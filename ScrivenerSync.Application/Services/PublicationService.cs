@@ -7,7 +7,6 @@ namespace ScrivenerSync.Application.Services;
 
 public class PublicationService(
     ISectionRepository sectionRepo,
-    IScrivenerProjectRepository projectRepo,
     IUnitOfWork unitOfWork) : IPublicationService
 {
     public async Task PublishAsync(Guid sectionId, Guid authorId, CancellationToken ct = default)

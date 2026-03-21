@@ -7,8 +7,6 @@ namespace ScrivenerSync.Application.Services;
 public class DashboardService(
     ISectionRepository sectionRepo,
     IUserRepository userRepo,
-    IReadEventRepository readEventRepo,
-    ICommentRepository commentRepo,
     IEmailDeliveryLogRepository logRepo) : IDashboardService
 {
     public async Task<IReadOnlyList<Section>> GetProjectOverviewAsync(

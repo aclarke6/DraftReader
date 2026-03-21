@@ -1,48 +1,160 @@
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using ScrivenerSync.Application.Services;
+using ScrivenerSync.Domain.Interfaces.Repositories;
+using ScrivenerSync.Domain.Interfaces.Services;
+using ScrivenerSync.Infrastructure.Dropbox;
+using ScrivenerSync.Infrastructure.Parsing;
+using ScrivenerSync.Infrastructure.Sync;
+using ScrivenerSync.Infrastructure.Persistence;
+using ScrivenerSync.Infrastructure.Persistence.Repositories;
+using ScrivenerSync.Web;
+using ScrivenerSync.Web.Services;
 
-var builder = WebApplication.CreateSlimBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.ConfigureHttpJsonOptions(options =>
+// ---------------------------------------------------------------------------
+// Configuration
+// ---------------------------------------------------------------------------
+var scrivenerSettings = new ScrivenerSyncSettings();
+builder.Configuration.GetSection("ScrivenerSync").Bind(scrivenerSettings);
+builder.Services.AddSingleton(scrivenerSettings);
+
+var emailSettings = new EmailSettings();
+builder.Configuration.GetSection("Email").Bind(emailSettings);
+builder.Services.AddSingleton(emailSettings);
+
+var dropboxSettings = new DropboxClientSettings();
+builder.Configuration.GetSection("Dropbox").Bind(dropboxSettings);
+builder.Services.AddSingleton(dropboxSettings);
+
+// ---------------------------------------------------------------------------
+// Database
+// ---------------------------------------------------------------------------
+var dbPath = scrivenerSettings.DatabasePath;
+if (string.IsNullOrWhiteSpace(dbPath))
+    dbPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "ScrivenerSync", "scrivener-sync.db");
+
+Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
+
+builder.Services.AddDbContext<ScrivenerSyncDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"));
+
+// ---------------------------------------------------------------------------
+// ASP.NET Core Identity
+// ---------------------------------------------------------------------------
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 {
-    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
+    options.Password.RequireDigit           = true;
+    options.Password.RequiredLength         = 8;
+    options.Password.RequireUppercase       = false;
+    options.Password.RequireNonAlphanumeric = false;
+    options.SignIn.RequireConfirmedEmail     = false;
+})
+.AddEntityFrameworkStores<ScrivenerSyncDbContext>()
+.AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath         = "/Account/Login";
+    options.LogoutPath        = "/Account/Logout";
+    options.AccessDeniedPath  = "/Account/AccessDenied";
+    options.SlidingExpiration = true;
+    options.ExpireTimeSpan    = TimeSpan.FromDays(14);
 });
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// ---------------------------------------------------------------------------
+// MVC
+// ---------------------------------------------------------------------------
+builder.Services.AddControllersWithViews();
 
-var app = builder.Build();
+// ---------------------------------------------------------------------------
+// Repositories
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<IUnitOfWork>(sp =>
+    sp.GetRequiredService<ScrivenerSyncDbContext>());
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
+builder.Services.AddScoped<IScrivenerProjectRepository, ScrivenerProjectRepository>();
+builder.Services.AddScoped<ISectionRepository, SectionRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IReadEventRepository, ReadEventRepository>();
+builder.Services.AddScoped<IUserNotificationPreferencesRepository, UserNotificationPreferencesRepository>();
+builder.Services.AddScoped<IEmailDeliveryLogRepository, EmailDeliveryLogRepository>();
 
-if (app.Environment.IsDevelopment())
+// ---------------------------------------------------------------------------
+// Application services
+// ---------------------------------------------------------------------------
+builder.Services.AddScoped<ISyncService, SyncService>();
+builder.Services.AddScoped<IPublicationService, PublicationService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// ---------------------------------------------------------------------------
+// Parsing and Dropbox
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton<IScrivenerProjectParser, ScrivenerProjectParser>();
+builder.Services.AddSingleton<IRtfConverter, RtfConverter>();
+
+if (!string.IsNullOrWhiteSpace(dropboxSettings.AccessToken))
 {
-    app.MapOpenApi();
+    builder.Services.AddSingleton<IDropboxClient>(
+        new ScrivenerSync.Infrastructure.Dropbox.DropboxClient(dropboxSettings));
 }
 
-Todo[] sampleTodos =
-[
-    new(1, "Walk the dog"),
-    new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-    new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-    new(4, "Clean the bathroom"),
-    new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-];
+// ---------------------------------------------------------------------------
+// Email sender
+// ---------------------------------------------------------------------------
+if (emailSettings.Provider == "Console")
+    builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
+else
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
-var todosApi = app.MapGroup("/todos");
-todosApi.MapGet("/", () => sampleTodos)
-        .WithName("GetTodos");
+// ---------------------------------------------------------------------------
+// Path resolver
+// ---------------------------------------------------------------------------
+builder.Services.AddSingleton(new DropboxClientSettingsAccessor
+{
+    LocalCachePath = dropboxSettings.LocalCachePath
+});
+builder.Services.AddScoped<ILocalPathResolver, LocalPathResolver>();
 
-todosApi.MapGet("/{id}", Results<Ok<Todo>, NotFound> (int id) =>
-    sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-        ? TypedResults.Ok(todo)
-        : TypedResults.NotFound())
-    .WithName("GetTodoById");
+// ---------------------------------------------------------------------------
+// Background sync service
+// ---------------------------------------------------------------------------
+builder.Services.AddHostedService<SyncBackgroundService>();
+
+// ---------------------------------------------------------------------------
+// Build and configure pipeline
+// ---------------------------------------------------------------------------
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ScrivenerSyncDbContext>();
+    db.Database.Migrate();
+}
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
 
-public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
-
-[JsonSerializable(typeof(Todo[]))]
-internal partial class AppJsonSerializerContext : JsonSerializerContext
-{
-
-}

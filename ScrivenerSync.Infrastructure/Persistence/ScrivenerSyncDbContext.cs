@@ -1,13 +1,22 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ScrivenerSync.Domain.Entities;
 using ScrivenerSync.Domain.Interfaces.Repositories;
 
 namespace ScrivenerSync.Infrastructure.Persistence;
 
+/// <summary>
+/// Single DbContext hosting both ASP.NET Core Identity tables (for authentication)
+/// and ScrivenerSync domain tables (for business logic).
+/// IdentityUser handles login only. Domain User handles roles, comments, invitations.
+/// The two are linked by sharing the same string Id (a GUID).
+/// </summary>
 public class ScrivenerSyncDbContext(DbContextOptions<ScrivenerSyncDbContext> options)
-    : DbContext(options), IUnitOfWork
+    : IdentityDbContext<IdentityUser>(options), IUnitOfWork
 {
-    public DbSet<User> Users { get; set; } = default!;
+    // Domain tables
+    public DbSet<User> AppUsers { get; set; } = default!;
     public DbSet<Invitation> Invitations { get; set; } = default!;
     public DbSet<ScrivenerProject> Projects { get; set; } = default!;
     public DbSet<Section> Sections { get; set; } = default!;
@@ -18,7 +27,10 @@ public class ScrivenerSyncDbContext(DbContextOptions<ScrivenerSyncDbContext> opt
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ScrivenerSyncDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ScrivenerSyncDbContext).Assembly);
     }
+
+    Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken ct) =>
+        base.SaveChangesAsync(ct);
 }

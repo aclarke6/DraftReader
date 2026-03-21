@@ -8,22 +8,14 @@ namespace ScrivenerSync.Application.Tests.Services;
 
 public class DashboardServiceTests
 {
-    private readonly Mock<ISectionRepository>          _sectionRepo  = new();
-    private readonly Mock<IUserRepository>             _userRepo     = new();
-    private readonly Mock<IReadEventRepository>        _readRepo     = new();
-    private readonly Mock<ICommentRepository>          _commentRepo  = new();
-    private readonly Mock<IEmailDeliveryLogRepository> _logRepo      = new();
+    private readonly Mock<ISectionRepository>          _sectionRepo = new();
+    private readonly Mock<IUserRepository>             _userRepo    = new();
+    private readonly Mock<IEmailDeliveryLogRepository> _logRepo     = new();
 
     private DashboardService CreateSut() => new(
         _sectionRepo.Object,
         _userRepo.Object,
-        _readRepo.Object,
-        _commentRepo.Object,
         _logRepo.Object);
-
-    // ---------------------------------------------------------------------------
-    // GetProjectOverview
-    // ---------------------------------------------------------------------------
 
     [Fact]
     public async Task GetProjectOverviewAsync_ReturnsSections()
@@ -36,19 +28,11 @@ public class DashboardServiceTests
 
         _sectionRepo.Setup(r => r.GetPublishedByProjectIdAsync(projectId, default))
             .ReturnsAsync(new List<Section> { section });
-        _commentRepo.Setup(r => r.CountBySectionIdAsync(section.Id, default))
-            .ReturnsAsync(3);
-        _readRepo.Setup(r => r.GetBySectionIdAsync(section.Id, default))
-            .ReturnsAsync(new List<ReadEvent>());
 
         var result = await sut.GetProjectOverviewAsync(projectId);
 
         Assert.Single(result);
     }
-
-    // ---------------------------------------------------------------------------
-    // GetReaderSummary
-    // ---------------------------------------------------------------------------
 
     [Fact]
     public async Task GetReaderSummaryAsync_ReturnsBetaReaders()
@@ -64,10 +48,6 @@ public class DashboardServiceTests
 
         Assert.Single(result);
     }
-
-    // ---------------------------------------------------------------------------
-    // GetEmailHealthSummary
-    // ---------------------------------------------------------------------------
 
     [Fact]
     public async Task GetEmailHealthSummaryAsync_ReturnsFailedLogs()
@@ -87,4 +67,3 @@ public class DashboardServiceTests
         Assert.Equal(EmailStatus.Failed, result[0].Status);
     }
 }
-

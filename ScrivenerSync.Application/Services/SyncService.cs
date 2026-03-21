@@ -11,7 +11,8 @@ public class SyncService(
     ISectionRepository sectionRepo,
     IUnitOfWork unitOfWork,
     IScrivenerProjectParser parser,
-    IRtfConverter converter) : ISyncService
+    IRtfConverter converter,
+    ILocalPathResolver pathResolver) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
     {
@@ -20,8 +21,9 @@ public class SyncService(
 
         try
         {
-            var scrivxPath = Path.Combine(project.DropboxPath, "project.scrivx");
+            var scrivxPath = await pathResolver.ResolveScrivxAsync(project, ct);
             var parsed     = parser.Parse(scrivxPath);
+            var localPath  = await pathResolver.ResolveAsync(project, ct);
 
             if (parsed.ManuscriptRoot is null)
             {
@@ -31,29 +33,19 @@ public class SyncService(
                 return;
             }
 
-            // Get all existing sections for reconciliation
             var existingSections = await sectionRepo.GetByProjectIdAsync(projectId, ct);
             var seenUuids        = new HashSet<string>();
 
-            // Walk the parsed tree and reconcile
             await ReconcileNodeAsync(
-                parsed.ManuscriptRoot,
-                parentId: null,
-                projectId: projectId,
-                scrivFolderPath: project.DropboxPath,
-                seenUuids: seenUuids,
-                ct: ct);
+                parsed.ManuscriptRoot, null, projectId, localPath, seenUuids, ct);
 
-            // Soft-delete sections no longer in the binder
             foreach (var section in existingSections)
             {
                 if (!seenUuids.Contains(section.ScrivenerUuid) && !section.IsSoftDeleted)
                 {
-                    // Cascade to descendants first
                     var descendants = await sectionRepo.GetAllDescendantsAsync(section.Id, ct);
                     foreach (var descendant in descendants)
                         descendant.SoftDelete();
-
                     section.SoftDelete();
                 }
             }
@@ -73,17 +65,15 @@ public class SyncService(
         var project = await projectRepo.GetByIdAsync(projectId, ct)
             ?? throw new EntityNotFoundException(nameof(ScrivenerProject), projectId);
 
+        var localPath         = await pathResolver.ResolveAsync(project, ct);
         var publishedSections = await sectionRepo.GetPublishedByProjectIdAsync(projectId, ct);
 
         foreach (var section in publishedSections)
         {
-            if (section.NodeType != NodeType.Document)
-                continue;
+            if (section.NodeType != NodeType.Document) continue;
 
-            var result = await converter.ConvertAsync(project.DropboxPath, section.ScrivenerUuid, ct);
-
-            if (result is null)
-                continue;
+            var result = await converter.ConvertAsync(localPath, section.ScrivenerUuid, ct);
+            if (result is null) continue;
 
             if (result.Hash != section.ContentHash)
             {
@@ -95,17 +85,9 @@ public class SyncService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    // ---------------------------------------------------------------------------
-    // Private helpers
-    // ---------------------------------------------------------------------------
-
     private async Task ReconcileNodeAsync(
-        ParsedBinderNode node,
-        Guid? parentId,
-        Guid projectId,
-        string scrivFolderPath,
-        HashSet<string> seenUuids,
-        CancellationToken ct)
+        ParsedBinderNode node, Guid? parentId, Guid projectId,
+        string scrivFolderPath, HashSet<string> seenUuids, CancellationToken ct)
     {
         seenUuids.Add(node.Uuid);
 
@@ -121,44 +103,25 @@ public class SyncService(
             await UpdateSectionAsync(existing, node, scrivFolderPath, ct);
         }
 
-        // Recurse into children
         foreach (var child in node.Children)
-        {
-            await ReconcileNodeAsync(
-                child,
-                parentId: existing.Id,
-                projectId: projectId,
-                scrivFolderPath: scrivFolderPath,
-                seenUuids: seenUuids,
-                ct: ct);
-        }
+            await ReconcileNodeAsync(child, existing.Id, projectId, scrivFolderPath, seenUuids, ct);
     }
 
     private async Task<Section> CreateSectionAsync(
-        ParsedBinderNode node,
-        Guid? parentId,
-        Guid projectId,
-        string scrivFolderPath,
-        CancellationToken ct)
+        ParsedBinderNode node, Guid? parentId, Guid projectId,
+        string scrivFolderPath, CancellationToken ct)
     {
         if (node.NodeType == ParsedNodeType.Folder)
-        {
-            return Section.CreateFolder(
-                projectId, node.Uuid, node.Title, parentId, node.SortOrder);
-        }
+            return Section.CreateFolder(projectId, node.Uuid, node.Title, parentId, node.SortOrder);
 
         var rtf = await converter.ConvertAsync(scrivFolderPath, node.Uuid, ct);
-
-        return Section.CreateDocument(
-            projectId, node.Uuid, node.Title, parentId, node.SortOrder,
-            rtf?.Html, rtf?.Hash, node.ScrivenerStatus);
+        return Section.CreateDocument(projectId, node.Uuid, node.Title, parentId,
+            node.SortOrder, rtf?.Html, rtf?.Hash, node.ScrivenerStatus);
     }
 
     private async Task UpdateSectionAsync(
-        Section existing,
-        ParsedBinderNode node,
-        string scrivFolderPath,
-        CancellationToken ct)
+        Section existing, ParsedBinderNode node,
+        string scrivFolderPath, CancellationToken ct)
     {
         existing.UpdateTitle(node.Title);
         existing.UpdateSortOrder(node.SortOrder);
@@ -167,11 +130,9 @@ public class SyncService(
         if (node.NodeType == ParsedNodeType.Document)
         {
             var rtf = await converter.ConvertAsync(scrivFolderPath, node.Uuid, ct);
-
             if (rtf is not null && rtf.Hash != existing.ContentHash)
             {
                 existing.UpdateContent(rtf.Html, rtf.Hash);
-
                 if (existing.IsPublished)
                     existing.MarkContentChanged();
             }

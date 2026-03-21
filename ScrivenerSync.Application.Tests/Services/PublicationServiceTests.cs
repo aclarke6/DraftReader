@@ -10,13 +10,9 @@ namespace ScrivenerSync.Application.Tests.Services;
 public class PublicationServiceTests
 {
     private readonly Mock<ISectionRepository>          _sectionRepo = new();
-    private readonly Mock<IScrivenerProjectRepository> _projectRepo = new();
-    private readonly Mock<IUnitOfWork>                 _unitOfWork  = new();
+        private readonly Mock<IUnitOfWork>                 _unitOfWork  = new();
 
-    private PublicationService CreateSut() => new(
-        _sectionRepo.Object,
-        _projectRepo.Object,
-        _unitOfWork.Object);
+    private PublicationService CreateSut() => new(_sectionRepo.Object, _unitOfWork.Object);
 
     private static Section MakeDocument(Guid projectId, bool published = false)
     {
@@ -127,3 +123,4 @@ public class PublicationServiceTests
         Assert.Single(result);
     }
 }
+
