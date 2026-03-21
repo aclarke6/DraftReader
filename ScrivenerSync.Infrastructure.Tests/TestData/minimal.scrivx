@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ScrivenerProject Version="2.0" Identifier="TEST-001">
+    <Binder>
+        <BinderItem UUID="DRAFT-001" Type="DraftFolder">
+            <Title>Manuscript</Title>
+            <MetaData/>
+            <Children>
+                <BinderItem UUID="BOOK-001" Type="Folder">
+                    <Title>Book 1</Title>
+                    <MetaData>
+                        <IncludeInCompile>Yes</IncludeInCompile>
+                    </MetaData>
+                    <Children>
+                        <BinderItem UUID="CHAP-001" Type="Folder">
+                            <Title>Chapter 1</Title>
+                            <MetaData>
+                                <IncludeInCompile>Yes</IncludeInCompile>
+                            </MetaData>
+                            <Children>
+                                <BinderItem UUID="SCEN-001" Type="Text">
+                                    <Title>Scene 1</Title>
+                                    <MetaData>
+                                        <StatusID>2</StatusID>
+                                        <IncludeInCompile>Yes</IncludeInCompile>
+                                    </MetaData>
+                                </BinderItem>
+                                <BinderItem UUID="SCEN-002" Type="Text">
+                                    <Title>Scene 2</Title>
+                                    <MetaData>
+                                        <StatusID>1</StatusID>
+                                        <IncludeInCompile>Yes</IncludeInCompile>
+                                    </MetaData>
+                                </BinderItem>
+                            </Children>
+                        </BinderItem>
+                    </Children>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+        <BinderItem UUID="TRASH-001" Type="TrashFolder">
+            <Title>Trash</Title>
+            <MetaData/>
+            <Children>
+                <BinderItem UUID="DELETED-001" Type="Text">
+                    <Title>Deleted Scene</Title>
+                    <MetaData/>
+                </BinderItem>
+            </Children>
+        </BinderItem>
+        <BinderItem UUID="RESEARCH-001" Type="ResearchFolder">
+            <Title>Research</Title>
+            <MetaData/>
+        </BinderItem>
+        <BinderItem UUID="CHARS-001" Type="Folder">
+            <Title>Characters</Title>
+            <MetaData/>
+        </BinderItem>
+    </Binder>
+    <StatusSettings>
+        <StatusItems>
+            <Status ID="-1">No Status</Status>
+            <Status ID="1">To Do</Status>
+            <Status ID="2">First Draft</Status>
+            <Status ID="3">Revised Draft</Status>
+            <Status ID="4">Final Draft</Status>
+            <Status ID="5">Done</Status>
+            <Status ID="6">In Progress</Status>
+        </StatusItems>
+    </StatusSettings>
+</ScrivenerProject>
