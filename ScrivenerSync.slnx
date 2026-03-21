@@ -15,6 +15,7 @@
     <Project Path="ScrivenerSync.Infrastructure.Tests/ScrivenerSync.Infrastructure.Tests.csproj" />
   </Folder>
   <Project Path="ScrivenerSync.Application/ScrivenerSync.Application.csproj" />
+  <Project Path="ScrivenerSync.DevTools/ScrivenerSync.DevTools.csproj" />
   <Project Path="ScrivenerSync.Domain/ScrivenerSync.Domain.csproj" />
   <Project Path="ScrivenerSync.Infrastructure/ScrivenerSync.Infrastructure.csproj" />
   <Project Path="ScrivenerSync.Web/ScrivenerSync.Web.csproj" />
