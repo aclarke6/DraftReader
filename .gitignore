@@ -1,0 +1,67 @@
+# PowerShell scripts
+*.ps1
+
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.ipdb
+
+# Test results
+TestResults/
+*.trx
+*.coveragexml
+coverage*/
+*.coverage
+
+# Entity Framework migrations (keep migrations, ignore snapshots if preferred)
+# Uncomment the line below if you want to exclude EF snapshots
+# *ModelSnapshot.cs
+
+# Logs
+*.log
+logs/
+
+# Environment and secrets - never commit these
+appsettings.Production.json
+appsettings.Staging.json
+*.pfx
+*.p12
+secrets.json
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Rider
+.idea/
+
+# Rider and VS Code
+*.DotSettings.user
