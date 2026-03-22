@@ -11,7 +11,14 @@ public sealed class ScrivenerProject
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = default!;
-    public string DropboxPath { get; private set; } = default!;
+    public string DropboxPath { get; private set; }
+
+    /// <summary>
+    /// UUID of the Scrivener binder node that is the root of this project.
+    /// For Book-split vaults this is the Book folder UUID.
+    /// For single-project vaults this is the Manuscript (DraftFolder) UUID.
+    /// </summary>
+    public string? ScrivenerRootUuid { get; private set; } = default!;
     public bool IsReaderActive { get; private set; }
     public DateTime? ReaderActivatedAt { get; private set; }
     public DateTime? LastSyncedAt { get; private set; }
@@ -30,7 +37,7 @@ public sealed class ScrivenerProject
     // Factory
     // ---------------------------------------------------------------------------
 
-    public static ScrivenerProject Create(string name, string dropboxPath)
+    public static ScrivenerProject Create(string name, string dropboxPath, string? scrivenerRootUuid = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new InvariantViolationException("I-PROJ-NAME",
@@ -40,13 +47,13 @@ public sealed class ScrivenerProject
             throw new InvariantViolationException("I-PROJ-PATH",
                 "Project Dropbox path must not be null or whitespace.");
 
-        return new ScrivenerProject
-        {
-            Id           = Guid.NewGuid(),
-            Name         = name.Trim(),
-            DropboxPath  = dropboxPath.Trim(),
+        return new ScrivenerProject {
+            Id = Guid.NewGuid(),
+            Name = name.Trim(),
+            DropboxPath = dropboxPath.Trim(),
+            ScrivenerRootUuid = scrivenerRootUuid?.Trim(),
             IsReaderActive = false,
-            SyncStatus   = SyncStatus.Stale,
+            SyncStatus = SyncStatus.Stale,
             IsSoftDeleted = false
         };
     }
@@ -91,3 +98,4 @@ public sealed class ScrivenerProject
         SoftDeletedAt  = DateTime.UtcNow;
     }
 }
+

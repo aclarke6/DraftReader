@@ -36,8 +36,16 @@ public class SyncService(
             var existingSections = await sectionRepo.GetByProjectIdAsync(projectId, ct);
             var seenUuids        = new HashSet<string>();
 
+            var rootNode = parsed.ManuscriptRoot;
+            if (!string.IsNullOrWhiteSpace(project.ScrivenerRootUuid))
+            {
+                var found = FindNodeByUuid(parsed.ManuscriptRoot, project.ScrivenerRootUuid);
+                if (found is not null)
+                    rootNode = found;
+            }
+
             await ReconcileNodeAsync(
-                parsed.ManuscriptRoot, null, projectId, localPath, seenUuids, ct);
+                rootNode, null, projectId, localPath, seenUuids, ct);
 
             foreach (var section in existingSections)
             {
@@ -137,5 +145,18 @@ public class SyncService(
                     existing.MarkContentChanged();
             }
         }
+    }
+
+    private static ParsedBinderNode? FindNodeByUuid(ParsedBinderNode node, string uuid)
+    {
+        if (node.Uuid == uuid)
+            return node;
+        foreach (var child in node.Children)
+        {
+            var found = FindNodeByUuid(child, uuid);
+            if (found is not null)
+                return found;
+        }
+        return null;
     }
 }

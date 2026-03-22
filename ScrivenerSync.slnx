@@ -6,7 +6,8 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="fix-account-controller-syntax.ps1" />
+    <File Path="get-dropbox-refresh-token.ps1" />
+    <File Path="scope-sync-to-root2.ps1" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="ScrivenerSync.Application.Tests/ScrivenerSync.Application.Tests.csproj" />

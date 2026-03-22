@@ -61,15 +61,19 @@ public static class DatabaseSeeder
         }
 
         // ---------------------------------------------------------------------------
-        // Seed Test.scriv project
+        // Seed Test.scriv > Book 1 project
         // ---------------------------------------------------------------------------
-        var existingProject = db.Projects.FirstOrDefault(p => p.Name == "Test");
+        var existingProject = db.Projects.FirstOrDefault(p => p.Name == "Test - Book 1");
         if (existingProject is null)
         {
-            var project = ScrivenerProject.Create("Test", scrivTestProjectDropboxPath);
+            var project = ScrivenerProject.Create(
+                "Test - Book 1",
+                scrivTestProjectDropboxPath,
+                "DF1031AB-818A-41EB-AD49-F26D5C44F3D4");
             db.Projects.Add(project);
             await db.SaveChangesAsync();
-            logger.LogInformation("Test project created: {Path}", scrivTestProjectDropboxPath);
+            logger.LogInformation("Test - Book 1 project created: {Path}", scrivTestProjectDropboxPath);
         }
     }
 }
+
