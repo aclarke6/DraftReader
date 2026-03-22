@@ -775,6 +775,14 @@ textarea {
   margin-top: var(--space-1);
 }
 
+/* Stats row - always 3 columns */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+}
+
 /* --------------------------------------------------------------------------
    17. Empty states
    -------------------------------------------------------------------------- */
@@ -817,3 +825,6 @@ textarea {
   .site-nav__inner { padding: 0 var(--space-4); }
   .prose { padding: var(--space-5) var(--space-4); }
 }
+
+
+

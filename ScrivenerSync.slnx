@@ -11,6 +11,8 @@
     <File Path="fix-console-email.ps1" />
     <File Path="fix-console-email2.ps1" />
     <File Path="fix-email-final.ps1" />
+    <File Path="fix-stats-row.ps1" />
+    <File Path="fix-stats-row2.ps1" />
     <File Path="Get-CodeFiles.ps1" />
     <File Path="redesign-dashboard.ps1" />
     <File Path="setup-packages.ps1" />
