@@ -1,27 +1,76 @@
 @model IReadOnlyList<User>
 @{ ViewData["Title"] = "Beta Readers"; }
 
-<h2>Beta Readers</h2>
-<p><a asp-action="InviteReader" class="btn">Invite Reader</a></p>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Beta Readers</h1>
+        <p class="page-subtitle">@Model.Count(r => !r.IsSoftDeleted) reader(s)</p>
+    </div>
+    <a asp-action="InviteReader" class="btn btn--primary">Invite a Reader</a>
+</div>
 
-<table>
-    <tr><th>Email</th><th>Name</th><th>Active</th><th>Actions</th></tr>
-    @foreach (var r in Model)
-    {
-        <tr>
-            <td>@r.Email</td>
-            <td>@r.DisplayName</td>
-            <td>@(r.IsActive ? "Yes" : "No")</td>
-            <td>
-                @if (r.IsActive)
+@if (!Model.Any(r => !r.IsSoftDeleted))
+{
+    <div class="empty-state">
+        <div class="empty-state__title">No readers yet</div>
+        <p class="empty-state__body">
+            Invite your first beta reader to get started.
+        </p>
+    </div>
+}
+else
+{
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Where(r => !r.IsSoftDeleted).OrderBy(r => r.DisplayName))
                 {
-                    <form asp-action="DeactivateReader" method="post" style="display:inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="userId" value="@r.Id" />
-                        <button type="submit" class="btn btn-sm btn-danger">Deactivate</button>
-                    </form>
+                    <tr>
+                        <td>@(r.DisplayName ?? "-")</td>
+                        <td style="color:var(--color-ink-muted);">@r.Email</td>
+                        <td>
+                            @if (r.IsActive)
+                            {
+                                <span class="badge badge--success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge--neutral">Inactive</span>
+                            }
+                        </td>
+                        <td style="color:var(--color-ink-muted); font-size:var(--text-sm);">
+                            @(r.ActivatedAt.HasValue ? r.ActivatedAt.Value.ToString("dd MMM yyyy") : "Pending")
+                        </td>
+                        <td>
+                            @if (r.IsActive)
+                            {
+                                <form asp-action="DeactivateReader" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@r.Id" />
+                                    <button type="submit" class="btn btn--danger btn--sm">Deactivate</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-action="ReactivateReader" method="post" style="display:inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="userId" value="@r.Id" />
+                                    <button type="submit" class="btn btn--secondary btn--sm">Reactivate</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
                 }
-            </td>
-        </tr>
-    }
-</table>
+            </tbody>
+        </table>
+    </div>
+}

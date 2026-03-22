@@ -195,6 +195,18 @@ public class AuthorController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReactivateReader(Guid userId)
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+
+        await userService.ReactivateUserAsync(userId, author.Id);
+        TempData["Success"] = "Reader reactivated.";
+        return RedirectToAction("Readers");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeactivateReader(Guid userId)
     {
         var author = await GetAuthorAsync();
@@ -276,3 +288,4 @@ public class AuthorController(
         return result;
     }
 }
+
