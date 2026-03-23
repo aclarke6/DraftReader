@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ScrivenerSync.Domain.Entities;
+using ScrivenerSync.Domain.Exceptions;
 using ScrivenerSync.Domain.Interfaces.Repositories;
 using ScrivenerSync.Infrastructure.Persistence;
 
@@ -16,6 +17,26 @@ public class ScrivenerProjectRepository(ScrivenerSyncDbContext db) : IScrivenerP
     public async Task<IReadOnlyList<ScrivenerProject>> GetAllAsync(CancellationToken ct = default) =>
         await db.Projects.Where(p => !p.IsSoftDeleted).ToListAsync(ct);
 
-    public async Task AddAsync(ScrivenerProject project, CancellationToken ct = default) =>
+    public async Task<ScrivenerProject?> GetByScrivenerRootUuidAsync(
+        string uuid, CancellationToken ct = default) =>
+        await db.Projects.FirstOrDefaultAsync(
+            p => p.ScrivenerRootUuid == uuid && !p.IsSoftDeleted, ct);
+
+    public async Task<ScrivenerProject?> GetSoftDeletedByScrivenerRootUuidAsync(
+        string uuid, CancellationToken ct = default) =>
+        await db.Projects.FirstOrDefaultAsync(
+            p => p.ScrivenerRootUuid == uuid && p.IsSoftDeleted, ct);
+
+    public async Task AddAsync(ScrivenerProject project, CancellationToken ct = default)
+    {
+        if (project.ScrivenerRootUuid is not null)
+        {
+            var existing = await GetByScrivenerRootUuidAsync(project.ScrivenerRootUuid, ct);
+            if (existing is not null)
+                throw new DuplicateProjectException(project.ScrivenerRootUuid);
+        }
+
         await db.Projects.AddAsync(project, ct);
+    }
 }
+

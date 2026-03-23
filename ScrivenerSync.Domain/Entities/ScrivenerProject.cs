@@ -88,6 +88,12 @@ public sealed class ScrivenerProject
         SyncErrorMessage = status == SyncStatus.Error ? errorMessage : null;
     }
 
+    public void MarkSyncing()
+    {
+        SyncStatus       = SyncStatus.Syncing;
+        SyncErrorMessage = null;
+    }
+
     public void SoftDelete()
     {
         if (IsSoftDeleted)
@@ -97,5 +103,16 @@ public sealed class ScrivenerProject
         IsSoftDeleted  = true;
         SoftDeletedAt  = DateTime.UtcNow;
     }
+
+    public void Restore(string? updatedName = null)
+    {
+        IsSoftDeleted = false;
+        SoftDeletedAt = null;
+        SyncStatus    = SyncStatus.Stale;
+        if (updatedName is not null)
+            Name = updatedName.Trim();
+    }
 }
+
+
 

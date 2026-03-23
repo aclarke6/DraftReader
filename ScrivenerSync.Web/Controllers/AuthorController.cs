@@ -1,7 +1,8 @@
+using ScrivenerSync.Domain.Enumerations;
+using ScrivenerSync.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScrivenerSync.Domain.Entities;
-using ScrivenerSync.Domain.Enumerations;
 using ScrivenerSync.Domain.Interfaces.Repositories;
 using ScrivenerSync.Domain.Interfaces.Services;
 using ScrivenerSync.Web.Models;
@@ -17,6 +18,8 @@ public class AuthorController(
     IDashboardService dashboardService,
     ISyncService syncService,
     IUserRepository userRepo,
+    IScrivenerProjectDiscoveryService discoveryService,
+    IServiceScopeFactory scopeFactory,
     ILogger<AuthorController> logger) : Controller
 {
     // ---------------------------------------------------------------------------
@@ -53,17 +56,63 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Sync(Guid projectId)
     {
-        try
+        // Mark as syncing immediately so the dashboard shows the progress bar
+        var project = await projectRepo.GetByIdAsync(projectId);
+        if (project is not null)
         {
-            await syncService.ParseProjectAsync(projectId);
-            TempData["Success"] = "Project synced successfully.";
+            project.MarkSyncing();
+            await GetUnitOfWork().SaveChangesAsync();
         }
-        catch (Exception ex)
+
+        // Fire sync in background using scopeFactory (safe after request ends)
+        _ = Task.Run(async () =>
         {
-            logger.LogError(ex, "Sync failed for project {ProjectId}", projectId);
-            TempData["Error"] = $"Sync failed: {ex.Message}";
-        }
+            using var scope   = scopeFactory.CreateScope();
+            var bgSyncService = scope.ServiceProvider.GetRequiredService<ISyncService>();
+            var bgProjectRepo = scope.ServiceProvider.GetRequiredService<IScrivenerProjectRepository>();
+            var bgUnitOfWork  = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            try
+            {
+                await bgSyncService.ParseProjectAsync(projectId);
+                logger.LogInformation("Background sync completed for project {ProjectId}", projectId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Background sync failed for project {ProjectId}: {Message}",
+                    projectId, ex.Message);
+
+                // Ensure the project status reflects the failure
+                try
+                {
+                    var failedProject = await bgProjectRepo.GetByIdAsync(projectId);
+                    if (failedProject is not null && failedProject.SyncStatus == SyncStatus.Syncing)
+                    {
+                        failedProject.UpdateSyncStatus(SyncStatus.Error, DateTime.UtcNow,
+                            ex.Message.Length > 200 ? ex.Message[..200] : ex.Message);
+                        await bgUnitOfWork.SaveChangesAsync();
+                    }
+                }
+                catch (Exception innerEx)
+                {
+                    logger.LogError(innerEx, "Failed to update sync error status for {ProjectId}", projectId);
+                }
+            }
+        });
+
         return RedirectToAction("Dashboard");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetSyncStatus(Guid projectId)
+    {
+        var project = await projectRepo.GetByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        return Json(new
+        {
+            status       = project.SyncStatus.ToString(),
+            errorMessage = project.SyncErrorMessage
+        });
     }
 
     // ---------------------------------------------------------------------------
@@ -241,6 +290,106 @@ public class AuthorController(
     }
 
     // ---------------------------------------------------------------------------
+    // Project removal (soft delete)
+    // ---------------------------------------------------------------------------
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RemoveProject(Guid projectId)
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+
+        var project = await projectRepo.GetByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        project.SoftDelete();
+        await GetUnitOfWork().SaveChangesAsync();
+
+        TempData["Success"] = $"{project.Name} removed. You can re-add it from Add Project.";
+        return RedirectToAction("Dashboard");
+    }
+
+    // ---------------------------------------------------------------------------
+    // Projects discovery
+    // ---------------------------------------------------------------------------
+
+    public async Task<IActionResult> Projects()
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+
+        var discovered = await discoveryService.DiscoverAsync();
+        return View(discovered);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddProjects(List<string> selectedUuids)
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+
+        if (selectedUuids is null || selectedUuids.Count == 0)
+        {
+            TempData["Error"] = "No projects selected.";
+            return RedirectToAction("Projects");
+        }
+
+        var discovered = await discoveryService.DiscoverAsync();
+        var toAdd      = discovered
+            .Where(d => selectedUuids.Contains(d.ScrivenerRootUuid) && !d.AlreadyAdded)
+            .ToList();
+
+        var addedCount = 0;
+        foreach (var d in toAdd)
+        {
+            try
+            {
+                // Check for soft-deleted project with same UUID - restore instead of create
+                var softDeleted = await projectRepo.GetSoftDeletedByScrivenerRootUuidAsync(d.ScrivenerRootUuid);
+                if (softDeleted is not null)
+                {
+                    softDeleted.Restore(d.Name);
+                    addedCount++;
+                }
+                else
+                {
+                    var project = ScrivenerProject.Create(d.Name, d.DropboxPath, d.ScrivenerRootUuid);
+                    await projectRepo.AddAsync(project);
+                    addedCount++;
+                }
+            }
+            catch (DuplicateProjectException)
+            {
+                // Already exists as active - skip silently
+            }
+        }
+
+        await GetUnitOfWork().SaveChangesAsync();
+
+        // Trigger initial sync for each newly added project
+        foreach (var d in toAdd)
+        {
+            var projects = await projectRepo.GetAllAsync();
+            var project  = projects.FirstOrDefault(p => p.ScrivenerRootUuid == d.ScrivenerRootUuid);
+            if (project is null) continue;
+
+            try { await syncService.ParseProjectAsync(project.Id); }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Initial sync failed for {Name}", d.Name);
+            }
+        }
+
+        TempData["Success"] = addedCount == 1
+            ? $"{toAdd.First(d => true).Name} added successfully."
+            : $"{addedCount} projects added successfully.";
+
+        return RedirectToAction("Dashboard");
+    }
+
+    // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
 
@@ -295,4 +444,17 @@ public class AuthorController(
         return result;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -4,5 +4,6 @@ public enum SyncStatus
 {
     Healthy,
     Stale,
-    Error
+    Error,
+    Syncing
 }

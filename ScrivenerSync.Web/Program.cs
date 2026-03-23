@@ -1,3 +1,4 @@
+using ScrivenerSync.Domain.Enumerations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ScrivenerSync.Application.Services;
@@ -90,6 +91,11 @@ builder.Services.AddScoped<IEmailDeliveryLogRepository, EmailDeliveryLogReposito
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IPublicationService, PublicationService>();
+builder.Services.AddScoped<IScrivenerProjectDiscoveryService, ScrivenerProjectDiscoveryService>();
+builder.Services.AddSingleton(new DiscoveryServiceOptions
+{
+    LocalCachePath = builder.Configuration["Dropbox:LocalCachePath"] ?? string.Empty
+});
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();
@@ -149,6 +155,19 @@ var seedPath     = builder.Configuration["Seed:TestProjectPath"] ?? "/Apps/Scriv
 
 await DatabaseSeeder.SeedAsync(app.Services, seedEmail, seedPassword, seedName, seedPath);
 
+// Reset any projects stuck in Syncing state from a previous crashed sync
+using (var startupScope = app.Services.CreateScope())
+{
+    var db = startupScope.ServiceProvider.GetRequiredService<ScrivenerSyncDbContext>();
+    var stuckProjects = db.Projects
+        .Where(p => p.SyncStatus == SyncStatus.Syncing)
+        .ToList();
+    foreach (var p in stuckProjects)
+        p.UpdateSyncStatus(SyncStatus.Stale, DateTime.UtcNow, null);
+    if (stuckProjects.Any())
+        await db.SaveChangesAsync();
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -166,5 +185,8 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+
+
 
 
