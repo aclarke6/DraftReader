@@ -1,0 +1,125 @@
+@model DraftReader.Web.Models.ReaderDashboardViewModel
+@{ ViewData["Title"] = "My Reading"; }
+
+<!-- Atmosphere hero -->
+<div class="site-hero" style="min-height:200px; margin-bottom:var(--space-8);">
+    <div class="site-hero__content">
+        <div class="site-hero__title">Welcome back</div>
+        <div class="site-hero__subtitle">
+            @if (Model.ProjectName is not null)
+            {
+                @($"{Model.ReadChapters} of {Model.TotalChapters} chapters read")
+            }
+            else
+            {
+                @:No manuscript available yet
+            }
+        </div>
+    </div>
+</div>
+
+<div style="max-width:800px; margin:0 auto; padding:0 var(--space-6);">
+
+    @if (Model.ProjectName is null)
+    {
+        <div class="card">
+            <div class="card__body" style="text-align:center; padding:var(--space-12);">
+                <p style="color:var(--color-text-muted); margin-bottom:var(--space-4);">
+                    No manuscript is currently available for reading.
+                </p>
+                <p style="color:var(--color-text-muted); font-size:var(--text-sm);">
+                    The author will notify you when chapters are ready.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Progress bar -->
+        <div class="card" style="margin-bottom:var(--space-6);">
+            <div class="card__body">
+                <div style="display:flex; justify-content:space-between; align-items:center;
+                            margin-bottom:var(--space-3);">
+                    <span style="font-weight:var(--font-medium);">@Model.ProjectName</span>
+                    <span style="font-size:var(--text-sm); color:var(--color-text-muted);">
+                        @Model.ReadChapters / @Model.TotalChapters chapters
+                    </span>
+                </div>
+                @{
+                    var pct = Model.TotalChapters > 0
+                        ? (int)((double)Model.ReadChapters / Model.TotalChapters * 100)
+                        : 0;
+                }
+                <div style="background:var(--color-border); border-radius:999px; height:8px;">
+                    <div style="background:var(--color-accent); border-radius:999px;
+                                height:8px; width:@(pct)%; transition:width 0.3s;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chapter list -->
+        <div class="card">
+            <div class="card__body" style="padding:0;">
+                @if (!Model.PublishedChapters.Any())
+                {
+                    <p style="padding:var(--space-8); text-align:center;
+                              color:var(--color-text-muted);">
+                        No chapters published yet.
+                    </p>
+                }
+                else
+                {
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:1px solid var(--color-border);">
+                                <th style="text-align:left; padding:var(--space-3) var(--space-5);
+                                           font-size:var(--text-xs); font-weight:var(--font-bold);
+                                           text-transform:uppercase; letter-spacing:0.06em;
+                                           color:var(--color-text-muted);">Chapter</th>
+                                <th style="text-align:left; padding:var(--space-3) var(--space-5);
+                                           font-size:var(--text-xs); font-weight:var(--font-bold);
+                                           text-transform:uppercase; letter-spacing:0.06em;
+                                           color:var(--color-text-muted);">Status</th>
+                                <th style="padding:var(--space-3) var(--space-5);"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.PublishedChapters)
+                            {
+                                <tr style="border-bottom:1px solid var(--color-border);">
+                                    <td style="padding:var(--space-4) var(--space-5);
+                                               font-weight:var(--font-medium);">
+                                        @item.Chapter.Title
+                                    </td>
+                                    <td style="padding:var(--space-4) var(--space-5);">
+                                        @if (item.HasRead)
+                                        {
+                                            <span style="color:var(--color-success);
+                                                         font-size:var(--text-sm);">Read</span>
+                                        }
+                                        else
+                                        {
+                                            <span style="color:var(--color-accent);
+                                                         font-size:var(--text-sm);
+                                                         font-weight:var(--font-medium);">New</span>
+                                        }
+                                    </td>
+                                    <td style="padding:var(--space-4) var(--space-5);
+                                               text-align:right;">
+                                        <a asp-controller="Reader" asp-action="Read"
+                                           asp-route-id="@item.Chapter.Id"
+                                           class="btn btn--primary"
+                                           style="font-size:var(--text-sm); padding:var(--space-2) var(--space-4);">
+                                            @(item.HasRead ? "Read again" : "Read")
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    }
+</div>

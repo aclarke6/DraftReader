@@ -50,7 +50,7 @@ public class AccountController(
                 var domainUser = await userRepo.GetByEmailAsync(model.Email);
                 return domainUser?.Role switch {
                     Domain.Enumerations.Role.Author => RedirectToAction("Dashboard", "Author"),
-                    _ => RedirectToAction("Index", "Reader")
+                    _ => RedirectToAction("Dashboard", "Reader")
                 };
 
             case { IsLockedOut: true }:
@@ -157,7 +157,7 @@ public class AccountController(
 
             logger.LogInformation("Invitation accepted and user signed in: {Email}", model.Email);
 
-            return RedirectToAction("Index", "Reader");
+            return RedirectToAction("Dashboard", "Reader");
         }
         catch (Exception ex)
         {
@@ -320,9 +320,10 @@ public class AccountController(
         if (domainUser?.Role == DraftReader.Domain.Enumerations.Role.Author)
             return RedirectToAction("Dashboard", "Author");
 
-        return RedirectToAction("Index", "Reader");
+        return RedirectToAction("Dashboard", "Reader");
     }
 }
+
 
 
 

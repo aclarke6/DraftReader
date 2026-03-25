@@ -6,18 +6,9 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="add-rtf-feature-tests.ps1" />
-    <File Path="add-styles-tests.ps1" />
-    <File Path="build-sync-progress-tracker.ps1" />
-    <File Path="fix-background-service.ps1" />
-    <File Path="fix-scrivener-char-styles.ps1" />
-    <File Path="fix-sync-no-dropbox.ps1" />
-    <File Path="fix-syncservice-tests.ps1" />
-    <File Path="fix-syncservice-tests2.ps1" />
-    <File Path="fix-syncservice-tracker.ps1" />
-    <File Path="integrate-images.ps1" />
-    <File Path="rename-to-draftreader.ps1" />
-    <File Path="scan-vault-rtf-features.ps1" />
+    <File Path="betabooks-export.json" />
+    <File Path="build-reader-dashboard.ps1" />
+    <File Path="get-dropbox-refresh-token.ps1" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="DraftReader.Application.Tests/DraftReader.Application.Tests.csproj" />

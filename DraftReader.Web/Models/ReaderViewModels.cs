@@ -47,3 +47,17 @@ public class AddCommentViewModel
     public bool IsPrivate { get; set; }
     public Guid? ParentCommentId { get; set; }
 }
+
+public class ReaderDashboardViewModel
+{
+    public string? ProjectName { get; set; }
+    public List<ChapterProgressViewModel> PublishedChapters { get; set; } = new();
+    public int TotalChapters { get; set; }
+    public int ReadChapters { get; set; }
+}
+
+public class ChapterProgressViewModel
+{
+    public DraftReader.Domain.Entities.Section Chapter { get; set; } = default!;
+    public bool HasRead { get; set; }
+}

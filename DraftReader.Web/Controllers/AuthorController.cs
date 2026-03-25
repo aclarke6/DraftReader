@@ -1,14 +1,15 @@
+using DraftReader.Domain.Interfaces.Repositories;
 using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DraftReader.Domain.Entities;
-using DraftReader.Domain.Interfaces.Repositories;
 using DraftReader.Domain.Interfaces.Services;
 using DraftReader.Web.Models;
 
 namespace DraftReader.Web.Controllers;
 
+#pragma warning disable CS9107
 [Authorize]
 public class AuthorController(
     IScrivenerProjectRepository projectRepo,
@@ -21,7 +22,7 @@ public class AuthorController(
     IScrivenerProjectDiscoveryService discoveryService,
     IServiceScopeFactory scopeFactory,
     ISyncProgressTracker progressTracker,
-    ILogger<AuthorController> logger) : Controller
+    ILogger<AuthorController> logger) : BaseController(userRepo)
 {
     // ---------------------------------------------------------------------------
     // Dashboard
@@ -449,6 +450,11 @@ public class AuthorController(
         return result;
     }
 }
+
+
+
+
+
 
 
 

@@ -15,8 +15,46 @@ public class ReaderController(
     ICommentService commentService,
     IReadingProgressService progressService,
     IUserRepository userRepo,
-    ILogger<ReaderController> logger) : Controller
+    ILogger<ReaderController> logger) : BaseController(userRepo)
 {
+    // ---------------------------------------------------------------------------
+    // Dashboard - reader home page
+    // ---------------------------------------------------------------------------
+    public async Task<IActionResult> Dashboard()
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null) return Forbid();
+
+        var project = await projectRepo.GetReaderActiveProjectAsync();
+        if (project is null)
+            return View(new ReaderDashboardViewModel { ProjectName = null });
+
+        var allSections     = await sectionRepo.GetByProjectIdAsync(project.Id);
+        var publishedChapters = allSections
+            .Where(s => s.NodeType == NodeType.Folder && s.IsPublished && !s.IsSoftDeleted)
+            .OrderBy(s => s.SortOrder)
+            .ToList();
+
+        var chaptersWithProgress = new List<ChapterProgressViewModel>();
+        foreach (var chapter in publishedChapters)
+        {
+            var hasRead = await progressService.IsCaughtUpAsync(user.Id, project.Id);
+            chaptersWithProgress.Add(new ChapterProgressViewModel
+            {
+                Chapter = chapter,
+                HasRead = hasRead
+            });
+        }
+
+        return View(new ReaderDashboardViewModel
+        {
+            ProjectName       = project.Name,
+            PublishedChapters = chaptersWithProgress,
+            TotalChapters     = publishedChapters.Count,
+            ReadChapters      = chaptersWithProgress.Count(c => c.HasRead)
+        });
+    }
+
     // ---------------------------------------------------------------------------
     // Index - top-level section selection
     // ---------------------------------------------------------------------------
@@ -187,13 +225,6 @@ public class ReaderController(
     // Private helpers
     // ---------------------------------------------------------------------------
 
-    private async Task<User?> GetCurrentUserAsync()
-    {
-        var email = User.Identity?.Name;
-        if (email is null) return null;
-        return await userRepo.GetByEmailAsync(email);
-    }
-
     private static bool HasPublishedChapter(Section section, IReadOnlyList<Section> all)
     {
         if (section.NodeType == NodeType.Folder && section.IsPublished) return true;
@@ -279,3 +310,5 @@ public class ReaderController(
         return groups;
     }
 }
+
+
