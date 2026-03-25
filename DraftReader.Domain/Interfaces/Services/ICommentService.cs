@@ -1,0 +1,13 @@
+using DraftReader.Domain.Entities;
+using DraftReader.Domain.Enumerations;
+
+namespace DraftReader.Domain.Interfaces.Services;
+
+public interface ICommentService
+{
+    Task<Comment> CreateRootCommentAsync(Guid sectionId, Guid userId, string body, Visibility visibility, CancellationToken ct = default);
+    Task<Comment> CreateReplyAsync(Guid parentCommentId, Guid userId, string body, Visibility requestedVisibility, CancellationToken ct = default);
+    Task EditCommentAsync(Guid commentId, Guid userId, string newBody, CancellationToken ct = default);
+    Task SoftDeleteCommentAsync(Guid commentId, Guid actingUserId, CancellationToken ct = default);
+    Task<IReadOnlyList<Comment>> GetThreadsForSectionAsync(Guid sectionId, Guid requestingUserId, CancellationToken ct = default);
+}

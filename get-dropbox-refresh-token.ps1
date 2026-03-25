@@ -1,15 +1,15 @@
-# ScrivenerSync - Get Dropbox refresh token
-# Run from solution root: C:\Users\alast\source\repos\ScrivenerSync
+# DraftReader - Get Dropbox refresh token
+# Run from solution root: C:\Users\alast\source\repos\DraftReader
 # Usage: .\get-dropbox-refresh-token.ps1
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "ScrivenerSync - Dropbox OAuth token refresh" -ForegroundColor Cyan
+Write-Host "DraftReader - Dropbox OAuth token refresh" -ForegroundColor Cyan
 Write-Host ""
 
 # Read AppKey and AppSecret from user secrets
 Write-Host "Reading credentials from user secrets..." -ForegroundColor Gray
-$secrets = dotnet user-secrets list --project ScrivenerSync.Web
+$secrets = dotnet user-secrets list --project DraftReader.Web
 $appKey    = ($secrets | Where-Object { $_ -match "^Dropbox:AppKey\s*=" }) -replace "^Dropbox:AppKey\s*=\s*", ""
 $appSecret = ($secrets | Where-Object { $_ -match "^Dropbox:AppSecret\s*=" }) -replace "^Dropbox:AppSecret\s*=\s*", ""
 
@@ -62,8 +62,8 @@ Write-Host ""
 
 # Step 4: Save to user secrets
 Write-Host "Saving to user secrets..." -ForegroundColor Cyan
-dotnet user-secrets set "Dropbox:AccessToken"  $accessToken  --project ScrivenerSync.Web
-dotnet user-secrets set "Dropbox:RefreshToken" $refreshToken --project ScrivenerSync.Web
+dotnet user-secrets set "Dropbox:AccessToken"  $accessToken  --project DraftReader.Web
+dotnet user-secrets set "Dropbox:RefreshToken" $refreshToken --project DraftReader.Web
 
 Write-Host ""
 Write-Host "Done. Restart the app and sync." -ForegroundColor Green

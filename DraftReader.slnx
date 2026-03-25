@@ -1,0 +1,30 @@
+<Solution>
+  <Folder Name="/Docs/">
+    <File Path="DraftReader-BillingModel-v2.docx" />
+    <File Path="DraftReader-BusinessModel-v3.docx" />
+    <File Path="DraftReader-BusinessModel.docx" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="add-rtf-feature-tests.ps1" />
+    <File Path="add-styles-tests.ps1" />
+    <File Path="build-sync-progress-tracker.ps1" />
+    <File Path="fix-background-service.ps1" />
+    <File Path="fix-scrivener-char-styles.ps1" />
+    <File Path="fix-syncservice-tests.ps1" />
+    <File Path="fix-syncservice-tests2.ps1" />
+    <File Path="fix-syncservice-tracker.ps1" />
+    <File Path="rename-to-draftreader.ps1" />
+    <File Path="scan-vault-rtf-features.ps1" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="DraftReader.Application.Tests/DraftReader.Application.Tests.csproj" />
+    <Project Path="DraftReader.Domain.Tests/DraftReader.Domain.Tests.csproj" />
+    <Project Path="DraftReader.Infrastructure.Tests/DraftReader.Infrastructure.Tests.csproj" />
+  </Folder>
+  <Project Path="DraftReader.Application/DraftReader.Application.csproj" />
+  <Project Path="DraftReader.DevTools/DraftReader.DevTools.csproj" />
+  <Project Path="DraftReader.Domain/DraftReader.Domain.csproj" />
+  <Project Path="DraftReader.Infrastructure/DraftReader.Infrastructure.csproj" />
+  <Project Path="DraftReader.Web/DraftReader.Web.csproj" />
+</Solution>
