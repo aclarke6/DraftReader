@@ -105,4 +105,95 @@ public class RtfConverterTests
 
         Assert.Null(result);
     }
+
+    // ---------------------------------------------------------------------------
+    // Scrivener character style tag stripping
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ConvertAsync_ScrivenerCharStyleTags_AreNotPresentInOutput()
+    {
+        var converter = new RtfConverter();
+
+        foreach (var uuid in new[] { "SCEN-001", "SCEN-002", "SCEN-003" })
+        {
+            var result = await converter.ConvertAsync(ScrivPath, uuid);
+            if (result is null) continue;
+
+            Assert.DoesNotContain("<$Scr_Cs::", result.Html, StringComparison.Ordinal);
+            Assert.DoesNotContain("</$Scr_Cs::", result.Html, StringComparison.Ordinal);
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Scrivener character style tag stripping (<$Scr_Cs::N>)
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ConvertAsync_WithScrCsTags_TagsAreAbsentFromOutput()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-CS-STYLE");
+
+        Assert.NotNull(result);
+        Assert.DoesNotContain("<$Scr_Cs::",  result!.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("</$Scr_Cs::", result.Html,  StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithScrCsTags_TextContentIsPreserved()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-CS-STYLE");
+
+        Assert.NotNull(result);
+        Assert.Contains("Shadows rise in the old city", result!.Html);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Scrivener paragraph style tag stripping (<$Scr_Ps::N>)
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ConvertAsync_WithScrPsTags_TagsAreAbsentFromOutput()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-PS-STYLE");
+
+        Assert.NotNull(result);
+        Assert.DoesNotContain("<$Scr_Ps::",  result!.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("</$Scr_Ps::", result.Html,  StringComparison.Ordinal);
+        Assert.DoesNotContain("<!$Scr_Ps::", result.Html,  StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithScrPsTags_TextContentIsPreserved()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-PS-STYLE");
+
+        Assert.NotNull(result);
+        Assert.Contains("Issren Sarouk", result!.Html);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Both tag types present in the same document
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ConvertAsync_WithBothTagTypes_AllTagsAreStripped()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-BOTH-STYLE");
+
+        Assert.NotNull(result);
+        Assert.DoesNotContain("<$Scr_Cs::",  result!.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("</$Scr_Cs::", result.Html,  StringComparison.Ordinal);
+        Assert.DoesNotContain("<$Scr_Ps::",  result.Html,  StringComparison.Ordinal);
+        Assert.DoesNotContain("</$Scr_Ps::", result.Html,  StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithBothTagTypes_TextContentIsPreserved()
+    {
+        var result = await new RtfConverter().ConvertAsync(_testDataPath, "SCEN-BOTH-STYLE");
+
+        Assert.NotNull(result);
+        Assert.Contains("Meet me at dawn", result!.Html);
+    }
 }

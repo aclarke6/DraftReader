@@ -6,16 +6,15 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="add-project-button2.ps1" />
-    <File Path="build-add-project-flow.ps1" />
-    <File Path="build-sync-progress.ps1" />
-    <File Path="Fix-Background-Sync.ps1" />
-    <File Path="fix-inmemory-package.ps1" />
-    <File Path="fix-sync-error-logging.ps1" />
-    <File Path="fix-sync-progress.ps1" />
-    <File Path="fix-syncstatus-collision.ps1" />
-    <File Path="get-dropbox-refresh-token.ps1" />
-    <File Path="scope-sync-to-root2.ps1" />
+    <File Path="add-rtf-feature-tests.ps1" />
+    <File Path="add-styles-tests.ps1" />
+    <File Path="build-sync-progress-tracker.ps1" />
+    <File Path="fix-background-service.ps1" />
+    <File Path="fix-scrivener-char-styles.ps1" />
+    <File Path="fix-syncservice-tests.ps1" />
+    <File Path="fix-syncservice-tests2.ps1" />
+    <File Path="fix-syncservice-tracker.ps1" />
+    <File Path="scan-vault-rtf-features.ps1" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="ScrivenerSync.Application.Tests/ScrivenerSync.Application.Tests.csproj" />

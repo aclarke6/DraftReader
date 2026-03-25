@@ -1,3 +1,4 @@
+using ScrivenerSync.Domain.Enumerations;
 using ScrivenerSync.Domain.Interfaces.Repositories;
 using ScrivenerSync.Domain.Interfaces.Services;
 
@@ -14,6 +15,12 @@ public class SyncBackgroundService(
             "Sync background service started. Interval: {Interval} minutes.",
             settings.SyncIntervalMinutes);
 
+        // Wait one full interval before first background sync
+        // so startup does not compete with user-initiated syncs
+        await Task.Delay(
+            TimeSpan.FromMinutes(settings.SyncIntervalMinutes),
+            stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             await RunSyncAsync(stoppingToken);
@@ -27,15 +34,23 @@ public class SyncBackgroundService(
     {
         try
         {
-            using var scope      = serviceProvider.CreateScope();
-            var projectRepo      = scope.ServiceProvider.GetRequiredService<IScrivenerProjectRepository>();
-            var syncService      = scope.ServiceProvider.GetRequiredService<ISyncService>();
+            using var scope = serviceProvider.CreateScope();
+            var projectRepo = scope.ServiceProvider.GetRequiredService<IScrivenerProjectRepository>();
+            var syncService = scope.ServiceProvider.GetRequiredService<ISyncService>();
 
             var projects = await projectRepo.GetAllAsync(ct);
 
             foreach (var project in projects)
             {
-                logger.LogDebug("Syncing project {ProjectName}...", project.Name);
+                // Skip projects already being synced manually
+                if (project.SyncStatus == SyncStatus.Syncing)
+                {
+                    logger.LogDebug(
+                        "Skipping {ProjectName} - already syncing.", project.Name);
+                    continue;
+                }
+
+                logger.LogDebug("Background syncing {ProjectName}...", project.Name);
                 await syncService.ParseProjectAsync(project.Id, ct);
                 await syncService.DetectContentChangesAsync(project.Id, ct);
             }

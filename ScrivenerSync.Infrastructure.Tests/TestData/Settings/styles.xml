@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Styles>
+  <Style ID="1" Type="character" Name="Dialogue" />
+  <Style ID="2" Type="paragraph" Name="Block Quote" />
+  <Style ID="3" Type="character" Name="Foreign Language" />
+</Styles>

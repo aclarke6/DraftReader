@@ -20,6 +20,7 @@ public class AuthorController(
     IUserRepository userRepo,
     IScrivenerProjectDiscoveryService discoveryService,
     IServiceScopeFactory scopeFactory,
+    ISyncProgressTracker progressTracker,
     ILogger<AuthorController> logger) : Controller
 {
     // ---------------------------------------------------------------------------
@@ -108,10 +109,14 @@ public class AuthorController(
         var project = await projectRepo.GetByIdAsync(projectId);
         if (project is null) return NotFound();
 
+        var progress = progressTracker.Get(projectId);
+
         return Json(new
         {
-            status       = project.SyncStatus.ToString(),
-            errorMessage = project.SyncErrorMessage
+            status            = project.SyncStatus.ToString(),
+            errorMessage      = project.SyncErrorMessage,
+            sectionsProcessed = progress?.SectionsProcessed ?? 0,
+            currentSection    = progress?.CurrentSection ?? string.Empty
         });
     }
 
@@ -444,6 +449,7 @@ public class AuthorController(
         return result;
     }
 }
+
 
 
 

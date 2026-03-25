@@ -12,7 +12,8 @@ public class SyncService(
     IUnitOfWork unitOfWork,
     IScrivenerProjectParser parser,
     IRtfConverter converter,
-    ILocalPathResolver pathResolver) : ISyncService
+    ILocalPathResolver pathResolver,
+    ISyncProgressTracker progressTracker) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
     {
@@ -59,10 +60,12 @@ public class SyncService(
             }
 
             project.UpdateSyncStatus(SyncStatus.Healthy, DateTime.UtcNow, null);
+            progressTracker.Clear(projectId);
         }
         catch (Exception ex)
         {
             project.UpdateSyncStatus(SyncStatus.Error, DateTime.UtcNow, ex.Message);
+            progressTracker.Clear(projectId);
         }
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -160,5 +163,7 @@ public class SyncService(
         return null;
     }
 }
+
+
 
 

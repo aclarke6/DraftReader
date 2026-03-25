@@ -11,7 +11,7 @@ public sealed class ScrivenerProject
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = default!;
-    public string DropboxPath { get; private set; }
+    public string DropboxPath { get; private set; } = default!;
 
     /// <summary>
     /// UUID of the Scrivener binder node that is the root of this project.
@@ -113,6 +113,7 @@ public sealed class ScrivenerProject
             Name = updatedName.Trim();
     }
 }
+
 
 
 

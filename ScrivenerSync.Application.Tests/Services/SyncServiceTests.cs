@@ -10,12 +10,13 @@ namespace ScrivenerSync.Application.Tests.Services;
 
 public class SyncServiceTests
 {
-    private readonly Mock<IScrivenerProjectRepository> _projectRepo  = new();
-    private readonly Mock<ISectionRepository>          _sectionRepo  = new();
-    private readonly Mock<IUnitOfWork>                 _unitOfWork   = new();
-    private readonly Mock<IScrivenerProjectParser>     _parser       = new();
-    private readonly Mock<IRtfConverter>               _converter    = new();
-    private readonly Mock<ILocalPathResolver>          _pathResolver = new();
+    private readonly Mock<IScrivenerProjectRepository> _projectRepo    = new();
+    private readonly Mock<ISectionRepository>          _sectionRepo    = new();
+    private readonly Mock<IUnitOfWork>                 _unitOfWork     = new();
+    private readonly Mock<IScrivenerProjectParser>     _parser         = new();
+    private readonly Mock<IRtfConverter>               _converter      = new();
+    private readonly Mock<ILocalPathResolver>          _pathResolver   = new();
+    private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
 
     private SyncService CreateSut() => new(
         _projectRepo.Object,
@@ -23,7 +24,8 @@ public class SyncServiceTests
         _unitOfWork.Object,
         _parser.Object,
         _converter.Object,
-        _pathResolver.Object);
+        _pathResolver.Object,
+        _progressTracker.Object);
 
     private static ScrivenerProject MakeProject() =>
         ScrivenerProject.Create("Test Novel", "/Apps/Scrivener/Test.scriv");

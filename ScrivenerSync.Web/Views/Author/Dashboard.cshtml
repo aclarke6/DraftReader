@@ -93,6 +93,7 @@
                             else if (p.SyncStatus == SyncStatus.Syncing)
                             {
                                 <span class="badge badge--accent" id="sync-badge-@p.Id">Syncing...</span>
+                                <div id="sync-count-@p.Id" style="font-size:0.75rem; color:var(--color-ink-muted); margin-top:2px;">Starting...</div>
                                 <div style="margin-top:4px; width:120px; height:4px; background:var(--color-border); border-radius:2px; overflow:hidden; position:relative;">
                                     <div id="sync-bar-@p.Id" style="height:100%; width:30%; background:var(--color-accent); border-radius:2px; position:absolute; animation: syncsweep 1.6s ease-in-out infinite;"></div>
                                 </div>
@@ -248,8 +249,12 @@ else if (Model.ActiveProject is not null)
                     .then(r => r.json())
                     .then(data => {
                         if (data.status !== 'Syncing') {
-                            // Sync complete - reload the dashboard
                             window.location.reload();
+                        } else {
+                            var countEl = document.getElementById('sync-count-' + projectId);
+                            if (countEl && data.sectionsProcessed > 0) {
+                                countEl.textContent = data.sectionsProcessed + ' sections processed';
+                            }
                         }
                     })
                     .catch(function() {});
@@ -263,6 +268,7 @@ else if (Model.ActiveProject is not null)
         setTimeout(pollSyncStatus, 2000);
     </script>
 }
+
 
 
 

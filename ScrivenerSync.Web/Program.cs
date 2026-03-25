@@ -91,6 +91,7 @@ builder.Services.AddScoped<IEmailDeliveryLogRepository, EmailDeliveryLogReposito
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<ISyncService, SyncService>();
 builder.Services.AddScoped<IPublicationService, PublicationService>();
+builder.Services.AddSingleton<ISyncProgressTracker, SyncProgressTracker>();
 builder.Services.AddScoped<IScrivenerProjectDiscoveryService, ScrivenerProjectDiscoveryService>();
 builder.Services.AddSingleton(new DiscoveryServiceOptions
 {
@@ -185,6 +186,7 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
 
 
 
