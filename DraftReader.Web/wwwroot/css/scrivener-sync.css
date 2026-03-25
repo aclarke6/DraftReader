@@ -145,17 +145,7 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
   margin-top: var(--space-1);
 }
 
-/* --------------------------------------------------------------------------
-   4. Navigation
-   -------------------------------------------------------------------------- */
-.site-nav {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: var(--shadow-sm);
-}
+
 
 .site-nav__inner {
   max-width: var(--max-width);
@@ -170,7 +160,7 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
 .site-nav__brand {
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
-  color: var(--color-text);
+  color: #ffffff;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
@@ -229,6 +219,10 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
 /* --------------------------------------------------------------------------
    5. Main content area
    -------------------------------------------------------------------------- */
+.site-main {
+  background: rgba(255, 252, 245, 0.82);
+  min-height: calc(100vh - 56px);
+}
 .site-main {
   max-width: var(--max-width);
   margin: 0 auto;
@@ -821,9 +815,160 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .site-main { padding: var(--space-6) var(--space-4); }
+  .site-main {
+  background: rgba(255, 252, 245, 0.82);
+  min-height: calc(100vh - 56px);
+}
+.site-main { padding: var(--space-6) var(--space-4); }
   .site-nav__inner { padding: 0 var(--space-4); }
   .prose { padding: var(--space-5) var(--space-4); }
+}
+
+
+
+
+/* --------------------------------------------------------------------------
+   Images and visual atmosphere
+   -------------------------------------------------------------------------- */
+
+/* Parchment tile background on body */
+body {
+  background-image: url('/images/DraftReader.Tile.web.jpg');
+  background-repeat: repeat;
+  background-size: 800px auto;
+  background-attachment: fixed;
+}
+
+/* Hero section - login page atmosphere */
+.site-hero {
+  position: relative;
+  width: 100%;
+  min-height: 260px;
+  background-image: url('/images/DraftReader.Atmosphere.web.jpg');
+  background-size: cover;
+  background-position: center 30%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.18) 0%,
+    rgba(0,0,0,0.45) 100%
+  );
+}
+
+.site-hero__content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #fff;
+  padding: var(--space-8) var(--space-6);
+}
+
+.site-hero__title {
+  font-family: var(--font-prose);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-2);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.site-hero__subtitle {
+  font-size: var(--text-base);
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+/* Nav with header image */
+.site-nav {
+  background-image: url('/images/DraftReader.Header.web.jpg');
+  background-size: cover;
+  background-position: center 40%;
+  position: relative;
+}
+
+.site-nav::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.72);
+  pointer-events: none;
+}
+
+.site-nav__inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* Logo in nav */
+.site-nav__logo {
+  height: 40px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: var(--space-2);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+
+/* Logo on login/auth pages */
+.auth-logo {
+  display: block;
+  margin: 0 auto var(--space-4);
+  height: 72px;
+  width: auto;
+}
+
+/* Footer logo */
+.site-footer__logo {
+  height: 24px;
+  width: auto;
+  opacity: 0.6;
+  vertical-align: middle;
+  margin-right: var(--space-1);
+}
+
+/* Dashboard page header band */
+.page-header--image {
+  background-image: url('/images/DraftReader.Header.web.jpg');
+  background-size: cover;
+  background-position: center 35%;
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: var(--space-8);
+}
+
+.page-header--image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 30, 0.65);
+}
+
+.page-header--image .page-header__inner {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-8) var(--space-8);
+  color: #fff;
+}
+
+.page-header--image .page-header__title {
+  font-family: var(--font-prose);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  margin-bottom: var(--space-1);
+  color: #fff;
+}
+
+.page-header--image .page-header__subtitle {
+  font-size: var(--text-sm);
+  opacity: 0.8;
+  color: #fff;
 }
 
 

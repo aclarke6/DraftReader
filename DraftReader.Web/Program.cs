@@ -33,16 +33,9 @@ builder.Services.AddSingleton(dropboxSettings);
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
-var dbPath = scrivenerSettings.DatabasePath;
-if (string.IsNullOrWhiteSpace(dbPath))
-    dbPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "DraftReader", "scrivener-sync.db");
-
-Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
 
 builder.Services.AddDbContext<DraftReaderDbContext>(options =>
-    options.UseSqlite($"Data Source={dbPath}"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // ---------------------------------------------------------------------------
 // ASP.NET Core Identity
@@ -126,11 +119,9 @@ else
 // ---------------------------------------------------------------------------
 // Path resolver
 // ---------------------------------------------------------------------------
-builder.Services.AddSingleton(new DropboxClientSettingsAccessor
-{
-    LocalCachePath = dropboxSettings.LocalCachePath
-});
-builder.Services.AddScoped<ILocalPathResolver, LocalPathResolver>();
+builder.Services.AddSingleton<IDropboxConnectionChecker, DropboxConnectionChecker>();
+builder.Services.AddScoped<ILocalPathResolver>(_ =>
+    new LocalPathResolver(scrivenerSettings.ResolvedLocalCachePath));
 
 // ---------------------------------------------------------------------------
 // Background sync service
@@ -186,6 +177,10 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+
+
+
 
 
 

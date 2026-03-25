@@ -4,7 +4,21 @@ public class DraftReaderSettings
 {
     public int SyncIntervalMinutes { get; set; } = 5;
     public string DropboxBasePath { get; set; } = string.Empty;
-    public string DatabasePath { get; set; } = string.Empty;
+    public string LocalCachePath { get; set; } = string.Empty;
+
+    public string ResolvedDropboxBasePath =>
+        string.IsNullOrWhiteSpace(DropboxBasePath)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "Dropbox", "Apps", "Scrivener")
+            : DropboxBasePath;
+
+    public string ResolvedLocalCachePath =>
+        string.IsNullOrWhiteSpace(LocalCachePath)
+            ? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                "DraftReader", "Cache")
+            : LocalCachePath;
 }
 
 public class EmailSettings

@@ -17,6 +17,7 @@ public class SyncServiceTests
     private readonly Mock<IRtfConverter>               _converter      = new();
     private readonly Mock<ILocalPathResolver>          _pathResolver   = new();
     private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
+    private readonly Mock<IDropboxConnectionChecker>   _connectionChecker = new();
 
     private SyncService CreateSut() => new(
         _projectRepo.Object,
@@ -25,7 +26,13 @@ public class SyncServiceTests
         _parser.Object,
         _converter.Object,
         _pathResolver.Object,
-        _progressTracker.Object);
+        _progressTracker.Object,
+        _connectionChecker.Object);
+
+    public SyncServiceTests()
+    {
+        _connectionChecker.Setup(x => x.IsConnectedAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+    }
 
     private static ScrivenerProject MakeProject() =>
         ScrivenerProject.Create("Test Novel", "/Apps/Scrivener/Test.scriv");
@@ -311,3 +318,5 @@ public class SyncServiceTests
             });
     }
 }
+
+

@@ -8,13 +8,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/scrivener-sync.css" />
+    <link rel="icon" type="image/png" href="~/images/DraftReader.Logo.web.png" />
 </head>
 <body>
 
     <!-- Navigation -->
     <nav class="site-nav">
         <div class="site-nav__inner">
-            <a href="/" class="site-nav__brand">DraftReader</a>
+            <a href="/" class="site-nav__brand">
+                <img src="~/images/DraftReader.Logo.web.png"
+                     alt="DraftReader"
+                     class="site-nav__logo" />
+                DraftReader
+            </a>
 
             @if (User.Identity?.IsAuthenticated == true)
             {
@@ -53,6 +59,16 @@
     <main class="site-main">
         @RenderBody()
     </main>
+
+    <!-- Footer -->
+    <footer style="text-align:center; padding:var(--space-8) var(--space-6);
+                   color:var(--color-text-muted); font-size:var(--text-sm);
+                   border-top:1px solid var(--color-border); margin-top:var(--space-16);">
+        <img src="~/images/DraftReader.Logo.web.png"
+             alt="DraftReader"
+             class="site-footer__logo" />
+        &copy; @DateTime.Now.Year DraftReader
+    </footer>
 
 </body>
 </html>

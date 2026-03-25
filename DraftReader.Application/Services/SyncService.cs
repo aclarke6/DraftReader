@@ -13,12 +13,24 @@ public class SyncService(
     IScrivenerProjectParser parser,
     IRtfConverter converter,
     ILocalPathResolver pathResolver,
-    ISyncProgressTracker progressTracker) : ISyncService
+    ISyncProgressTracker progressTracker,
+    IDropboxConnectionChecker connectionChecker) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
     {
         var project = await projectRepo.GetByIdAsync(projectId, ct)
             ?? throw new EntityNotFoundException(nameof(ScrivenerProject), projectId);
+
+        if (!await connectionChecker.IsConnectedAsync(ct))
+        {
+            if (project.SyncStatus != SyncStatus.Stale)
+            {
+                project.UpdateSyncStatus(SyncStatus.Stale, DateTime.UtcNow,
+                    "Dropbox not connected. Configure Dropbox to enable sync.");
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+            return;
+        }
 
         try
         {
@@ -45,8 +57,7 @@ public class SyncService(
                     rootNode = found;
             }
 
-            await ReconcileNodeAsync(
-                rootNode, null, projectId, localPath, seenUuids, ct);
+            await ReconcileNodeAsync(rootNode, null, projectId, localPath, seenUuids, ct);
 
             foreach (var section in existingSections)
             {
@@ -73,6 +84,9 @@ public class SyncService(
 
     public async Task DetectContentChangesAsync(Guid projectId, CancellationToken ct = default)
     {
+        if (!await connectionChecker.IsConnectedAsync())
+            return;
+
         var project = await projectRepo.GetByIdAsync(projectId, ct)
             ?? throw new EntityNotFoundException(nameof(ScrivenerProject), projectId);
 
@@ -163,7 +177,3 @@ public class SyncService(
         return null;
     }
 }
-
-
-
-
