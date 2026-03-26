@@ -222,8 +222,6 @@ a:hover { color: var(--color-accent-hover); text-decoration: underline; }
 .site-main {
   background: rgba(255, 252, 245, 0.82);
   min-height: calc(100vh - 56px);
-}
-.site-main {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: var(--space-10) var(--space-6);
@@ -818,8 +816,10 @@ textarea {
   .site-main {
   background: rgba(255, 252, 245, 0.82);
   min-height: calc(100vh - 56px);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-6);
 }
-.site-main { padding: var(--space-6) var(--space-4); }
   .site-nav__inner { padding: 0 var(--space-4); }
   .prose { padding: var(--space-5) var(--space-4); }
 }
@@ -836,7 +836,6 @@ body {
   background-image: url('/images/DraftReader.Tile.web.jpg');
   background-repeat: repeat;
   background-size: 800px auto;
-  background-attachment: fixed;
 }
 
 /* Hero section - login page atmosphere */
@@ -887,10 +886,13 @@ body {
 
 /* Nav with header image */
 .site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   background-image: url('/images/DraftReader.Header.web.jpg');
   background-size: cover;
   background-position: center 40%;
-  position: relative;
+  
 }
 
 .site-nav::after {
@@ -970,6 +972,9 @@ body {
   opacity: 0.8;
   color: #fff;
 }
+
+
+
 
 
 

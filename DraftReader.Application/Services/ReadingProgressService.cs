@@ -44,7 +44,11 @@ public class ReadingProgressService(
         return true;
     }
 
+    public async Task<bool> HasReadSectionAsync(Guid userId, Guid sectionId, CancellationToken ct = default) =>
+        await readEventRepo.HasReadAsync(sectionId, userId, ct);
+
     public async Task<IReadOnlyList<ReadEvent>> GetProgressForProjectAsync(
         Guid projectId, CancellationToken ct = default) =>
         await readEventRepo.GetByProjectIdAsync(projectId, ct);
 }
+

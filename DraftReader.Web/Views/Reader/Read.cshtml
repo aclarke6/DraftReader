@@ -3,7 +3,7 @@
 
 <style>
     .chapter-layout { display: flex; gap: 32px; }
-    .chapter-sidebar { width: 200px; flex-shrink: 0; position: sticky; top: 20px; }
+    .chapter-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; }
     .chapter-main { flex: 1; min-width: 0; }
     .scene-block { display: flex; gap: 24px; margin-bottom: 48px; }
     .scene-prose { flex: 1; min-width: 0; }
@@ -14,44 +14,85 @@
     .comment-box.private { border-left-color: #f0ad4e; }
     .add-comment-mini textarea { width: 100%; padding: 6px; font-size: 0.8em;
                                   font-family: Georgia, serif; box-sizing: border-box; }
-    .chapter-comments { margin-top: 48px; padding-top: 32px;
-                        border-top: 2px solid #eee; }
+    .chapter-comments { margin-top: 48px; padding-top: 32px; border-top: 2px solid #eee; }
     .btn-xs { padding: 3px 8px; font-size: 11px; }
+
+    /* Sidebar nav */
+    .sidebar-section-label {
+        font-size: 0.7em; font-weight: bold; text-transform: uppercase;
+        letter-spacing: 0.06em; color: var(--color-text-muted);
+        margin: 12px 0 6px 0;
+    }
+    .sidebar-link {
+        display: block; font-size: 0.82em; padding: 3px 0 3px 8px;
+        color: var(--color-accent); text-decoration: none;
+        border-left: 2px solid transparent;
+        transition: border-color 0.15s, color 0.15s;
+        line-height: 1.4;
+    }
+    .sidebar-link:hover { border-left-color: var(--color-accent); color: var(--color-text); text-decoration: none; }
+    .sidebar-link--active { border-left-color: var(--color-accent); color: var(--color-text); font-weight: 500; }
+    .sidebar-link--chapter { color: var(--color-text-muted); font-size: 0.78em; }
+    .sidebar-divider { border: none; border-top: 1px solid var(--color-border); margin: 10px 0; }
+
     @@media (max-width: 900px) {
         .scene-block { flex-direction: column; }
         .scene-comments { width: 100%; }
+        .chapter-sidebar { display: none; }
     }
 </style>
 
 <div class="chapter-layout">
 
-    <!-- Sidebar TOC -->
+    <!-- Sidebar -->
     <aside class="chapter-sidebar">
+
+        @* Back navigation *@
         @if (Model.BookContents is not null)
         {
-            <div style="margin-bottom:10px;">
-                <a asp-action="Index" style="font-size:0.8em; color:#888;">@Model.ProjectName</a>
-                <span style="color:#ccc; margin:0 4px;">&rsaquo;</span>
+            <div style="margin-bottom:8px;">
+                <a asp-action="Index" class="sidebar-link sidebar-link--chapter">@Model.ProjectName</a>
                 <a asp-action="Browse" asp-route-id="@Model.BookContents.TopLevelSection.Id"
-                   style="font-size:0.8em; color:#888;">@Model.BookContents.TopLevelSection.Title</a>
+                   class="sidebar-link sidebar-link--chapter">
+                    &rsaquo; @Model.BookContents.TopLevelSection.Title
+                </a>
             </div>
+            <hr class="sidebar-divider" />
+        }
+
+        @* Current chapter scenes *@
+        <div class="sidebar-section-label">This chapter</div>
+
+        @foreach (var item in Model.Scenes)
+        {
+            <a href="#scene-@item.Scene.Id" class="sidebar-link">@item.Scene.Title</a>
+        }
+
+        <a href="#chapter-comments" class="sidebar-link" style="margin-top:6px; color:var(--color-text-muted);">
+            &#9998; Chapter Comments
+        </a>
+
+        @* Other chapters *@
+        @if (Model.BookContents is not null && Model.BookContents.Groups.Any())
+        {
+            <hr class="sidebar-divider" />
+            <div class="sidebar-section-label">Other chapters</div>
+
             @foreach (var group in Model.BookContents.Groups)
             {
                 @if (!string.IsNullOrEmpty(group.Heading))
                 {
-                    <div style="font-size:0.75em; font-weight:bold; color:#555;
-                                text-transform:uppercase; letter-spacing:0.03em;
-                                margin:12px 0 4px 0;">@group.Heading</div>
+                    <div style="font-size:0.72em; font-weight:bold; color:var(--color-text-muted);
+                                text-transform:uppercase; margin:8px 0 3px 0;">@group.Heading</div>
                 }
                 @foreach (var sub in group.SubGroups)
                 {
-                    <div style="font-size:0.75em; color:#888; margin:8px 0 3px 8px;">@sub.Heading</div>
+                    <div style="font-size:0.72em; color:var(--color-text-muted); margin:6px 0 2px 6px;">@sub.Heading</div>
                     @if (sub.ChapterSection is not null)
                     {
                         <a asp-action="Read" asp-route-id="@sub.ChapterSection.Id"
-                           style="display:block; font-size:0.85em; padding-left:16px; margin-bottom:3px;
-                                  font-weight:@(sub.ChapterSection.Id == Model.Chapter.Id ? "bold" : "normal");
-                                  color:@(sub.ChapterSection.Id == Model.Chapter.Id ? "#1a1a1a" : "#2a6496");">
+                           class="sidebar-link @(sub.ChapterSection.Id == Model.Chapter.Id ? "sidebar-link--active" : "")"
+                           style="padding-left:16px;">
                             @sub.ChapterSection.Title
                         </a>
                     }
@@ -59,9 +100,7 @@
                 @if (group.ChapterSection is not null)
                 {
                     <a asp-action="Read" asp-route-id="@group.ChapterSection.Id"
-                       style="display:block; font-size:0.85em; margin-bottom:4px;
-                              font-weight:@(group.ChapterSection.Id == Model.Chapter.Id ? "bold" : "normal");
-                              color:@(group.ChapterSection.Id == Model.Chapter.Id ? "#1a1a1a" : "#2a6496");">
+                       class="sidebar-link @(group.ChapterSection.Id == Model.Chapter.Id ? "sidebar-link--active" : "")">
                         @group.ChapterSection.Title
                     </a>
                 }
@@ -86,19 +125,22 @@
         }
 
         <h2 style="margin-top:0;">@Model.Chapter.Title</h2>
+        <a href="#chapter-comments" class="btn btn--secondary"
+           style="font-size:var(--text-sm); margin-bottom:var(--space-6); display:inline-block;">
+            Jump to Chapter Comments
+        </a>
 
         <!-- Scenes with side comments -->
         @foreach (var item in Model.Scenes)
         {
-            <div class="scene-block">
+            <div class="scene-block" id="scene-@item.Scene.Id">
 
                 <!-- Prose -->
                 <div class="scene-prose">
                     <h4 style="color:#666; font-weight:normal; font-size:0.9em;
                                 border-bottom:1px solid #eee; padding-bottom:4px;
                                 margin-bottom:16px;">@item.Scene.Title</h4>
-                    <div style="background:white; padding:24px 28px; border:1px solid #eee;
-                                line-height:1.8;">
+                    <div style="background:white; padding:24px 28px; border:1px solid #eee; line-height:1.8;">
                         <div class="scene-prose-content">
                             @Html.Raw(item.Scene.HtmlContent ?? "<p><em>No content.</em></p>")
                         </div>
@@ -131,8 +173,7 @@
                                     <input type="hidden" name="ParentCommentId" value="@c.Id" />
                                     <input type="text" name="Body" placeholder="Reply..."
                                            style="width:100%; padding:3px 6px; font-size:0.8em;" />
-                                    <button type="submit" class="btn btn-xs"
-                                            style="margin-top:4px;">Reply</button>
+                                    <button type="submit" class="btn btn-xs" style="margin-top:4px;">Reply</button>
                                 </form>
                             }
                         </div>
@@ -159,7 +200,7 @@
         }
 
         <!-- Chapter-level comments -->
-        <div class="chapter-comments">
+        <div class="chapter-comments" id="chapter-comments">
             <h3>Chapter Comments</h3>
             <p style="font-size:0.85em; color:#888;">
                 Use chapter comments for overall impressions of the chapter as a whole.
@@ -214,3 +255,46 @@
 
     </main>
 </div>
+
+<script>
+(function() {
+    var key = 'scroll_chapter_@Model.Chapter.Id';
+
+    // Restore scroll position on load
+    var saved = localStorage.getItem(key);
+    if (saved) {
+        setTimeout(function() { window.scrollTo(0, parseInt(saved, 10)); }, 100);
+    }
+
+    // Highlight active sidebar link on scroll
+    var links = document.querySelectorAll('.chapter-sidebar .sidebar-link[href^="#"]');
+    var sections = [];
+    links.forEach(function(link) {
+        var id = link.getAttribute('href').substring(1);
+        var el = document.getElementById(id);
+        if (el) sections.push({ el: el, link: link });
+    });
+
+    function updateActive() {
+        var scrollY = window.scrollY + 120;
+        var current = null;
+        sections.forEach(function(s) {
+            if (s.el.offsetTop <= scrollY) current = s;
+        });
+        links.forEach(function(l) { l.classList.remove('sidebar-link--active'); });
+        if (current) current.link.classList.add('sidebar-link--active');
+    }
+
+    // Save scroll position (debounced)
+    var timer;
+    window.addEventListener('scroll', function() {
+        clearTimeout(timer);
+        timer = setTimeout(function() {
+            localStorage.setItem(key, window.scrollY);
+            updateActive();
+        }, 150);
+    });
+
+    updateActive();
+})();
+</script>

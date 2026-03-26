@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
+    <File Path="add-base-controller.ps1" />
     <File Path="betabooks-export.json" />
     <File Path="build-reader-dashboard.ps1" />
     <File Path="get-dropbox-refresh-token.ps1" />

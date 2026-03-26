@@ -38,7 +38,7 @@ public class ReaderController(
         var chaptersWithProgress = new List<ChapterProgressViewModel>();
         foreach (var chapter in publishedChapters)
         {
-            var hasRead = await progressService.IsCaughtUpAsync(user.Id, project.Id);
+            var hasRead = await progressService.HasReadSectionAsync(user.Id, chapter.Id);
             chaptersWithProgress.Add(new ChapterProgressViewModel
             {
                 Chapter = chapter,
@@ -60,27 +60,7 @@ public class ReaderController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Index()
     {
-        var project = await projectRepo.GetReaderActiveProjectAsync();
-        if (project is null) return View("NoActiveProject");
-
-        var allSections = await sectionRepo.GetByProjectIdAsync(project.Id);
-        var manuscript  = allSections.FirstOrDefault(s => s.ParentId == null && s.NodeType == NodeType.Folder);
-        if (manuscript is null) return View("NoActiveProject");
-
-        var topLevel = allSections
-            .Where(s => s.ParentId == manuscript.Id && !s.IsSoftDeleted)
-            .OrderBy(s => s.SortOrder)
-            .Where(s => HasPublishedChapter(s, allSections))
-            .ToList();
-
-        if (topLevel.Count == 1)
-            return RedirectToAction("Browse", new { id = topLevel[0].Id });
-
-        return View(new TopLevelViewModel
-        {
-            TopLevelSections = topLevel,
-            ProjectName      = project.Name
-        });
+        return RedirectToAction("Dashboard");
     }
 
     // ---------------------------------------------------------------------------
@@ -310,5 +290,3 @@ public class ReaderController(
         return groups;
     }
 }
-
-
