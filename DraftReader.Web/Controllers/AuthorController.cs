@@ -1,4 +1,4 @@
-using DraftReader.Domain.Interfaces.Repositories;
+﻿using DraftReader.Domain.Interfaces.Repositories;
 using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
@@ -33,13 +33,14 @@ public class AuthorController(
         if (author is null)
             return RedirectToAction("Index", "Reader");
 
-        var projects         = await projectRepo.GetAllAsync();
-        var active           = await projectRepo.GetReaderActiveProjectAsync();
+        var projects          = await projectRepo.GetAllAsync();
+        var active            = await projectRepo.GetReaderActiveProjectAsync();
         var publishedChapters = active is not null
             ? await publicationService.GetPublishedChaptersAsync(active.Id)
             : new List<Section>();
-        var failures  = await dashboardService.GetEmailHealthSummaryAsync();
-        var readers   = await userRepo.GetAllBetaReadersAsync();
+        var failures      = await dashboardService.GetEmailHealthSummaryAsync();
+        var readers       = await userRepo.GetAllBetaReadersAsync();
+        var notifications = await dashboardService.GetRecentNotificationsAsync(author.Id, maxItems: 20);
 
         return View(new DashboardViewModel
         {
@@ -47,7 +48,8 @@ public class AuthorController(
             AllProjects       = projects,
             PublishedSections = publishedChapters,
             EmailFailures     = failures,
-            ActiveReaderCount = readers.Count(r => r.IsActive && !r.IsSoftDeleted)
+            ActiveReaderCount = readers.Count(r => r.IsActive && !r.IsSoftDeleted),
+            Notifications     = notifications
         });
     }
 
@@ -58,7 +60,6 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Sync(Guid projectId)
     {
-        // Mark as syncing immediately so the dashboard shows the progress bar
         var project = await projectRepo.GetByIdAsync(projectId);
         if (project is not null)
         {
@@ -66,7 +67,6 @@ public class AuthorController(
             await GetUnitOfWork().SaveChangesAsync();
         }
 
-        // Fire sync in background using scopeFactory (safe after request ends)
         _ = Task.Run(async () =>
         {
             using var scope   = scopeFactory.CreateScope();
@@ -82,8 +82,6 @@ public class AuthorController(
             {
                 logger.LogError(ex, "Background sync failed for project {ProjectId}: {Message}",
                     projectId, ex.Message);
-
-                // Ensure the project status reflects the failure
                 try
                 {
                     var failedProject = await bgProjectRepo.GetByIdAsync(projectId);
@@ -157,7 +155,7 @@ public class AuthorController(
     }
 
     // ---------------------------------------------------------------------------
-    // Sections list with chapter publish buttons
+    // Sections list
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Sections(Guid projectId)
     {
@@ -167,7 +165,6 @@ public class AuthorController(
         var sections = await sectionRepo.GetByProjectIdAsync(projectId);
         var sorted   = SortDepthFirst(sections);
 
-        // Pre-compute which folders can be published
         var publishable = new HashSet<Guid>();
         foreach (var (s, _) in sorted.Where(x => x.Section.NodeType == NodeType.Folder))
         {
@@ -175,7 +172,7 @@ public class AuthorController(
                 publishable.Add(s.Id);
         }
 
-        ViewBag.Project    = project;
+        ViewBag.Project     = project;
         ViewBag.Publishable = publishable;
         return View(sorted);
     }
@@ -287,18 +284,58 @@ public class AuthorController(
         var comments = await GetCommentService().GetThreadsForSectionAsync(id, author.Id);
         var events   = await GetReadEventRepo().GetBySectionIdAsync(id);
 
+        var nameMap = new Dictionary<Guid, string>();
+        foreach (var uid in comments.Select(c => c.AuthorId).Distinct())
+        {
+            var u = await userRepo.GetByIdAsync(uid);
+            nameMap[uid] = u?.DisplayName ?? "Unknown";
+        }
+
         return View(new SectionViewModel
         {
-            Section   = s,
-            Comments  = comments,
-            ReadCount = events.Count
+            Section            = s,
+            Comments           = comments,
+            ReadCount          = events.Count,
+            CommentAuthorNames = nameMap
         });
     }
 
     // ---------------------------------------------------------------------------
-    // Project removal (soft delete)
+    // Author comment reply and status
     // ---------------------------------------------------------------------------
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReplyToComment(Guid parentCommentId, Guid sectionId, string body)
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+        try
+        {
+            await GetCommentService().CreateReplyAsync(
+                parentCommentId, author.Id, body, Domain.Enumerations.Visibility.Public);
+            TempData["Success"] = "Reply posted.";
+        }
+        catch (Exception ex) { TempData["Error"] = ex.Message; }
+        return RedirectToAction("Section", new { id = sectionId });
+    }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetCommentStatus(Guid commentId, Guid sectionId, Domain.Enumerations.CommentStatus status)
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+        try
+        {
+            await GetCommentService().SetCommentStatusAsync(commentId, author.Id, status);
+        }
+        catch (Exception ex) { TempData["Error"] = ex.Message; }
+        return RedirectToAction("Section", new { id = sectionId });
+    }
+
+    // ---------------------------------------------------------------------------
+    // Project removal
+    // ---------------------------------------------------------------------------
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveProject(Guid projectId)
@@ -319,7 +356,6 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     // Projects discovery
     // ---------------------------------------------------------------------------
-
     public async Task<IActionResult> Projects()
     {
         var author = await GetAuthorAsync();
@@ -352,7 +388,6 @@ public class AuthorController(
         {
             try
             {
-                // Check for soft-deleted project with same UUID - restore instead of create
                 var softDeleted = await projectRepo.GetSoftDeletedByScrivenerRootUuidAsync(d.ScrivenerRootUuid);
                 if (softDeleted is not null)
                 {
@@ -366,15 +401,11 @@ public class AuthorController(
                     addedCount++;
                 }
             }
-            catch (DuplicateProjectException)
-            {
-                // Already exists as active - skip silently
-            }
+            catch (DuplicateProjectException) { }
         }
 
         await GetUnitOfWork().SaveChangesAsync();
 
-        // Trigger initial sync for each newly added project
         foreach (var d in toAdd)
         {
             var projects = await projectRepo.GetAllAsync();
@@ -389,7 +420,7 @@ public class AuthorController(
         }
 
         TempData["Success"] = addedCount == 1
-            ? $"{toAdd.First(d => true).Name} added successfully."
+            ? $"{toAdd.First().Name} added successfully."
             : $"{addedCount} projects added successfully.";
 
         return RedirectToAction("Dashboard");
@@ -398,14 +429,12 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
-
     private async Task<User?> GetAuthorAsync()
     {
         var email = User.Identity?.Name;
-        if (email is null)
-            return null;
+        if (email is null) return null;
         var user = await userRepo.GetByEmailAsync(email);
-        return user?.Role == Domain.Enumerations.Role.Author ? user : null;
+        return user?.Role == Role.Author ? user : null;
     }
 
     private IUnitOfWork GetUnitOfWork() =>
@@ -426,8 +455,7 @@ public class AuthorController(
         foreach (var s in sections)
         {
             var key = s.ParentId ?? root;
-            if (!lookup.ContainsKey(key))
-                lookup[key] = new List<Section>();
+            if (!lookup.ContainsKey(key)) lookup[key] = new List<Section>();
             lookup[key].Add(s);
         }
 
@@ -450,23 +478,4 @@ public class AuthorController(
         return result;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

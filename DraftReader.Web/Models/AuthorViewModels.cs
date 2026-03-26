@@ -1,20 +1,23 @@
-using DraftReader.Domain.Entities;
+﻿using DraftReader.Domain.Entities;
+using DraftReader.Domain.Notifications;
 
 namespace DraftReader.Web.Models;
 
 public class DashboardViewModel
 {
     public ScrivenerProject? ActiveProject { get; set; }
-    public IReadOnlyList<ScrivenerProject> AllProjects { get; set; } = new List<ScrivenerProject>();
-    public IReadOnlyList<Section> PublishedSections { get; set; } = new List<Section>();
-    public IReadOnlyList<EmailDeliveryLog> EmailFailures { get; set; } = new List<EmailDeliveryLog>();
+    public IReadOnlyList<ScrivenerProject> AllProjects { get; set; } = [];
+    public IReadOnlyList<Section> PublishedSections { get; set; } = [];
+    public IReadOnlyList<EmailDeliveryLog> EmailFailures { get; set; } = [];
     public int ActiveReaderCount { get; set; }
+    public IReadOnlyList<NotificationItemDto> Notifications { get; set; } = [];
 }
 
 public class SectionViewModel
 {
     public Section Section { get; set; } = default!;
-    public IReadOnlyList<Comment> Comments { get; set; } = new List<Comment>();
+    public IReadOnlyList<Comment> Comments { get; set; } = [];
+    public IReadOnlyDictionary<Guid, string> CommentAuthorNames { get; set; } = new Dictionary<Guid, string>();
     public int ReadCount { get; set; }
 }
 

@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using DraftReader.Application.Services;
 using DraftReader.Domain.Entities;
 using DraftReader.Domain.Enumerations;
@@ -8,14 +8,20 @@ namespace DraftReader.Application.Tests.Services;
 
 public class DashboardServiceTests
 {
-    private readonly Mock<ISectionRepository>          _sectionRepo = new();
-    private readonly Mock<IUserRepository>             _userRepo    = new();
-    private readonly Mock<IEmailDeliveryLogRepository> _logRepo     = new();
+    private readonly Mock<ISectionRepository>             _sectionRepo  = new();
+    private readonly Mock<IUserRepository>                _userRepo     = new();
+    private readonly Mock<IEmailDeliveryLogRepository>    _logRepo      = new();
+    private readonly Mock<ICommentRepository>             _commentRepo  = new();
+    private readonly Mock<IInvitationRepository>          _invRepo      = new();
+    private readonly Mock<IScrivenerProjectRepository>    _projectRepo  = new();
 
     private DashboardService CreateSut() => new(
         _sectionRepo.Object,
         _userRepo.Object,
-        _logRepo.Object);
+        _logRepo.Object,
+        _commentRepo.Object,
+        _invRepo.Object,
+        _projectRepo.Object);
 
     [Fact]
     public async Task GetProjectOverviewAsync_ReturnsSections()

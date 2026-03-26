@@ -18,15 +18,13 @@ public class CommentService(
     {
         var section = await sectionRepo.GetByIdAsync(sectionId, ct)
             ?? throw new EntityNotFoundException(nameof(Section), sectionId);
-
         var user = await userRepo.GetByIdAsync(userId, ct)
             ?? throw new EntityNotFoundException(nameof(User), userId);
-
         if (user.Role == Role.BetaReader && !section.IsPublished)
             throw new UnauthorisedOperationException(
                 "Beta readers may only comment on published sections.");
-
-        var comment = Comment.CreateRoot(sectionId, userId, body, visibility);
+        var comment = Comment.CreateRoot(sectionId, userId, body, visibility,
+            isReaderComment: user.Role == Role.BetaReader);
         await commentRepo.AddAsync(comment, ct);
         await unitOfWork.SaveChangesAsync(ct);
         return comment;
@@ -38,25 +36,21 @@ public class CommentService(
     {
         var parent = await commentRepo.GetByIdAsync(parentCommentId, ct)
             ?? throw new EntityNotFoundException(nameof(Comment), parentCommentId);
-
         if (parent.IsSoftDeleted)
             throw new InvariantViolationException("I-17",
                 "Cannot reply to a soft-deleted comment.");
-
         var user = await userRepo.GetByIdAsync(userId, ct)
             ?? throw new EntityNotFoundException(nameof(User), userId);
-
         var section = await sectionRepo.GetByIdAsync(parent.SectionId, ct)
             ?? throw new EntityNotFoundException(nameof(Section), parent.SectionId);
-
         if (user.Role == Role.BetaReader && !section.IsPublished)
             throw new UnauthorisedOperationException(
                 "Beta readers may only comment on published sections.");
-
         var reply = Comment.CreateReply(
             parent.SectionId, userId, parentCommentId,
             parent.Visibility, body, requestedVisibility);
-
+        if (user.Role == Role.Author && parent.Status != CommentStatus.AuthorReply)
+            parent.MarkDoneByReply();
         await commentRepo.AddAsync(reply, ct);
         await unitOfWork.SaveChangesAsync(ct);
         return reply;
@@ -67,15 +61,26 @@ public class CommentService(
     {
         var comment = await commentRepo.GetByIdAsync(commentId, ct)
             ?? throw new EntityNotFoundException(nameof(Comment), commentId);
-
         var user = await userRepo.GetByIdAsync(userId, ct)
             ?? throw new EntityNotFoundException(nameof(User), userId);
-
         if (comment.AuthorId != userId && user.Role != Role.Author)
             throw new UnauthorisedOperationException(
                 "Only the comment author may edit a comment.");
-
         comment.Edit(newBody);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task SetCommentStatusAsync(
+        Guid commentId, Guid authorUserId, CommentStatus status, CancellationToken ct = default)
+    {
+        var user = await userRepo.GetByIdAsync(authorUserId, ct)
+            ?? throw new EntityNotFoundException(nameof(User), authorUserId);
+        if (user.Role != Role.Author)
+            throw new UnauthorisedOperationException(
+                "Only the author may set comment status.");
+        var comment = await commentRepo.GetByIdAsync(commentId, ct)
+            ?? throw new EntityNotFoundException(nameof(Comment), commentId);
+        comment.SetStatus(status);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -84,14 +89,11 @@ public class CommentService(
     {
         var comment = await commentRepo.GetByIdAsync(commentId, ct)
             ?? throw new EntityNotFoundException(nameof(Comment), commentId);
-
         var user = await userRepo.GetByIdAsync(actingUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), actingUserId);
-
         if (comment.AuthorId != actingUserId && user.Role != Role.Author)
             throw new UnauthorisedOperationException(
                 "Only the comment author or the platform author may delete a comment.");
-
         comment.SoftDelete();
         await unitOfWork.SaveChangesAsync(ct);
     }
@@ -101,13 +103,7 @@ public class CommentService(
     {
         var user = await userRepo.GetByIdAsync(requestingUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), requestingUserId);
-
         var roots = await commentRepo.GetRootsBySectionIdAsync(sectionId, ct);
-
-        var visible = roots
-            .Where(c => c.IsVisibleTo(requestingUserId, user.Role))
-            .ToList();
-
-        return visible;
+        return roots.Where(c => c.IsVisibleTo(requestingUserId, user.Role)).ToList();
     }
 }

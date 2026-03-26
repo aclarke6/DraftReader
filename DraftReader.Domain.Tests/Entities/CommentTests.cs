@@ -1,4 +1,4 @@
-using DraftReader.Domain.Entities;
+﻿using DraftReader.Domain.Entities;
 using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
 
@@ -219,4 +219,84 @@ public class CommentTests
 
         Assert.False(comment.IsVisibleTo(otherUserId, Role.BetaReader));
     }
+
+    // Add these test methods to DraftReader.Domain.Tests\Entities\CommentTests.cs
+    // ---------------------------------------------------------------------------
+    // Status â€” initial state
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void CreateRoot_ReaderComment_HasStatusNew()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: true);
+        Assert.Equal(CommentStatus.New, comment.Status);
+    }
+
+    [Fact]
+    public void CreateRoot_AuthorComment_HasStatusAuthorReply()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: false);
+        Assert.Equal(CommentStatus.AuthorReply, comment.Status);
+    }
+
+    [Fact]
+    public void CreateReply_AlwaysHasStatusAuthorReply()
+    {
+        var reply = Comment.CreateReply(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Visibility.Public, "Reply body", Visibility.Public);
+        Assert.Equal(CommentStatus.AuthorReply, reply.Status);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Status â€” SetStatus
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void SetStatus_OnReaderComment_UpdatesStatus()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: true);
+        comment.SetStatus(CommentStatus.Todo);
+        Assert.Equal(CommentStatus.Todo, comment.Status);
+    }
+
+    [Fact]
+    public void SetStatus_OnAuthorReply_ThrowsInvariantViolation()
+    {
+        var reply = Comment.CreateReply(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Visibility.Public, "Reply body", Visibility.Public);
+
+        var ex = Assert.Throws<InvariantViolationException>(() => reply.SetStatus(CommentStatus.Done));
+        Assert.Equal("I-COMMENT-STATUS", ex.InvariantCode);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Status â€” MarkDoneByReply
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void MarkDoneByReply_WhenNew_SetsDone()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: true);
+        Assert.Equal(CommentStatus.New, comment.Status);
+
+        comment.MarkDoneByReply();
+
+        Assert.Equal(CommentStatus.Done, comment.Status);
+    }
+
+    [Fact]
+    public void MarkDoneByReply_WhenAlreadyTodo_DoesNotOverride()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: true);
+        comment.SetStatus(CommentStatus.Todo);
+
+        comment.MarkDoneByReply();
+
+        // MarkDoneByReply only overrides New â€” an explicit status is preserved
+        Assert.Equal(CommentStatus.Todo, comment.Status);
+    }
+
 }
+

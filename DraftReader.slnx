@@ -6,10 +6,12 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".gitignore" />
-    <File Path="add-base-controller.ps1" />
+    <File Path="add-comment-status-v2.ps1" />
     <File Path="betabooks-export.json" />
-    <File Path="build-reader-dashboard.ps1" />
+    <File Path="Copy-SourceFiles.ps1" />
+    <File Path="Get-CodeFiles.ps1" />
     <File Path="get-dropbox-refresh-token.ps1" />
+    <File Path="Show-ProjectTree.ps1" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="DraftReader.Application.Tests/DraftReader.Application.Tests.csproj" />

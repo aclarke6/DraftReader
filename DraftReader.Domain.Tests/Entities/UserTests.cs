@@ -23,6 +23,7 @@ public class UserTests
         Assert.False(user.IsSoftDeleted);
         Assert.Null(user.ActivatedAt);
         Assert.Null(user.LastLoginAt);
+        Assert.Null(user.LastNotificationCheckAt);
         Assert.Null(user.SoftDeletedAt);
     }
 
@@ -188,5 +189,33 @@ public class UserTests
         user.SoftDelete();
 
         Assert.Throws<UnauthorisedOperationException>(() => user.RecordLogin());
+    }
+    // ---------------------------------------------------------------------------
+    // RecordNotificationCheck
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void RecordNotificationCheck_SetsLastNotificationCheckAt()
+    {
+        var user = User.Create("test@example.com", "Test User", Role.BetaReader);
+        var before = DateTime.UtcNow;
+
+        user.RecordNotificationCheck();
+
+        Assert.NotNull(user.LastNotificationCheckAt);
+        Assert.True(user.LastNotificationCheckAt >= before);
+    }
+
+    [Fact]
+    public void RecordNotificationCheck_CalledTwice_UpdatesTimestamp()
+    {
+        var user = User.Create("test@example.com", "Test User", Role.BetaReader);
+        user.RecordNotificationCheck();
+        var first = user.LastNotificationCheckAt;
+
+        System.Threading.Thread.Sleep(10);
+        user.RecordNotificationCheck();
+
+        Assert.True(user.LastNotificationCheckAt > first);
     }
 }
