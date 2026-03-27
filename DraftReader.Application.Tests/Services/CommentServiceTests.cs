@@ -1,4 +1,4 @@
-using Moq;
+﻿using Moq;
 using DraftReader.Application.Services;
 using DraftReader.Domain.Entities;
 using DraftReader.Domain.Enumerations;
@@ -231,7 +231,7 @@ public class CommentServiceTests
 
         var sut = CreateSut();
 
-        _commentRepo.Setup(r => r.GetRootsBySectionIdAsync(section.Id, default))
+        _commentRepo.Setup(r => r.GetAllBySectionIdAsync(section.Id, default))
             .ReturnsAsync(new List<Comment> { publicComment, privateComment });
         _commentRepo.Setup(r => r.GetRepliesByParentIdAsync(It.IsAny<Guid>(), default))
             .ReturnsAsync(new List<Comment>());
@@ -243,3 +243,4 @@ public class CommentServiceTests
         Assert.Equal("Public.", result[0].Body);
     }
 }
+

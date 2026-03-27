@@ -98,12 +98,16 @@ public class CommentService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Returns all comments for a section (roots and replies), ordered by CreatedAt,
+    /// filtered by visibility rules for the requesting user.
+    /// </summary>
     public async Task<IReadOnlyList<Comment>> GetThreadsForSectionAsync(
         Guid sectionId, Guid requestingUserId, CancellationToken ct = default)
     {
         var user = await userRepo.GetByIdAsync(requestingUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), requestingUserId);
-        var roots = await commentRepo.GetRootsBySectionIdAsync(sectionId, ct);
-        return roots.Where(c => c.IsVisibleTo(requestingUserId, user.Role)).ToList();
+        var all = await commentRepo.GetAllBySectionIdAsync(sectionId, ct);
+        return all.Where(c => c.IsVisibleTo(requestingUserId, user.Role)).ToList();
     }
 }

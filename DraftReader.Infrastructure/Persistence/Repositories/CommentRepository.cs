@@ -17,6 +17,12 @@ public class CommentRepository(DraftReaderDbContext db) : ICommentRepository
             .OrderBy(c => c.CreatedAt)
             .ToListAsync(ct);
 
+    public async Task<IReadOnlyList<Comment>> GetAllBySectionIdAsync(Guid sectionId, CancellationToken ct = default) =>
+        await db.Comments
+            .Where(c => c.SectionId == sectionId)
+            .OrderBy(c => c.CreatedAt)
+            .ToListAsync(ct);
+
     public async Task<IReadOnlyList<Comment>> GetRepliesByParentIdAsync(Guid parentCommentId, CancellationToken ct = default) =>
         await db.Comments
             .Where(c => c.ParentCommentId == parentCommentId)

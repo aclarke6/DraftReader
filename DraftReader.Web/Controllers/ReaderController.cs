@@ -17,9 +17,6 @@ public class ReaderController(
     IUserRepository userRepo,
     ILogger<ReaderController> logger) : BaseController(userRepo)
 {
-    // ---------------------------------------------------------------------------
-    // Dashboard - reader home page
-    // ---------------------------------------------------------------------------
     public async Task<IActionResult> Dashboard()
     {
         var user = await GetCurrentUserAsync();
@@ -29,7 +26,7 @@ public class ReaderController(
         if (project is null)
             return View(new ReaderDashboardViewModel { ProjectName = null });
 
-        var allSections     = await sectionRepo.GetByProjectIdAsync(project.Id);
+        var allSections = await sectionRepo.GetByProjectIdAsync(project.Id);
         var publishedChapters = allSections
             .Where(s => s.NodeType == NodeType.Folder && s.IsPublished && !s.IsSoftDeleted)
             .OrderBy(s => s.SortOrder)
@@ -55,17 +52,8 @@ public class ReaderController(
         });
     }
 
-    // ---------------------------------------------------------------------------
-    // Index - top-level section selection
-    // ---------------------------------------------------------------------------
-    public async Task<IActionResult> Index()
-    {
-        return RedirectToAction("Dashboard");
-    }
+    public async Task<IActionResult> Index() => RedirectToAction("Dashboard");
 
-    // ---------------------------------------------------------------------------
-    // Browse - contents of a top-level section showing chapters as links
-    // ---------------------------------------------------------------------------
     public async Task<IActionResult> Browse(Guid id)
     {
         var project = await projectRepo.GetReaderActiveProjectAsync();
@@ -75,19 +63,14 @@ public class ReaderController(
         var topSection  = allSections.FirstOrDefault(s => s.Id == id);
         if (topSection is null) return NotFound();
 
-        var groups = BuildContentGroups(topSection, allSections);
-
         return View(new SectionContentsViewModel
         {
             TopLevelSection = topSection,
-            Groups          = groups,
+            Groups          = BuildContentGroups(topSection, allSections),
             ProjectName     = project.Name
         });
     }
 
-    // ---------------------------------------------------------------------------
-    // Read - a chapter (shows all scenes in sequence)
-    // ---------------------------------------------------------------------------
     public async Task<IActionResult> Read(Guid id)
     {
         var chapter = await sectionRepo.GetByIdAsync(id);
@@ -96,7 +79,6 @@ public class ReaderController(
         var user = await GetCurrentUserAsync();
         if (user is null) return Forbid();
 
-        // Record open for the chapter
         await progressService.RecordOpenAsync(id, user.Id);
 
         var project     = await projectRepo.GetReaderActiveProjectAsync();
@@ -104,7 +86,6 @@ public class ReaderController(
             ? await sectionRepo.GetByProjectIdAsync(project.Id)
             : new List<Section>();
 
-        // Get all published scenes belonging to this chapter, in order
         var scenes = allSections
             .Where(s => s.ParentId == chapter.Id &&
                         s.NodeType == NodeType.Document &&
@@ -112,22 +93,28 @@ public class ReaderController(
             .OrderBy(s => s.SortOrder)
             .ToList();
 
-        // Load comments for each scene and for the chapter itself
         var scenesWithComments = new List<SceneWithComments>();
         foreach (var scene in scenes)
         {
             await progressService.RecordOpenAsync(scene.Id, user.Id);
             var comments = await commentService.GetThreadsForSectionAsync(scene.Id, user.Id);
-            scenesWithComments.Add(new SceneWithComments
-            {
-                Scene    = scene,
-                Comments = comments
-            });
+            scenesWithComments.Add(new SceneWithComments { Scene = scene, Comments = comments });
         }
 
         var chapterComments = await commentService.GetThreadsForSectionAsync(id, user.Id);
-        var breadcrumb      = BuildBreadcrumb(chapter, allSections);
-        var topAncestor     = GetTopLevelAncestor(chapter, allSections);
+
+        // Build author name lookup for all comments across scenes and chapter
+        var allComments = scenesWithComments.SelectMany(s => s.Comments)
+            .Concat(chapterComments);
+        var nameMap = new Dictionary<Guid, string>();
+        foreach (var uid in allComments.Select(c => c.AuthorId).Distinct())
+        {
+            var u = await userRepo.GetByIdAsync(uid);
+            nameMap[uid] = u?.DisplayName ?? "Unknown";
+        }
+
+        var breadcrumb  = BuildBreadcrumb(chapter, allSections);
+        var topAncestor = GetTopLevelAncestor(chapter, allSections);
 
         SectionContentsViewModel? bookContents = null;
         if (topAncestor is not null)
@@ -142,18 +129,16 @@ public class ReaderController(
 
         return View(new ChapterReadViewModel
         {
-            Chapter         = chapter,
-            Breadcrumb      = breadcrumb,
-            Scenes          = scenesWithComments,
-            ChapterComments = chapterComments,
-            BookContents    = bookContents,
-            ProjectName     = project?.Name ?? string.Empty
+            Chapter            = chapter,
+            Breadcrumb         = breadcrumb,
+            Scenes             = scenesWithComments,
+            ChapterComments    = chapterComments,
+            BookContents       = bookContents,
+            ProjectName        = project?.Name ?? string.Empty,
+            CommentAuthorNames = nameMap
         });
     }
 
-    // ---------------------------------------------------------------------------
-    // Add comment
-    // ---------------------------------------------------------------------------
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddComment(AddCommentViewModel model)
@@ -178,8 +163,7 @@ public class ReaderController(
             TempData["Error"] = "Failed to save comment.";
         }
 
-        // Return to the chapter - find which chapter this section belongs to
-        var section = await sectionRepo.GetByIdAsync(model.SectionId);
+        var section   = await sectionRepo.GetByIdAsync(model.SectionId);
         var chapterId = section?.NodeType == NodeType.Folder
             ? section.Id
             : section?.ParentId ?? model.SectionId;
@@ -187,9 +171,6 @@ public class ReaderController(
         return RedirectToAction("Read", new { id = chapterId });
     }
 
-    // ---------------------------------------------------------------------------
-    // Delete comment
-    // ---------------------------------------------------------------------------
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteComment(Guid commentId, Guid chapterId)
@@ -201,45 +182,35 @@ public class ReaderController(
         return RedirectToAction("Read", new { id = chapterId });
     }
 
-    // ---------------------------------------------------------------------------
-    // Private helpers
-    // ---------------------------------------------------------------------------
-
     private static bool HasPublishedChapter(Section section, IReadOnlyList<Section> all)
     {
         if (section.NodeType == NodeType.Folder && section.IsPublished) return true;
-        var children = all.Where(s => s.ParentId == section.Id && !s.IsSoftDeleted);
-        return children.Any(c => HasPublishedChapter(c, all));
+        return all.Where(s => s.ParentId == section.Id && !s.IsSoftDeleted)
+                  .Any(c => HasPublishedChapter(c, all));
     }
 
     private static Section? GetTopLevelAncestor(Section section, IReadOnlyList<Section> all)
     {
         var lookup  = all.ToDictionary(s => s.Id);
         var current = section;
-
         while (current.ParentId.HasValue && lookup.TryGetValue(current.ParentId.Value, out var parent))
         {
             if (!parent.ParentId.HasValue) return current;
             current = parent;
         }
-
         return null;
     }
 
-    private static IReadOnlyList<string> BuildBreadcrumb(
-        Section section, IReadOnlyList<Section> all)
+    private static IReadOnlyList<string> BuildBreadcrumb(Section section, IReadOnlyList<Section> all)
     {
         var lookup    = all.ToDictionary(s => s.Id);
         var crumbs    = new List<string>();
         var currentId = section.ParentId;
-
         while (currentId.HasValue && lookup.TryGetValue(currentId.Value, out var parent))
         {
             crumbs.Insert(0, parent.Title);
             currentId = parent.ParentId;
         }
-
-        // Remove Manuscript root
         if (crumbs.Count > 0) crumbs.RemoveAt(0);
         return crumbs;
     }
@@ -253,40 +224,31 @@ public class ReaderController(
             .ToList();
 
         var groups = new List<ContentGroup>();
-
         foreach (var child in children)
         {
-            if (child.NodeType == NodeType.Folder)
-            {
-                var folderChildren    = all.Where(s => s.ParentId == child.Id && !s.IsSoftDeleted).ToList();
-                var folderHasSubFolders = folderChildren.Any(s => s.NodeType == NodeType.Folder);
+            if (child.NodeType != NodeType.Folder) continue;
 
-                if (folderHasSubFolders)
+            var folderChildren    = all.Where(s => s.ParentId == child.Id && !s.IsSoftDeleted).ToList();
+            var folderHasSubFolders = folderChildren.Any(s => s.NodeType == NodeType.Folder);
+
+            if (folderHasSubFolders)
+            {
+                var subGroups = BuildContentGroups(child, all);
+                if (subGroups.Any())
+                    groups.Add(new ContentGroup { Heading = child.Title, Depth = 0, SubGroups = subGroups });
+            }
+            else if (child.IsPublished)
+            {
+                groups.Add(new ContentGroup
                 {
-                    var subGroups = BuildContentGroups(child, all);
-                    if (subGroups.Any())
-                        groups.Add(new ContentGroup
-                        {
-                            Heading   = child.Title,
-                            Depth     = 0,
-                            SubGroups = subGroups
-                        });
-                }
-                else if (child.IsPublished)
-                {
-                    // This is a published chapter - show as a link
-                    groups.Add(new ContentGroup
-                    {
-                        Heading        = string.Empty,
-                        Depth          = 0,
-                        ChapterSection = child,
-                        Scenes         = new List<Section>(),
-                        SubGroups      = new List<ContentGroup>()
-                    });
-                }
+                    Heading        = string.Empty,
+                    Depth          = 0,
+                    ChapterSection = child,
+                    Scenes         = new List<Section>(),
+                    SubGroups      = new List<ContentGroup>()
+                });
             }
         }
-
         return groups;
     }
 }

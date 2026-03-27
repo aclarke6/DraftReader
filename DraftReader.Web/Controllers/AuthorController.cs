@@ -281,6 +281,14 @@ public class AuthorController(
         var s = await sectionRepo.GetByIdAsync(id);
         if (s is null) return NotFound();
 
+        // Resolve parent chapter title if this is a scene
+        string? chapterTitle = null;
+        if (s.ParentId.HasValue)
+        {
+            var parent = await sectionRepo.GetByIdAsync(s.ParentId.Value);
+            chapterTitle = parent?.Title;
+        }
+
         var comments = await GetCommentService().GetThreadsForSectionAsync(id, author.Id);
         var events   = await GetReadEventRepo().GetBySectionIdAsync(id);
 
@@ -294,6 +302,7 @@ public class AuthorController(
         return View(new SectionViewModel
         {
             Section            = s,
+            ChapterTitle       = chapterTitle,
             Comments           = comments,
             ReadCount          = events.Count,
             CommentAuthorNames = nameMap
@@ -478,4 +487,5 @@ public class AuthorController(
         return result;
     }
 }
+
 

@@ -32,6 +32,10 @@ public class ChapterReadViewModel
     public IReadOnlyList<Comment> ChapterComments { get; set; } = new List<Comment>();
     public SectionContentsViewModel? BookContents { get; set; }
     public string ProjectName { get; set; } = string.Empty;
+
+    /// <summary>Maps AuthorId -> DisplayName for all comments in this view.</summary>
+    public IReadOnlyDictionary<Guid, string> CommentAuthorNames { get; set; }
+        = new Dictionary<Guid, string>();
 }
 
 public class SceneWithComments

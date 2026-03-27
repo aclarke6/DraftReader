@@ -1,0 +1,13 @@
+Minor Fixes
+===========
+Author Chapter Level Page needed, as well as Scene level page.
+
+Chapter page should see scene comments on RHS and Chapter level comments on floating bar at the bottom. Scene level page should have a link to chapter page. Scene page "2 readers" should have a hover over that displays which readers.
+
+New requirement. Floating bar at very bottom that retains Copyright details and has a System status - System Outages etc. Also a Report Fault button that will open a popup, or a full page - not sure which is best, that will then privately email support@draftreader.co.uk. I need help setting up email redirection of this to alastair_clarke@yahoo.com on CloudFlare website, if they provide it.
+
+Also, Only allow Chapter Level publishing - Scene level publishing seems too detailed.  Part level publishing will automatically publish all chapters below, and by definition, all scenes below each chapter.  Book level publishing as well.
+
+Major Features
+==============
+Publishing for Readers should have CSS for iOS, Android, phones, tablets and full screens.

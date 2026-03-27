@@ -36,8 +36,13 @@ param(
 
     # If provided, also write the dump to a file (UTF-8)
     [Parameter(Mandatory = $false)]
-    [string]$OutputFile = ""
+    [string]$OutputFile = "",
+
+    # Maximum characters per clipboard chunk
+    [Parameter(Mandatory = $false)]
+    [int]$ChunkLimit = 100000
 )
+
 if ($ShowHelp -or -not $FileNames -or @($FileNames).Count -eq 0) {
 
     Write-Host @"
@@ -63,11 +68,15 @@ OPTIONS
   -OutputFile <path>
       If provided, also writes the output to a file (UTF-8).
 
+  -ChunkLimit <int>
+      Maximum characters per clipboard chunk.
+      Default: 100000
+
   -h | -ShowHelp
       Show this help text and exit.
 
 NOTES
-  If you use positional filenames, put -RootPath and -OutputFile BEFORE the filenames:
+  If you use positional filenames, put -RootPath, -OutputFile and -ChunkLimit BEFORE the filenames:
     .\Copy-SourceFiles.ps1 -RootPath . -OutputFile Dump.txt Program.cs VaultReader.cs
 "@
     exit 0
@@ -129,19 +138,20 @@ function Find-FileByName {
         Sort-Object FullName
 }
 
-$chunkLimit = 10000
-$currentChunk = New-Object System.Text.StringBuilder
+$currentChunk      = New-Object System.Text.StringBuilder
 $script:chunkIndex = 1
+# Track which files have been fully flushed to the clipboard
+$script:filesInChunk = [System.Collections.Generic.List[string]]::new()
 
 function Emit-Chunk {
     param(
         [string]$Text,
-        [bool]$IsFinal = $false
+        [bool]$IsFinal = $false,
+        [string[]]$FilesIncluded = @()
     )
 
     if ([string]::IsNullOrWhiteSpace($Text)) { return }
 
-    # Build wrapped chunk text
     $wrapped = New-Object System.Text.StringBuilder
 
     if ($IsFinal) {
@@ -165,32 +175,52 @@ function Emit-Chunk {
     $finalText = $wrapped.ToString()
 
     Write-Host ""
-    Write-Host "=== Emitting chunk #$script:chunkIndex ==="
-    Write-Host "Characters: $($finalText.Length)"
-    Write-Host "Copied to clipboard. Press ENTER for next chunk..."
-    Write-Host ""
+
+    if ($IsFinal) {
+        Write-Host "=== FINAL CHUNK #$script:chunkIndex ===" -ForegroundColor Green
+    }
+    else {
+        Write-Host "=== Chunk #$script:chunkIndex ===" -ForegroundColor Cyan
+    }
+
+    Write-Host "Characters : $($finalText.Length)" -ForegroundColor DarkGray
+
+    if ($FilesIncluded.Count -gt 0) {
+        Write-Host "Files clipped in this chunk:" -ForegroundColor Yellow
+        foreach ($f in $FilesIncluded) {
+            Write-Host "  + $f" -ForegroundColor Yellow
+        }
+    }
 
     $finalText | Set-Clipboard
 
     if ($OutputFile -ne "") {
         $outPath = [IO.Path]::ChangeExtension($OutputFile, ".$script:chunkIndex.txt")
         $finalText | Out-File -FilePath $outPath -Encoding utf8
-        Write-Host "Also wrote: $outPath"
+        Write-Host "Also wrote : $outPath" -ForegroundColor DarkGray
     }
 
-    $null = Read-Host
-    $script:chunkIndex++
-
+    if ($IsFinal) {
+        Write-Host ""
+        Write-Host "All done — final chunk is in the clipboard." -ForegroundColor Green
+        Write-Host ""
+    }
+    else {
+        Write-Host ""
+        Write-Host "Copied to clipboard. Press ENTER for next chunk..." -ForegroundColor Cyan
+        Write-Host ""
+        $null = Read-Host
+        $script:chunkIndex++
+    }
 }
 
 foreach ($name in $FileNames) {
 
-    # Build the block for this file
     $fileBlock = New-Object System.Text.StringBuilder
+    $fileMatches = @(Find-FileByName -FileName $name)
 
-    $matches = @(Find-FileByName -FileName $name)
-
-    if (-not $matches -or @($matches).Count -eq 0) {
+    if (-not $fileMatches -or @($fileMatches).Count -eq 0) {
+        Write-Host "  NOT FOUND : $name" -ForegroundColor Red
         [void]$fileBlock.AppendLine("")
         [void]$fileBlock.AppendLine("============================================================")
         [void]$fileBlock.AppendLine("FILE: $name")
@@ -198,13 +228,14 @@ foreach ($name in $FileNames) {
         [void]$fileBlock.AppendLine("============================================================")
         [void]$fileBlock.AppendLine("")
     }
-    elseif ($matches.Count -gt 1) {
+    elseif ($fileMatches.Count -gt 1) {
+        Write-Host "  AMBIGUOUS : $name ($($fileMatches.Count) matches)" -ForegroundColor Magenta
         [void]$fileBlock.AppendLine("")
         [void]$fileBlock.AppendLine("============================================================")
         [void]$fileBlock.AppendLine("FILE: $name")
         [void]$fileBlock.AppendLine("STATUS: AMBIGUOUS (multiple matches found)")
         [void]$fileBlock.AppendLine("MATCHES:")
-        foreach ($m in $matches) {
+        foreach ($m in $fileMatches) {
             $rel = Get-RepoRelativePath -FullPath $m.FullName -RootPathResolved $root
             [void]$fileBlock.AppendLine(" - $rel")
         }
@@ -212,7 +243,7 @@ foreach ($name in $FileNames) {
         [void]$fileBlock.AppendLine("")
     }
     else {
-        $file = $matches[0]
+        $file     = $fileMatches[0]
         $absolute = $file.FullName
         $relative = Get-RepoRelativePath -FullPath $absolute -RootPathResolved $root
 
@@ -230,18 +261,16 @@ foreach ($name in $FileNames) {
 
     $blockText = $fileBlock.ToString()
 
-    # Check if adding this block would exceed the chunk limit
-    if (($currentChunk.Length + $blockText.Length) -gt $chunkLimit) {
-        Emit-Chunk -Text $currentChunk.ToString()
+    # If adding this block would breach the limit, flush the current chunk first
+    if (($currentChunk.Length + $blockText.Length) -gt $ChunkLimit) {
+        Emit-Chunk -Text $currentChunk.ToString() -IsFinal:$false -FilesIncluded $script:filesInChunk.ToArray()
         $currentChunk.Clear() | Out-Null
+        $script:filesInChunk.Clear()
     }
 
-    # Add the block to the current chunk
     [void]$currentChunk.Append($blockText)
+    $script:filesInChunk.Add($name)
 }
 
-# Emit final chunk
-Emit-Chunk -Text $currentChunk.ToString() -IsFinal:$true
-
-
-Write-Host "All chunks emitted."
+# Emit final chunk — no ENTER prompt, just report and exit
+Emit-Chunk -Text $currentChunk.ToString() -IsFinal:$true -FilesIncluded $script:filesInChunk.ToArray()

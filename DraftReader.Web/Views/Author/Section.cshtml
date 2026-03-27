@@ -1,8 +1,15 @@
-﻿@using DraftReader.Domain.Enumerations
+@using DraftReader.Domain.Enumerations
 @model SectionViewModel
 @{ ViewData["Title"] = Model.Section.Title; }
 
-<h2>@Model.Section.Title</h2>
+@if (Model.ChapterTitle is not null)
+{
+    <p style="font-size:var(--text-sm); color:var(--color-ink-muted); margin-bottom:4px;">
+        <a asp-action="Sections" style="color:var(--color-ink-muted);">Sections</a>
+        &rsaquo; @Model.ChapterTitle
+    </p>
+}
+<h2 style="margin-top:0;">@Model.Section.Title</h2>
 <p style="color:var(--color-ink-muted)">@Model.Section.ScrivenerStatus | Read by @Model.ReadCount reader(s)</p>
 
 <div style="background:white; padding:24px; border:1px solid var(--color-border); margin-bottom:32px; border-radius:var(--radius-md);">
@@ -14,11 +21,13 @@
 @foreach (var c in Model.Comments)
 {
     var authorName    = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var n) ? n : "Unknown";
-    var borderColour  = c.Visibility == Visibility.Private ? "#f0ad4e" : "var(--color-accent)";
     var isAuthorReply = c.Status == CommentStatus.AuthorReply;
+    var isReply       = c.ParentCommentId.HasValue;
+    var borderColour  = isReply ? "#ccc" : (c.Visibility == Visibility.Private ? "#f0ad4e" : "var(--color-accent)");
 
     <div style="border-left:3px solid @borderColour; padding:14px 16px; margin-bottom:16px;
-                background:white; border-radius:0 var(--radius-sm) var(--radius-sm) 0;">
+                background:white; border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+                @(isReply ? "margin-left:24px;" : "")">
 
         <div style="display:flex; justify-content:space-between; align-items:center;
                     margin-bottom:8px; flex-wrap:wrap; gap:8px;">
@@ -38,7 +47,7 @@
                     Author reply
                 </span>
             }
-            else
+            else if (!isReply)
             {
                 <form asp-action="SetCommentStatus" method="post" style="display:inline;">
                     @Html.AntiForgeryToken()
@@ -64,28 +73,25 @@
         else
         {
             <p style="margin:0 0 12px 0;">@c.Body</p>
-            @if (!isAuthorReply)
-            {
-                <details style="margin-top:4px;">
-                    <summary style="font-size:var(--text-xs); color:var(--color-accent);
-                                    cursor:pointer; list-style:none; user-select:none;">
-                        &#8617; Reply
-                    </summary>
-                    <form asp-action="ReplyToComment" method="post" style="margin-top:8px;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="parentCommentId" value="@c.Id" />
-                        <input type="hidden" name="sectionId" value="@Model.Section.Id" />
-                        <textarea name="body" rows="3" placeholder="Your reply..."
-                                  style="width:100%; padding:8px; font-family:Georgia,serif;
-                                         font-size:var(--text-sm); border:1px solid var(--color-border);
-                                         border-radius:var(--radius-sm); box-sizing:border-box;
-                                         resize:vertical;"></textarea>
-                        <div style="margin-top:6px;">
-                            <button type="submit" class="btn btn--primary btn--sm">Post Reply</button>
-                        </div>
-                    </form>
-                </details>
-            }
+            <details style="margin-top:4px;">
+                <summary style="font-size:var(--text-xs); color:var(--color-accent);
+                                cursor:pointer; list-style:none; user-select:none;">
+                    &#8617; Reply
+                </summary>
+                <form asp-action="ReplyToComment" method="post" style="margin-top:8px;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="parentCommentId" value="@c.Id" />
+                    <input type="hidden" name="sectionId" value="@Model.Section.Id" />
+                    <textarea name="body" rows="3" placeholder="Your reply..."
+                              style="width:100%; padding:8px; font-family:Georgia,serif;
+                                     font-size:var(--text-sm); border:1px solid var(--color-border);
+                                     border-radius:var(--radius-sm); box-sizing:border-box;
+                                     resize:vertical;"></textarea>
+                    <div style="margin-top:6px;">
+                        <button type="submit" class="btn btn--primary btn--sm">Post Reply</button>
+                    </div>
+                </form>
+            </details>
         }
     </div>
 }
@@ -107,4 +113,3 @@
         _                      => "inherit"
     };
 }
-

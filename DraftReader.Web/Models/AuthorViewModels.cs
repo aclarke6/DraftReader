@@ -1,4 +1,4 @@
-﻿using DraftReader.Domain.Entities;
+using DraftReader.Domain.Entities;
 using DraftReader.Domain.Notifications;
 
 namespace DraftReader.Web.Models;
@@ -16,6 +16,7 @@ public class DashboardViewModel
 public class SectionViewModel
 {
     public Section Section { get; set; } = default!;
+    public string? ChapterTitle { get; set; }
     public IReadOnlyList<Comment> Comments { get; set; } = [];
     public IReadOnlyDictionary<Guid, string> CommentAuthorNames { get; set; } = new Dictionary<Guid, string>();
     public int ReadCount { get; set; }
