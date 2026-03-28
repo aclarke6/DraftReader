@@ -1,292 +1,439 @@
 @model ChapterReadViewModel
-@{ ViewData["Title"] = Model.Chapter.Title; }
+@{
+    ViewData["Title"] = Model.Chapter.Title;
+}
 
-<style>
-    .chapter-layout { display: flex; gap: 32px; }
-    .chapter-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 72px; max-height: calc(100vh - 90px); overflow-y: auto; }
-    .chapter-main { flex: 1; min-width: 0; }
-    .scene-block { display: flex; gap: 24px; margin-bottom: 48px; }
-    .scene-prose { flex: 1; min-width: 0; }
-    .scene-comments { width: 280px; flex-shrink: 0; }
-    .scene-prose-content * { font-family: Georgia, serif !important; font-size: 16px !important; }
-    .comment-box { border-left: 3px solid #2a6496; padding: 10px 12px; margin-bottom: 8px; background: white; font-size: 0.85em; }
-    .comment-box.private { border-left-color: #f0ad4e; }
-    .comment-box.reply { border-left-color: #bbb; margin-left: 14px; }
-    .add-comment-mini textarea { width: 100%; padding: 6px; font-size: 0.8em; font-family: Georgia, serif; box-sizing: border-box; }
-    .chapter-comments { margin-top: 48px; padding-top: 32px; border-top: 2px solid #eee; }
-    .btn-xs { padding: 3px 8px; font-size: 11px; }
-    .sidebar-section-label { font-size: 0.7em; font-weight: bold; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin: 12px 0 6px 0; }
-    .sidebar-link { display: block; font-size: 0.82em; padding: 3px 0 3px 8px; color: var(--color-accent); text-decoration: none; border-left: 2px solid transparent; transition: border-color 0.15s, color 0.15s; line-height: 1.4; }
-    .sidebar-link:hover { border-left-color: var(--color-accent); color: var(--color-text); text-decoration: none; }
-    .sidebar-link--active { border-left-color: var(--color-accent); color: var(--color-text); font-weight: 500; }
-    .sidebar-link--chapter { color: var(--color-text-muted); font-size: 0.78em; }
-    .sidebar-divider { border: none; border-top: 1px solid var(--color-border); margin: 10px 0; }
-    @@media (max-width: 900px) { .scene-block { flex-direction: column; } .scene-comments { width: 100%; } .chapter-sidebar { display: none; } }
-</style>
+<div class="reader-page">
 
-<div class="chapter-layout">
-    <aside class="chapter-sidebar">
+    <button type="button"
+            class="reader__contents-toggle"
+            id="readerContentsToggle"
+            aria-expanded="false"
+            aria-controls="readerContentsPanel">
+        Contents
+    </button>
+
+    <div id="readerContentsPanel" class="reader__contents">
         @if (Model.BookContents is not null)
         {
-            <div style="margin-bottom:8px;">
-                <a asp-action="Index" class="sidebar-link sidebar-link--chapter">@Model.ProjectName</a>
-                <a asp-action="Browse" asp-route-id="@Model.BookContents.TopLevelSection.Id"
-                   class="sidebar-link sidebar-link--chapter">&rsaquo; @Model.BookContents.TopLevelSection.Title</a>
+            <div class="reader__contents-header">
+                <a asp-action="Index" class="reader__contents-link reader__contents-link--chapter">@Model.ProjectName</a>
+                <a asp-action="Browse"
+                   asp-route-id="@Model.BookContents.TopLevelSection.Id"
+                   class="reader__contents-link reader__contents-link--chapter">&rsaquo; @Model.BookContents.TopLevelSection.Title</a>
             </div>
-            <hr class="sidebar-divider" />
+            <hr class="reader__contents-divider" />
         }
-        <div class="sidebar-section-label">This chapter</div>
-        @foreach (var item in Model.Scenes)
-        {
-            <a href="#scene-@item.Scene.Id" class="sidebar-link">@item.Scene.Title</a>
-        }
-        <a href="#chapter-comments" class="sidebar-link" style="margin-top:6px; color:var(--color-text-muted);">&#9998; Chapter Comments</a>
+
+        <div class="reader__contents-section">
+            <div class="reader__contents-label">This chapter</div>
+            @foreach (var item in Model.Scenes)
+            {
+                <a href="#scene-@item.Scene.Id" class="reader__contents-link">@item.Scene.Title</a>
+            }
+            <a href="#chapter-comments"
+                   class="reader__contents-link reader__contents-link--muted">
+                &#9998; Chapter Comments
+            </a>
+        </div>
+
         @if (Model.BookContents is not null && Model.BookContents.Groups.Any())
         {
-            <hr class="sidebar-divider" />
-            <div class="sidebar-section-label">Other chapters</div>
-            @foreach (var group in Model.BookContents.Groups)
-            {
-                @if (!string.IsNullOrEmpty(group.Heading))
+            <hr class="reader__contents-divider" />
+            <div class="reader__contents-section">
+                <div class="reader__contents-label">Other chapters</div>
+
+                @foreach (var group in Model.BookContents.Groups)
                 {
-                    <div style="font-size:0.72em; font-weight:bold; color:var(--color-text-muted); text-transform:uppercase; margin:8px 0 3px 0;">@group.Heading</div>
-                }
-                @foreach (var sub in group.SubGroups)
-                {
-                    <div style="font-size:0.72em; color:var(--color-text-muted); margin:6px 0 2px 6px;">@sub.Heading</div>
-                    @if (sub.ChapterSection is not null)
+                    @if (!string.IsNullOrEmpty(group.Heading))
                     {
-                        <a asp-action="Read" asp-route-id="@sub.ChapterSection.Id"
-                           class="sidebar-link @(sub.ChapterSection.Id == Model.Chapter.Id ? "sidebar-link--active" : "")"
-                           style="padding-left:16px;">@sub.ChapterSection.Title</a>
+                        <div class="reader__contents-subheading">@group.Heading</div>
                     }
-                }
-                @if (group.ChapterSection is not null)
-                {
-                    <a asp-action="Read" asp-route-id="@group.ChapterSection.Id"
-                       class="sidebar-link @(group.ChapterSection.Id == Model.Chapter.Id ? "sidebar-link--active" : "")">@group.ChapterSection.Title</a>
-                }
-            }
-        }
-    </aside>
 
-    <main class="chapter-main">
-        @if (Model.Breadcrumb.Any())
-        {
-            <div style="font-size:0.8em; color:#888; margin-bottom:6px;">
-                @for (int i = 0; i < Model.Breadcrumb.Count; i++)
-                {
-                    @Model.Breadcrumb[i]
-                    if (i < Model.Breadcrumb.Count - 1) { <span style="margin:0 6px;">&rsaquo;</span> }
-                }
-            </div>
-        }
-
-        <h2 style="margin-top:0;">@Model.Chapter.Title</h2>
-        <a href="#chapter-comments" class="btn btn--secondary"
-           style="font-size:var(--text-sm); margin-bottom:var(--space-6); display:inline-block;">
-            Jump to Chapter Comments
-        </a>
-
-        @foreach (var item in Model.Scenes)
-        {
-            var roots   = item.Comments.Where(c => c.ParentCommentId == null).ToList();
-            var replies = item.Comments.Where(c => c.ParentCommentId != null)
-                              .GroupBy(c => c.ParentCommentId!.Value)
-                              .ToDictionary(g => g.Key, g => g.ToList());
-
-            <div class="scene-block" id="scene-@item.Scene.Id">
-                <div class="scene-prose">
-                    <h4 style="color:#666; font-weight:normal; font-size:0.9em; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:16px;">@item.Scene.Title</h4>
-                    <div style="background:white; padding:24px 28px; border:1px solid #eee; line-height:1.8;">
-                        <div class="scene-prose-content">
-                            @Html.Raw(item.Scene.HtmlContent ?? "<p><em>No content.</em></p>")
-                        </div>
-                    </div>
-                </div>
-
-                <div class="scene-comments">
-                    <div style="font-size:0.75em; text-transform:uppercase; letter-spacing:0.05em; color:#888; margin-bottom:8px;">Comments</div>
-
-                    @foreach (var c in roots)
+                    @foreach (var sub in group.SubGroups)
                     {
-                        var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
-                        <div class="comment-box @(c.Visibility == Visibility.Private ? "private" : "")">
-                            @if (c.IsSoftDeleted)
-                            {
-                                <p style="color:#aaa; font-style:italic; margin:0;">Removed.</p>
-                            }
-                            else
-                            {
-                                <div style="color:#888; margin-bottom:4px; font-size:0.9em;">
-                                    <strong>@commentName</strong>
-                                    <span style="margin-left:6px;">@c.CreatedAt.ToString("dd MMM")</span>
-                                    @if (c.Visibility == Visibility.Private) { <span style="color:#f0ad4e;">[Private]</span> }
-                                </div>
-                                <p style="margin:0 0 6px 0;">@c.Body</p>
-                                <form asp-action="AddComment" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                    <input type="hidden" name="ParentCommentId" value="@c.Id" />
-                                    <input type="text" name="Body" placeholder="Reply..." style="width:100%; padding:3px 6px; font-size:0.8em;" />
-                                    <button type="submit" class="btn btn-xs" style="margin-top:4px;">Reply</button>
-                                </form>
-                            }
-                        </div>
-
-                        @if (replies.TryGetValue(c.Id, out var childReplies))
+                        @if (!string.IsNullOrEmpty(sub.Heading))
                         {
-                            @foreach (var r in childReplies)
-                            {
-                                var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
-                                <div class="comment-box reply @(r.Visibility == Visibility.Private ? "private" : "")">
-                                    @if (r.IsSoftDeleted)
-                                    {
-                                        <p style="color:#aaa; font-style:italic; margin:0;">Removed.</p>
-                                    }
-                                    else
-                                    {
-                                        <div style="color:#888; margin-bottom:4px; font-size:0.9em;">
-                                            <strong>@replyName</strong>
-                                            <span style="margin-left:6px;">@r.CreatedAt.ToString("dd MMM")</span>
-                                        </div>
-                                        <p style="margin:0 0 6px 0;">@r.Body</p>
-                                        <form asp-action="AddComment" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                            <input type="hidden" name="ParentCommentId" value="@c.Id" />
-                                            <input type="text" name="Body" placeholder="Reply..." style="width:100%; padding:3px 6px; font-size:0.8em;" />
-                                            <button type="submit" class="btn btn-xs" style="margin-top:4px;">Reply</button>
-                                        </form>
-                                    }
-                                </div>
-                            }
+                            <div class="reader__contents-subheading reader__contents-subheading--nested">@sub.Heading</div>
+                        }
+
+                        @if (sub.ChapterSection is not null)
+                        {
+                            <a asp-action="Read"
+                                   asp-route-id="@sub.ChapterSection.Id"
+                                   class="reader__contents-link @(sub.ChapterSection.Id == Model.Chapter.Id ? "reader__contents-link--active" : "") reader__contents-link--indented">
+                                @sub.ChapterSection.Title
+                            </a>
                         }
                     }
 
-                    <div class="add-comment-mini" style="margin-top:8px;">
-                        <form asp-action="AddComment" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                            <textarea name="Body" rows="3" placeholder="Comment on @item.Scene.Title..."></textarea>
-                            <div style="margin-top:4px; display:flex; gap:8px; align-items:center;">
-                                <label style="font-size:0.75em;"><input type="checkbox" name="IsPrivate" /> Private</label>
-                                <button type="submit" class="btn btn-xs">Post</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                    @if (group.ChapterSection is not null)
+                    {
+                        <a asp-action="Read"
+                               asp-route-id="@group.ChapterSection.Id"
+                               class="reader__contents-link @(group.ChapterSection.Id == Model.Chapter.Id ? "reader__contents-link--active" : "")">
+                            @group.ChapterSection.Title
+                        </a>
+                    }
+                }
             </div>
         }
+    </div>
 
-        <div class="chapter-comments" id="chapter-comments">
-            <h3>Chapter Comments</h3>
-            <p style="font-size:0.85em; color:#888;">Use chapter comments for overall impressions of the chapter as a whole.</p>
-
-            @{
-                var chapterRoots   = Model.ChapterComments.Where(c => c.ParentCommentId == null).ToList();
-                var chapterReplies = Model.ChapterComments.Where(c => c.ParentCommentId != null)
-                                         .GroupBy(c => c.ParentCommentId!.Value)
-                                         .ToDictionary(g => g.Key, g => g.ToList());
+    <div class="chapter-layout">
+        <aside class="chapter-sidebar">
+            @if (Model.BookContents is not null)
+            {
+                <div class="chapter-sidebar__header">
+                    <a asp-action="Index" class="chapter-sidebar__link chapter-sidebar__link--chapter">@Model.ProjectName</a>
+                    <a asp-action="Browse"
+                       asp-route-id="@Model.BookContents.TopLevelSection.Id"
+                       class="chapter-sidebar__link chapter-sidebar__link--chapter">&rsaquo; @Model.BookContents.TopLevelSection.Title</a>
+                </div>
+                <hr class="chapter-sidebar__divider" />
             }
 
-            @foreach (var c in chapterRoots)
+            <div class="chapter-sidebar__label">This chapter</div>
+            @foreach (var item in Model.Scenes)
             {
-                var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
-                <div style="border-left:3px solid @(c.Visibility == Visibility.Private ? "#f0ad4e" : "#2a6496"); padding:12px 16px; margin-bottom:8px; background:white;">
-                    @if (c.IsSoftDeleted)
-                    {
-                        <p style="color:#888; font-style:italic; margin:0;">This comment has been removed.</p>
-                    }
-                    else
-                    {
-                        <div style="margin-bottom:6px;">
-                            <strong style="font-size:0.9em;">@commentName</strong>
-                            <span style="font-size:0.85em; color:#888; margin-left:8px;">@c.CreatedAt.ToString("dd MMM yyyy")</span>
-                            @if (c.Visibility == Visibility.Private) { <span style="color:#f0ad4e; font-size:0.75em; margin-left:6px;">[Private]</span> }
-                        </div>
-                        <p style="margin:0 0 8px 0;">@c.Body</p>
-                        <form asp-action="AddComment" method="post" style="display:flex; gap:8px;">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                            <input type="hidden" name="ParentCommentId" value="@c.Id" />
-                            <input type="text" name="Body" placeholder="Reply..." style="flex:1; padding:5px 8px; font-size:0.85em;" />
-                            <button type="submit" class="btn btn-sm">Reply</button>
-                        </form>
-                    }
-                </div>
+                <a href="#scene-@item.Scene.Id" class="chapter-sidebar__link">@item.Scene.Title</a>
+            }
 
-                @if (chapterReplies.TryGetValue(c.Id, out var childReplies))
+            <a href="#chapter-comments"
+                   class="chapter-sidebar__link chapter-sidebar__link--muted chapter-sidebar__link--comments">
+                &#9998; Chapter Comments
+            </a>
+
+            @if (Model.BookContents is not null && Model.BookContents.Groups.Any())
+            {
+                <hr class="chapter-sidebar__divider" />
+                <div class="chapter-sidebar__label">Other chapters</div>
+
+                @foreach (var group in Model.BookContents.Groups)
                 {
-                    @foreach (var r in childReplies)
+                    @if (!string.IsNullOrEmpty(group.Heading))
                     {
-                        var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
-                        <div style="border-left:3px solid #bbb; padding:12px 16px; margin-bottom:8px; margin-left:20px; background:white;">
-                            @if (r.IsSoftDeleted)
-                            {
-                                <p style="color:#888; font-style:italic; margin:0;">This comment has been removed.</p>
-                            }
-                            else
-                            {
-                                <div style="margin-bottom:6px;">
-                                    <strong style="font-size:0.9em;">@replyName</strong>
-                                    <span style="font-size:0.85em; color:#888; margin-left:8px;">@r.CreatedAt.ToString("dd MMM yyyy")</span>
-                                </div>
-                                <p style="margin:0 0 8px 0;">@r.Body</p>
-                                <form asp-action="AddComment" method="post" style="display:flex; gap:8px;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                                    <input type="hidden" name="ParentCommentId" value="@c.Id" />
-                                    <input type="text" name="Body" placeholder="Reply..." style="flex:1; padding:5px 8px; font-size:0.85em;" />
-                                    <button type="submit" class="btn btn-sm">Reply</button>
-                                </form>
-                            }
-                        </div>
+                        <div class="chapter-sidebar__subheading">@group.Heading</div>
+                    }
+
+                    @foreach (var sub in group.SubGroups)
+                    {
+                        @if (!string.IsNullOrEmpty(sub.Heading))
+                        {
+                            <div class="chapter-sidebar__subheading chapter-sidebar__subheading--nested">@sub.Heading</div>
+                        }
+
+                        @if (sub.ChapterSection is not null)
+                        {
+                            <a asp-action="Read"
+                                   asp-route-id="@sub.ChapterSection.Id"
+                                   class="chapter-sidebar__link chapter-sidebar__link--indented @(sub.ChapterSection.Id == Model.Chapter.Id ? "chapter-sidebar__link--active" : "")">
+                                @sub.ChapterSection.Title
+                            </a>
+                        }
+                    }
+
+                    @if (group.ChapterSection is not null)
+                    {
+                        <a asp-action="Read"
+                               asp-route-id="@group.ChapterSection.Id"
+                               class="chapter-sidebar__link @(group.ChapterSection.Id == Model.Chapter.Id ? "chapter-sidebar__link--active" : "")">
+                            @group.ChapterSection.Title
+                        </a>
                     }
                 }
             }
+        </aside>
 
-            <div style="background:#f8f8f6; padding:20px; border:1px solid #eee; margin-top:16px;">
-                <h4 style="margin-top:0;">Add a chapter comment</h4>
-                <form asp-action="AddComment" method="post">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                    <textarea name="Body" rows="4" placeholder="Your overall thoughts on this chapter..."
-                              style="width:100%; padding:10px; font-family:Georgia,serif; font-size:15px; box-sizing:border-box;"></textarea>
-                    <div style="margin-top:10px; display:flex; gap:20px; align-items:center;">
-                        <label style="font-size:0.85em;"><input type="checkbox" name="IsPrivate" /> Private - only you and the author can see this</label>
-                        <button type="submit" class="btn">Post Comment</button>
+        <main class="chapter-main">
+            @if (Model.Breadcrumb.Any())
+            {
+                <div class="chapter-breadcrumb">
+                    @for (int i = 0; i < Model.Breadcrumb.Count; i++)
+                    {
+                        @Model.Breadcrumb[i]
+                        if (i < Model.Breadcrumb.Count - 1)
+                        {
+                            <span class="chapter-breadcrumb__sep">&rsaquo;</span>
+                        }
+                    }
+                </div>
+            }
+
+            <h2 class="chapter-title">@Model.Chapter.Title</h2>
+
+            @foreach (var item in Model.Scenes)
+            {
+                var roots = item.Comments.Where(c => c.ParentCommentId == null).ToList();
+                var replies = item.Comments.Where(c => c.ParentCommentId != null)
+                    .GroupBy(c => c.ParentCommentId!.Value)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                <div class="scene-block" id="scene-@item.Scene.Id">
+                    <div class="scene-prose">
+                        <h4 class="scene-heading">@item.Scene.Title</h4>
+
+                        <div class="scene-prose-shell">
+                            <div class="scene-prose-content prose">
+                                @Html.Raw(item.Scene.HtmlContent ?? "<p><em>No content.</em></p>")
+                            </div>
+                        </div>
                     </div>
-                </form>
+
+                    <div class="scene-comments">
+                        <div class="scene-comments-label">Comments</div>
+
+                        @foreach (var c in roots)
+                        {
+                            var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
+
+                            <div class="comment-box @(c.Visibility == Visibility.Private ? "comment-box--private" : "")">
+                                @if (c.IsSoftDeleted)
+                                {
+                                    <p class="comment-box__removed">Removed.</p>
+                                }
+                                else
+                                {
+                                    <div class="comment-box__meta">
+                                        <strong>@commentName</strong>
+                                        <span class="comment-box__date">@c.CreatedAt.ToString("dd MMM")</span>
+                                        @if (c.Visibility == Visibility.Private)
+                                        {
+                                            <span class="comment-box__private">[Private]</span>
+                                        }
+                                    </div>
+
+                                    <p class="comment-box__body">@c.Body</p>
+
+                                    <form asp-action="AddComment" method="post" class="comment-box__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="SectionId" value="@item.Scene.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                        <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
+                                        <button type="submit" class="btn btn-xs">Reply</button>
+                                    </form>
+                                }
+                            </div>
+
+                            @if (replies.TryGetValue(c.Id, out var childReplies))
+                            {
+                                @foreach (var r in childReplies)
+                                {
+                                    var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
+
+                                    <div class="comment-box comment-box--reply @(r.Visibility == Visibility.Private ? "comment-box--private" : "")">
+                                        @if (r.IsSoftDeleted)
+                                        {
+                                            <p class="comment-box__removed">Removed.</p>
+                                        }
+                                        else
+                                        {
+                                            <div class="comment-box__meta">
+                                                <strong>@replyName</strong>
+                                                <span class="comment-box__date">@r.CreatedAt.ToString("dd MMM")</span>
+                                            </div>
+
+                                            <p class="comment-box__body">@r.Body</p>
+
+                                            <form asp-action="AddComment" method="post" class="comment-box__reply-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="SectionId" value="@item.Scene.Id" />
+                                                <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                                <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
+                                                <button type="submit" class="btn btn-xs">Reply</button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
+                            }
+                        }
+
+                        <div class="add-comment-mini">
+                            <form asp-action="AddComment" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="SectionId" value="@item.Scene.Id" />
+                                <textarea name="Body" rows="3" placeholder="Comment on @item.Scene.Title..."></textarea>
+
+                                <div class="add-comment-mini__actions">
+                                    <label class="add-comment-mini__private">
+                                        <input type="checkbox" name="IsPrivate" />
+                                        Private
+                                    </label>
+                                    <button type="submit" class="btn btn-xs">Post</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="chapter-comments" id="chapter-comments">
+                <h3>Chapter Comments</h3>
+                <p class="chapter-comments__intro">Use chapter comments for overall impressions of the chapter as a whole.</p>
+
+                @{
+                    var chapterRoots = Model.ChapterComments.Where(c => c.ParentCommentId == null).ToList();
+                    var chapterReplies = Model.ChapterComments.Where(c => c.ParentCommentId != null)
+                        .GroupBy(c => c.ParentCommentId!.Value)
+                        .ToDictionary(g => g.Key, g => g.ToList());
+                }
+
+                @foreach (var c in chapterRoots)
+                {
+                    var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
+
+                    <div class="chapter-comment @(c.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
+                        @if (c.IsSoftDeleted)
+                        {
+                            <p class="chapter-comment__removed">This comment has been removed.</p>
+                        }
+                        else
+                        {
+                            <div class="chapter-comment__meta">
+                                <strong>@commentName</strong>
+                                <span class="chapter-comment__date">@c.CreatedAt.ToString("dd MMM yyyy")</span>
+                                @if (c.Visibility == Visibility.Private)
+                                {
+                                    <span class="chapter-comment__private">[Private]</span>
+                                }
+                            </div>
+
+                            <p class="chapter-comment__body">@c.Body</p>
+
+                            <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
+                                <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
+                                <button type="submit" class="btn btn-sm">Reply</button>
+                            </form>
+                        }
+                    </div>
+
+                    @if (chapterReplies.TryGetValue(c.Id, out var childReplies))
+                    {
+                        @foreach (var r in childReplies)
+                        {
+                            var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
+
+                            <div class="chapter-comment chapter-comment--reply @(r.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
+                                @if (r.IsSoftDeleted)
+                                {
+                                    <p class="chapter-comment__removed">This comment has been removed.</p>
+                                }
+                                else
+                                {
+                                    <div class="chapter-comment__meta">
+                                        <strong>@replyName</strong>
+                                        <span class="chapter-comment__date">@r.CreatedAt.ToString("dd MMM yyyy")</span>
+                                    </div>
+
+                                    <p class="chapter-comment__body">@r.Body</p>
+
+                                    <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                        <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
+                                        <button type="submit" class="btn btn-sm">Reply</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    }
+                }
+
+                <div class="chapter-comment-form">
+                    <h4 class="chapter-comment-form__title">Add a chapter comment</h4>
+
+                    <form asp-action="AddComment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
+
+                        <textarea name="Body"
+                                  rows="4"
+                                  placeholder="Your overall thoughts on this chapter..."
+                                  class="chapter-comment-form__textarea"></textarea>
+
+                        <div class="chapter-comment-form__actions">
+                            <label class="chapter-comment-form__private">
+                                <input type="checkbox" name="IsPrivate" />
+                                Private - only you and the author can see this
+                            </label>
+
+                            <button type="submit" class="btn">Post Comment</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 </div>
 
 <script>
-(function() {
-    var key = 'scroll_chapter_@Model.Chapter.Id';
-    var saved = localStorage.getItem(key);
-    if (saved) { setTimeout(function() { window.scrollTo(0, parseInt(saved, 10)); }, 100); }
-    var links = document.querySelectorAll('.chapter-sidebar .sidebar-link[href^="#"]');
-    var sections = [];
-    links.forEach(function(link) {
-        var id = link.getAttribute('href').substring(1);
-        var el = document.getElementById(id);
-        if (el) sections.push({ el: el, link: link });
-    });
-    function updateActive() {
-        var scrollY = window.scrollY + 120;
-        var current = null;
-        sections.forEach(function(s) { if (s.el.offsetTop <= scrollY) current = s; });
-        links.forEach(function(l) { l.classList.remove('sidebar-link--active'); });
-        if (current) current.link.classList.add('sidebar-link--active');
-    }
-    var timer;
-    window.addEventListener('scroll', function() {
-        clearTimeout(timer);
-        timer = setTimeout(function() { localStorage.setItem(key, window.scrollY); updateActive(); }, 150);
-    });
-    updateActive();
-})();
+    (function () {
+        var key = 'scroll_chapter_@Model.Chapter.Id';
+        var saved = localStorage.getItem(key);
+        if (saved) {
+            setTimeout(function () { window.scrollTo(0, parseInt(saved, 10)); }, 100);
+        }
+
+        var links = document.querySelectorAll('.chapter-sidebar .chapter-sidebar__link[href^="#"]');
+        var sections = [];
+        links.forEach(function (link) {
+            var id = link.getAttribute('href').substring(1);
+            var el = document.getElementById(id);
+            if (el) {
+                sections.push({ el: el, link: link });
+            }
+        });
+
+        function updateActive() {
+            var scrollY = window.scrollY + 120;
+            var current = null;
+            sections.forEach(function (s) {
+                if (s.el.offsetTop <= scrollY) current = s;
+            });
+
+            links.forEach(function (l) {
+                l.classList.remove('chapter-sidebar__link--active');
+            });
+
+            if (current) {
+                current.link.classList.add('chapter-sidebar__link--active');
+            }
+        }
+
+        var timer;
+        window.addEventListener('scroll', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                localStorage.setItem(key, window.scrollY);
+                updateActive();
+            }, 150);
+        });
+
+        updateActive();
+    })();
+
+    (function () {
+        var toggle = document.getElementById('readerContentsToggle');
+        var panel = document.getElementById('readerContentsPanel');
+
+        if (!toggle || !panel) {
+            return;
+        }
+
+        toggle.addEventListener('click', function () {
+            var isOpen = panel.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        panel.querySelectorAll('a[href^="#"]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                panel.classList.remove('is-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    })();
 </script>
