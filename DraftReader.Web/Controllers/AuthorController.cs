@@ -3,10 +3,10 @@ using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using DraftReader.Domain.Entities;
 using DraftReader.Domain.Interfaces.Services;
 using DraftReader.Web.Models;
-
 namespace DraftReader.Web.Controllers;
 
 #pragma warning disable CS9107
@@ -234,14 +234,41 @@ public class AuthorController(
 
         try
         {
+            DateTime? expiresAtUtc = null;
+
+            if (!model.NeverExpires)
+            {
+                if (!model.ExpiresAt.HasValue)
+                {
+                    ModelState.AddModelError(nameof(model.ExpiresAt), "Please choose an expiry date.");
+                    return View(model);
+                }
+
+                expiresAtUtc = DateTime.SpecifyKind(model.ExpiresAt.Value, DateTimeKind.Local).ToUniversalTime();
+            }
+
             var policy = model.NeverExpires ? ExpiryPolicy.AlwaysOpen : ExpiryPolicy.ExpiresAt;
-            await userService.IssueInvitationAsync(model.Email, policy, model.ExpiresAt, author.Id);
+            await userService.IssueInvitationAsync(model.Email, policy, expiresAtUtc, author.Id);
+
             TempData["Success"] = $"Invitation sent to {model.Email}.";
             return RedirectToAction("Readers");
         }
+        catch (DbUpdateException ex)
+        {
+            logger.LogError(ex, "InviteReader database failure for {Email} by author {AuthorId}", model.Email, author.Id);
+            ModelState.AddModelError(string.Empty, "Unable to send invitation. Please check the details and try again.");
+            return View(model);
+        }
+        catch (InvariantViolationException ex)
+        {
+            logger.LogWarning(ex, "InviteReader validation failure for {Email} by author {AuthorId}", model.Email, author.Id);
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
         catch (Exception ex)
         {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            logger.LogError(ex, "InviteReader unexpected failure for {Email} by author {AuthorId}", model.Email, author.Id);
+            ModelState.AddModelError(string.Empty, "Unable to send invitation due to an unexpected error.");
             return View(model);
         }
     }
@@ -487,5 +514,4 @@ public class AuthorController(
         return result;
     }
 }
-
 

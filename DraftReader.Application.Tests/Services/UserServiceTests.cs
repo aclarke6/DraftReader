@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Moq;
 using DraftReader.Application.Services;
 using DraftReader.Domain.Entities;
@@ -105,7 +105,7 @@ public class UserServiceTests
         _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
         _userRepo.Setup(r => r.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
 
-        await sut.AcceptInvitationAsync(invitation.Token, "Reader Name", "hashedpassword");
+        await sut.AcceptInvitationAsync(invitation.Token, "Reader Name");
 
         Assert.True(user.IsActive);
         Assert.Equal(InvitationStatus.Accepted, invitation.Status);
@@ -120,7 +120,7 @@ public class UserServiceTests
             .ReturnsAsync((Invitation?)null);
 
         await Assert.ThrowsAsync<EntityNotFoundException>(
-            () => sut.AcceptInvitationAsync("badtoken", "Name", "hash"));
+            () => sut.AcceptInvitationAsync("badtoken", "Name"));
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class UserServiceTests
         _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
 
         await Assert.ThrowsAsync<InvariantViolationException>(
-            () => sut.AcceptInvitationAsync(invitation.Token, "Name", "hash"));
+            () => sut.AcceptInvitationAsync(invitation.Token, "Name"));
     }
 
     // ---------------------------------------------------------------------------
@@ -176,4 +176,30 @@ public class UserServiceTests
 
         Assert.True(reader.IsSoftDeleted);
     }
+
+    [Fact]
+    public async Task IssueInvitationAsync_WithExpiresAtPolicy_AndNullExpiry_ThrowsInvariantViolation()
+    {
+        var author = User.Create("author@example.com", "Author", Role.Author);
+        author.Activate();
+        var sut = CreateSut();
+
+        _userRepo.Setup(r => r.GetByIdAsync(author.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        _userRepo.Setup(r => r.EmailExistsAsync("reader@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var ex = await Assert.ThrowsAsync<InvariantViolationException>(() =>
+            sut.IssueInvitationAsync(
+                "reader@example.com",
+                ExpiryPolicy.ExpiresAt,
+                null,
+                author.Id,
+                CancellationToken.None));
+
+        Assert.Equal("I-INVITE-EXPIRY-REQUIRED", ex.InvariantCode);
+    }
 }
+
+

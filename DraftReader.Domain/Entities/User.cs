@@ -1,4 +1,4 @@
-using DraftReader.Domain.Enumerations;
+﻿using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
 
 namespace DraftReader.Domain.Entities;
@@ -80,4 +80,19 @@ public sealed class User
             throw new InvariantViolationException("I-16",
                 $"The Author account may not be {operation}d.");
     }
+
+    public void AcceptInvitation(string displayName)
+    {
+        if (IsSoftDeleted)
+            throw new InvariantViolationException("I-USER-DELETED",
+                "A soft-deleted user cannot accept an invitation.");
+
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new InvariantViolationException("I-DISPLAYNAME",
+                "User display name must not be null or whitespace.");
+
+        DisplayName = displayName.Trim();
+        Activate();
+    }
 }
+

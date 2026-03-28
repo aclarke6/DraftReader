@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DraftReader.Domain.Entities;
 using DraftReader.Domain.Enumerations;
@@ -14,8 +14,8 @@ public class ReaderController(
     ISectionRepository sectionRepo,
     ICommentService commentService,
     IReadingProgressService progressService,
-    IUserRepository userRepo,
-    ILogger<ReaderController> logger) : BaseController(userRepo)
+    IUserRepository userRepository,
+    ILogger<ReaderController> logger) : BaseController(userRepository)
 {
     public async Task<IActionResult> Dashboard()
     {
@@ -109,7 +109,7 @@ public class ReaderController(
         var nameMap = new Dictionary<Guid, string>();
         foreach (var uid in allComments.Select(c => c.AuthorId).Distinct())
         {
-            var u = await userRepo.GetByIdAsync(uid);
+            var u = await userRepository.GetByIdAsync(uid);
             nameMap[uid] = u?.DisplayName ?? "Unknown";
         }
 
@@ -252,3 +252,5 @@ public class ReaderController(
         return groups;
     }
 }
+
+

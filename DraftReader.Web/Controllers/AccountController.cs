@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using DraftReader.Domain.Interfaces.Repositories;
@@ -123,15 +123,7 @@ public class AccountController(
 
         try
         {
-            // Activate the domain user
-            await userService.AcceptInvitationAsync(
-                model.Token, model.DisplayName, model.Password);
-
-            // Create the Identity user so they can log in
-            var domainUser = await userRepo.GetByEmailAsync(model.Email);
-            if (domainUser is null)
-                throw new InvalidOperationException("User not found after activation.");
-
+            // Ensure Identity user exists FIRST
             var existingIdentity = await userManager.FindByEmailAsync(model.Email);
             if (existingIdentity is null)
             {
@@ -150,6 +142,10 @@ public class AccountController(
                     return View(model);
                 }
             }
+
+            // Now activate the domain user + invitation
+            await userService.AcceptInvitationAsync(
+                model.Token, model.DisplayName);
 
             // Sign them in immediately
             await signInManager.PasswordSignInAsync(
@@ -323,6 +319,7 @@ public class AccountController(
         return RedirectToAction("Dashboard", "Reader");
     }
 }
+
 
 
 

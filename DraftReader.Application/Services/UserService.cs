@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using DraftReader.Domain.Entities;
 using DraftReader.Domain.Enumerations;
 using DraftReader.Domain.Exceptions;
@@ -31,9 +31,17 @@ public class UserService(
 
         var user = User.Create(email, "Pending", Role.BetaReader);
 
+        if (expiryPolicy == ExpiryPolicy.ExpiresAt && !expiresAt.HasValue)
+            throw new InvariantViolationException("I-INVITE-EXPIRY-REQUIRED",
+                "An expiry date is required when the invitation is set to expire.");
+
         var invitation = expiryPolicy == ExpiryPolicy.AlwaysOpen
             ? Invitation.CreateAlwaysOpen(user.Id)
-            : Invitation.CreateWithExpiry(user.Id, expiresAt!.Value);
+            : Invitation.CreateWithExpiry(
+                user.Id,
+                expiresAt ?? throw new InvariantViolationException(
+                    "I-INVITE-EXPIRY-REQUIRED",
+                    "An expiry date is required when the invitation is set to expire."));
 
         var prefs = UserNotificationPreferences.CreateForBetaReader(user.Id);
 
@@ -46,7 +54,8 @@ public class UserService(
         var inviteUrl = $"{baseUrl}/Account/AcceptInvitation?token={invitation.Token}";
 
         await emailSender.SendAsync(
-            email, "Invited Reader",
+            email,
+            "Invited Reader",
             "You have been invited to review a manuscript on DraftReader",
             $"Click the link to accept your invitation: <a href=\"{inviteUrl}\">{inviteUrl}</a>",
             ct);
@@ -55,7 +64,8 @@ public class UserService(
     }
 
     public async Task<User> AcceptInvitationAsync(
-        string token, string displayName, string passwordHash,
+        string token,
+        string displayName,
         CancellationToken ct = default)
     {
         var invitation = await invitationRepo.GetByTokenAsync(token, ct)
@@ -68,8 +78,8 @@ public class UserService(
         var user = await userRepo.GetByIdAsync(invitation.UserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), invitation.UserId);
 
+        user.AcceptInvitation(displayName);
         invitation.Accept();
-        user.Activate();
 
         await unitOfWork.SaveChangesAsync(ct);
         return user;
@@ -136,4 +146,3 @@ public class UserService(
             throw new UnauthorisedOperationException("Only the Author may perform this action.");
     }
 }
-
