@@ -164,9 +164,9 @@
 
             @foreach (var item in Model.Scenes)
             {
-                var roots = item.Comments.Where(c => c.ParentCommentId == null).ToList();
-                var replies = item.Comments.Where(c => c.ParentCommentId != null)
-                    .GroupBy(c => c.ParentCommentId!.Value)
+                var roots = item.Comments.Where(c => c.Comment.ParentCommentId == null).ToList();
+                var replies = item.Comments.Where(c => c.Comment.ParentCommentId != null)
+                    .GroupBy(c => c.Comment.ParentCommentId!.Value)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
                 <div class="scene-block" id="scene-@item.Scene.Id">
@@ -185,60 +185,102 @@
 
                         @foreach (var c in roots)
                         {
-                            var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
-
-                            <div class="comment-box @(c.Visibility == Visibility.Private ? "comment-box--private" : "")">
-                                @if (c.IsSoftDeleted)
+                            <div class="comment-box @(c.Comment.Visibility == Visibility.Private ? "comment-box--private" : "")">
+                                @if (c.Comment.IsSoftDeleted)
                                 {
                                     <p class="comment-box__removed">Removed.</p>
                                 }
                                 else
                                 {
                                     <div class="comment-box__meta">
-                                        <strong>@commentName</strong>
-                                        <span class="comment-box__date">@c.CreatedAt.ToString("dd MMM")</span>
-                                        @if (c.Visibility == Visibility.Private)
+                                        <strong>@c.AuthorDisplayName</strong>
+                                        <span class="comment-box__date">@c.Comment.CreatedAt.ToString("dd MMM")</span>
+                                        @if (c.Comment.Visibility == Visibility.Private)
                                         {
                                             <span class="comment-box__private">[Private]</span>
                                         }
+
+                                        @if (c.CanDelete || c.UseModeratorDelete)
+                                        {
+                                            <span class="comment-box__actions">
+                                                <form asp-action="@(c.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
+                                                      method="post"
+                                                      class="comment-delete-form"
+                                                      data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
+                                                      data-has-children="@(c.HasChildren ? "true" : "false")">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                                    <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                                    <button type="submit"
+                                                            class="comment-action-btn"
+                                                            title="@(c.UseModeratorDelete ? "Moderator delete" : "Delete")"
+                                                            aria-label="@(c.UseModeratorDelete ? "Moderator delete comment" : "Delete comment")">
+                                                        &#128465;
+                                                    </button>
+                                                </form>
+                                            </span>
+                                        }
                                     </div>
 
-                                    <p class="comment-box__body">@c.Body</p>
+                                    <p class="comment-box__body">@c.Comment.Body</p>
 
                                     <form asp-action="AddComment" method="post" class="comment-box__reply-form">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                        <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                         <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
                                         <button type="submit" class="btn btn-xs">Reply</button>
                                     </form>
                                 }
                             </div>
 
-                            @if (replies.TryGetValue(c.Id, out var childReplies))
+                            @if (replies.TryGetValue(c.Comment.Id, out var childReplies))
                             {
                                 @foreach (var r in childReplies)
                                 {
-                                    var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
-
-                                    <div class="comment-box comment-box--reply @(r.Visibility == Visibility.Private ? "comment-box--private" : "")">
-                                        @if (r.IsSoftDeleted)
+                                    <div class="comment-box comment-box--reply @(r.Comment.Visibility == Visibility.Private ? "comment-box--private" : "")">
+                                        @if (r.Comment.IsSoftDeleted)
                                         {
                                             <p class="comment-box__removed">Removed.</p>
                                         }
                                         else
                                         {
                                             <div class="comment-box__meta">
-                                                <strong>@replyName</strong>
-                                                <span class="comment-box__date">@r.CreatedAt.ToString("dd MMM")</span>
+                                                <strong>@r.AuthorDisplayName</strong>
+                                                <span class="comment-box__date">@r.Comment.CreatedAt.ToString("dd MMM")</span>
+                                                @if (r.Comment.Visibility == Visibility.Private)
+                                                {
+                                                    <span class="comment-box__private">[Private]</span>
+                                                }
+
+                                                @if (r.CanDelete || r.UseModeratorDelete)
+                                                {
+                                                    <span class="comment-box__actions">
+                                                        <form asp-action="@(r.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
+                                                              method="post"
+                                                              class="comment-delete-form"
+                                                              data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
+                                                              data-has-children="@(r.HasChildren ? "true" : "false")">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="commentId" value="@r.Comment.Id" />
+                                                            <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                                            <button type="submit"
+                                                                    class="comment-action-btn"
+                                                                    title="@(r.UseModeratorDelete ? "Moderator delete" : "Delete")"
+                                                                    aria-label="@(r.UseModeratorDelete ? "Moderator delete reply" : "Delete reply")">
+                                                                &#128465;
+                                                            </button>
+                                                        </form>
+                                                    </span>
+                                                }
                                             </div>
 
-                                            <p class="comment-box__body">@r.Body</p>
+                                            <p class="comment-box__body">@r.Comment.Body</p>
 
                                             <form asp-action="AddComment" method="post" class="comment-box__reply-form">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                                <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                                <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                                 <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
                                                 <button type="submit" class="btn btn-xs">Reply</button>
                                             </form>
@@ -272,68 +314,110 @@
                 <p class="chapter-comments__intro">Use chapter comments for overall impressions of the chapter as a whole.</p>
 
                 @{
-                    var chapterRoots = Model.ChapterComments.Where(c => c.ParentCommentId == null).ToList();
-                    var chapterReplies = Model.ChapterComments.Where(c => c.ParentCommentId != null)
-                        .GroupBy(c => c.ParentCommentId!.Value)
+                    var chapterRoots = Model.ChapterComments.Where(c => c.Comment.ParentCommentId == null).ToList();
+                    var chapterReplies = Model.ChapterComments.Where(c => c.Comment.ParentCommentId != null)
+                        .GroupBy(c => c.Comment.ParentCommentId!.Value)
                         .ToDictionary(g => g.Key, g => g.ToList());
                 }
 
                 @foreach (var c in chapterRoots)
                 {
-                    var commentName = Model.CommentAuthorNames.TryGetValue(c.AuthorId, out var cn) ? cn : "Unknown";
-
-                    <div class="chapter-comment @(c.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
-                        @if (c.IsSoftDeleted)
+                    <div class="chapter-comment @(c.Comment.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
+                        @if (c.Comment.IsSoftDeleted)
                         {
                             <p class="chapter-comment__removed">This comment has been removed.</p>
                         }
                         else
                         {
                             <div class="chapter-comment__meta">
-                                <strong>@commentName</strong>
-                                <span class="chapter-comment__date">@c.CreatedAt.ToString("dd MMM yyyy")</span>
-                                @if (c.Visibility == Visibility.Private)
+                                <strong>@c.AuthorDisplayName</strong>
+                                <span class="chapter-comment__date">@c.Comment.CreatedAt.ToString("dd MMM yyyy")</span>
+                                @if (c.Comment.Visibility == Visibility.Private)
                                 {
                                     <span class="chapter-comment__private">[Private]</span>
                                 }
+
+                                @if (c.CanDelete || c.UseModeratorDelete)
+                                {
+                                    <span class="chapter-comment__actions">
+                                        <form asp-action="@(c.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
+                                              method="post"
+                                              class="comment-delete-form"
+                                              data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
+                                              data-has-children="@(c.HasChildren ? "true" : "false")">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                            <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                            <button type="submit"
+                                                    class="comment-action-btn"
+                                                    title="@(c.UseModeratorDelete ? "Moderator delete" : "Delete")"
+                                                    aria-label="@(c.UseModeratorDelete ? "Moderator delete comment" : "Delete comment")">
+                                                &#128465;
+                                            </button>
+                                        </form>
+                                    </span>
+                                }
                             </div>
 
-                            <p class="chapter-comment__body">@c.Body</p>
+                            <p class="chapter-comment__body">@c.Comment.Body</p>
 
                             <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                                <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                 <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
                                 <button type="submit" class="btn btn-sm">Reply</button>
                             </form>
                         }
                     </div>
 
-                    @if (chapterReplies.TryGetValue(c.Id, out var childReplies))
+                    @if (chapterReplies.TryGetValue(c.Comment.Id, out var childReplies))
                     {
                         @foreach (var r in childReplies)
                         {
-                            var replyName = Model.CommentAuthorNames.TryGetValue(r.AuthorId, out var rn) ? rn : "Unknown";
-
-                            <div class="chapter-comment chapter-comment--reply @(r.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
-                                @if (r.IsSoftDeleted)
+                            <div class="chapter-comment chapter-comment--reply @(r.Comment.Visibility == Visibility.Private ? "chapter-comment--private" : "")">
+                                @if (r.Comment.IsSoftDeleted)
                                 {
                                     <p class="chapter-comment__removed">This comment has been removed.</p>
                                 }
                                 else
                                 {
                                     <div class="chapter-comment__meta">
-                                        <strong>@replyName</strong>
-                                        <span class="chapter-comment__date">@r.CreatedAt.ToString("dd MMM yyyy")</span>
+                                        <strong>@r.AuthorDisplayName</strong>
+                                        <span class="chapter-comment__date">@r.Comment.CreatedAt.ToString("dd MMM yyyy")</span>
+                                        @if (r.Comment.Visibility == Visibility.Private)
+                                        {
+                                            <span class="chapter-comment__private">[Private]</span>
+                                        }
+
+                                        @if (r.CanDelete || r.UseModeratorDelete)
+                                        {
+                                            <span class="chapter-comment__actions">
+                                                <form asp-action="@(r.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
+                                                      method="post"
+                                                      class="comment-delete-form"
+                                                      data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
+                                                      data-has-children="@(r.HasChildren ? "true" : "false")">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="commentId" value="@r.Comment.Id" />
+                                                    <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                                    <button type="submit"
+                                                            class="comment-action-btn"
+                                                            title="@(r.UseModeratorDelete ? "Moderator delete" : "Delete")"
+                                                            aria-label="@(r.UseModeratorDelete ? "Moderator delete reply" : "Delete reply")">
+                                                        &#128465;
+                                                    </button>
+                                                </form>
+                                            </span>
+                                        }
                                     </div>
 
-                                    <p class="chapter-comment__body">@r.Body</p>
+                                    <p class="chapter-comment__body">@r.Comment.Body</p>
 
                                     <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                                        <input type="hidden" name="ParentCommentId" value="@c.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                         <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
                                         <button type="submit" class="btn btn-sm">Reply</button>
                                     </form>
@@ -433,6 +517,30 @@
             link.addEventListener('click', function () {
                 panel.classList.remove('is-open');
                 toggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    })();
+
+    (function () {
+        var deleteForms = document.querySelectorAll('.comment-delete-form');
+
+        deleteForms.forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                var mode = form.getAttribute('data-delete-mode');
+                var hasChildren = form.getAttribute('data-has-children') === 'true';
+                var message = '';
+
+                if (mode === 'moderator') {
+                    message = hasChildren
+                        ? 'Moderator Delete: this will delete this comment and all replies beneath it. Continue?'
+                        : 'Moderator Delete: this will delete this comment. Continue?';
+                } else {
+                    message = 'Delete this comment?';
+                }
+
+                if (!window.confirm(message)) {
+                    event.preventDefault();
+                }
             });
         });
     })();

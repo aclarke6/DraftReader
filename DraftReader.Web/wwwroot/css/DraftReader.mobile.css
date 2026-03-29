@@ -178,9 +178,25 @@
         width: 100%;
         margin-bottom: var(--space-2);
     }
-
     .chapter-comment--reply {
         margin-left: var(--space-3);
+    }
+
+    .comment-box__meta,
+    .chapter-comment__meta {
+        align-items: flex-start;
+    }
+
+    .comment-box__actions,
+    .chapter-comment__actions {
+        margin-left: auto;
+        flex-shrink: 0;
+        align-self: flex-start;
+    }
+
+    .comment-action-btn {
+        min-width: 32px;
+        min-height: 32px;
     }
 
     .stats-row {
@@ -331,3 +347,4 @@
         font-size: var(--text-xs);
     }
 }
+

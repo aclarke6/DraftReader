@@ -273,9 +273,19 @@
 }
 
 .comment-box__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
     color: var(--color-text-muted);
     margin-bottom: var(--space-1);
     font-size: var(--text-xs);
+}
+
+.comment-box__actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
 }
 
 .comment-box__date {
@@ -332,6 +342,37 @@
     font-weight: var(--font-normal);
 }
 
+.comment-delete-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.comment-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    line-height: 1;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition), background-color var(--transition);
+}
+
+.comment-action-btn:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+.comment-action-btn:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
 /* --------------------------------------------------------------------------
    6. Chapter Comments and Forms
    -------------------------------------------------------------------------- */
@@ -361,6 +402,31 @@
 .chapter-comment--reply {
     border-left-color: var(--color-border-strong);
     margin-left: var(--space-5);
+}
+
+.chapter-comment__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xs);
+}
+
+.chapter-comment__date {
+    margin-left: var(--space-2);
+}
+
+.chapter-comment__private {
+    color: var(--color-private);
+    margin-left: var(--space-2);
+}
+
+.chapter-comment__actions {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
 }
 
 .chapter-comment__reply-form {
@@ -569,3 +635,4 @@
         color: var(--color-accent);
         text-decoration: underline;
     }
+
