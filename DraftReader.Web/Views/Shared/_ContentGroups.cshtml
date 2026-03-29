@@ -2,23 +2,29 @@
 
 @foreach (var group in Model)
 {
-    <div style="margin-top: @(group.Depth == 0 ? "20px" : "12px");
-                margin-left: @(group.Depth * 16)px;">
+    var topSpace = group.Depth == 0 ? "20px" : "12px";
+    var indent = $"{group.Depth * 16}px";
+    var headingClass = group.Depth == 0
+        ? "content-group__heading content-group__heading--root"
+        : "content-group__heading content-group__heading--nested";
+
+    <div class="content-group"
+         style="--content-group-margin-top:@topSpace; --content-group-indent:@indent;">
 
         @if (!string.IsNullOrEmpty(group.Heading))
         {
-            <h4 style="font-size:@(group.Depth == 0 ? "1.05em" : "0.95em"); color:#444;
-                       border-bottom:1px solid #eee; padding-bottom:4px; margin:0 0 10px 0;">
+            <h4 class="@headingClass">
                 @group.Heading
             </h4>
         }
 
         @if (group.ChapterSection is not null)
         {
-            <div style="margin-bottom:10px; padding-left:12px;">
-                <a asp-controller="Reader" asp-action="Read"
+            <div class="content-group__chapter">
+                <a asp-controller="Reader"
+                   asp-action="Read"
                    asp-route-id="@group.ChapterSection.Id"
-                   style="font-size:1em;">@group.ChapterSection.Title</a>
+                   class="content-group__chapter-link">@group.ChapterSection.Title</a>
             </div>
         }
 

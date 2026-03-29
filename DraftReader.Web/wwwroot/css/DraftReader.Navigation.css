@@ -164,3 +164,35 @@
     color: var(--color-border-strong);
     font-size: var(--text-xs);
 }
+
+/* --------------------------------------------------------------------------
+   3. Content Group Navigation
+   -------------------------------------------------------------------------- */
+.content-group {
+    margin-top: var(--content-group-margin-top, 12px);
+    margin-left: var(--content-group-indent, 0);
+}
+
+.content-group__heading {
+    color: #444;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
+    margin: 0 0 10px 0;
+}
+
+.content-group__heading--root {
+    font-size: 1.05em;
+}
+
+.content-group__heading--nested {
+    font-size: 0.95em;
+}
+
+.content-group__chapter {
+    margin-bottom: 10px;
+    padding-left: 12px;
+}
+
+.content-group__chapter-link {
+    font-size: 1em;
+}
