@@ -10,5 +10,6 @@ public interface ICommentService
     Task EditCommentAsync(Guid commentId, Guid userId, string newBody, CancellationToken ct = default);
     Task SetCommentStatusAsync(Guid commentId, Guid authorUserId, CommentStatus status, CancellationToken ct = default);
     Task SoftDeleteCommentAsync(Guid commentId, Guid actingUserId, CancellationToken ct = default);
+    Task ModerateDeleteCommentAsync(Guid commentId, Guid moderatorUserId, CancellationToken ct = default);
     Task<IReadOnlyList<Comment>> GetThreadsForSectionAsync(Guid sectionId, Guid requestingUserId, CancellationToken ct = default);
 }

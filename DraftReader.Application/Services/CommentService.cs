@@ -96,10 +96,58 @@ public class CommentService(
             ?? throw new EntityNotFoundException(nameof(Comment), commentId);
         var user = await userRepo.GetByIdAsync(actingUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), actingUserId);
-        if (comment.AuthorId != actingUserId && user.Role != Role.Author)
+
+        // Authorisation and deletion rule:
+        // Deletion is strictly ownership-based.
+        // Role.Author does NOT grant permission to delete other users' comments.
+        // A comment or reply may be deleted only when it has no child replies.
+        // Soft-deleted children still count as children for delete eligibility.
+        if (comment.AuthorId != actingUserId)
             throw new UnauthorisedOperationException(
-                "Only the comment author or the platform author may delete a comment.");
+                "Only the comment author may delete a comment.");
+
+        var children = await commentRepo.GetRepliesByParentIdAsync(comment.Id, ct);
+        if (children.Count > 0)
+            throw new InvariantViolationException(
+                "I-COMMENT-HAS-CHILDREN",
+                "A comment with child replies may not be deleted.");
+
         comment.SoftDelete();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Moderator delete is a distinct operation from normal user delete.
+    /// It will allow an Author acting as Moderator to delete any comment,
+    /// including a comment with descendants, and will cascade through the subtree.
+    /// </summary>
+    /// <param name="commentId"></param>
+    /// <param name="moderatorUserId"></param>
+    /// <param name="ct"></param>
+    /// <returns></returns>
+    /// <exception cref="EntityNotFoundException">
+    /// Thrown if the comment or user is not found.
+    /// </exception>
+    /// <exception cref="UnauthorisedOperationException">
+    /// Thrown if the user is not an Author.
+    /// </exception>
+    public async Task ModerateDeleteCommentAsync(
+        Guid commentId, Guid moderatorUserId, CancellationToken ct = default)
+    {
+        var comment = await commentRepo.GetByIdAsync(commentId, ct)
+            ?? throw new EntityNotFoundException(nameof(Comment), commentId);
+
+        var user = await userRepo.GetByIdAsync(moderatorUserId, ct)
+            ?? throw new EntityNotFoundException(nameof(User), moderatorUserId);
+
+        // Moderator delete rule:
+        // Only the Author role may perform a moderator delete.
+        // Moderator delete may target any comment or reply and cascades through all descendants.
+        if (user.Role != Role.Author)
+            throw new UnauthorisedOperationException(
+                "Only a moderator may perform a moderator delete.");
+
+        await SoftDeleteSubTreeAsync(comment, ct);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -114,5 +162,22 @@ public class CommentService(
             ?? throw new EntityNotFoundException(nameof(User), requestingUserId);
         var all = await commentRepo.GetAllBySectionIdAsync(sectionId, ct);
         return all.Where(c => c.IsVisibleTo(requestingUserId, user.Role)).ToList();
+    }
+
+    /// <summary>
+    /// Cascade soft delete helper for moderator delete.
+    /// This will soft delete the current comment and then recurse through all descendants.
+    /// </summary>
+    private async Task SoftDeleteSubTreeAsync(Comment comment, CancellationToken ct)
+    {
+        // Idempotent: safe to call even if already soft deleted
+        comment.SoftDelete();
+
+        var children = await commentRepo.GetRepliesByParentIdAsync(comment.Id, ct);
+
+        foreach (var child in children)
+        {
+            await SoftDeleteSubTreeAsync(child, ct);
+        }
     }
 }

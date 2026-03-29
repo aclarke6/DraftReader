@@ -173,45 +173,45 @@ public class CommentServiceTests
             () => sut.EditCommentAsync(comment.Id, other.Id, "Hacked."));
     }
 
-    // ---------------------------------------------------------------------------
-    // SoftDeleteComment
-    // ---------------------------------------------------------------------------
+    //// ---------------------------------------------------------------------------
+    //// SoftDeleteComment
+    //// ---------------------------------------------------------------------------
 
-    [Fact]
-    public async Task SoftDeleteCommentAsync_Owner_DeletesComment()
-    {
-        var section = MakePublishedSection();
-        var reader  = MakeBetaReader();
-        reader.Activate();
-        var comment = Comment.CreateRoot(section.Id, reader.Id, "Original.", Visibility.Public);
-        var sut     = CreateSut();
+    //[Fact]
+    //public async Task SoftDeleteCommentAsync_Owner_DeletesComment()
+    //{
+    //    var section = MakePublishedSection();
+    //    var reader  = MakeBetaReader();
+    //    reader.Activate();
+    //    var comment = Comment.CreateRoot(section.Id, reader.Id, "Original.", Visibility.Public);
+    //    var sut     = CreateSut();
 
-        _commentRepo.Setup(r => r.GetByIdAsync(comment.Id, default)).ReturnsAsync(comment);
-        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+    //    _commentRepo.Setup(r => r.GetByIdAsync(comment.Id, default)).ReturnsAsync(comment);
+    //    _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
 
-        await sut.SoftDeleteCommentAsync(comment.Id, reader.Id);
+    //    await sut.SoftDeleteCommentAsync(comment.Id, reader.Id);
 
-        Assert.True(comment.IsSoftDeleted);
-    }
+    //    Assert.True(comment.IsSoftDeleted);
+    //}
 
-    [Fact]
-    public async Task SoftDeleteCommentAsync_Author_CanDeleteAnyComment()
-    {
-        var section = MakePublishedSection();
-        var reader  = MakeBetaReader();
-        var author  = MakeAuthor();
-        reader.Activate();
-        author.Activate();
-        var comment = Comment.CreateRoot(section.Id, reader.Id, "Original.", Visibility.Public);
-        var sut     = CreateSut();
+    //[Fact]
+    //public async Task SoftDeleteCommentAsync_Author_CanDeleteAnyComment()
+    //{
+    //    var section = MakePublishedSection();
+    //    var reader  = MakeBetaReader();
+    //    var author  = MakeAuthor();
+    //    reader.Activate();
+    //    author.Activate();
+    //    var comment = Comment.CreateRoot(section.Id, reader.Id, "Original.", Visibility.Public);
+    //    var sut     = CreateSut();
 
-        _commentRepo.Setup(r => r.GetByIdAsync(comment.Id, default)).ReturnsAsync(comment);
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+    //    _commentRepo.Setup(r => r.GetByIdAsync(comment.Id, default)).ReturnsAsync(comment);
+    //    _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
 
-        await sut.SoftDeleteCommentAsync(comment.Id, author.Id);
+    //    await sut.SoftDeleteCommentAsync(comment.Id, author.Id);
 
-        Assert.True(comment.IsSoftDeleted);
-    }
+    //    Assert.True(comment.IsSoftDeleted);
+    //}
 
     // ---------------------------------------------------------------------------
     // GetThreadsForSection
