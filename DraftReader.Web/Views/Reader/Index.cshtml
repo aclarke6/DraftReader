@@ -9,12 +9,12 @@
 }
 else
 {
-    <ul style="list-style: none; padding: 0; margin-top: 24px;">
+    <ul class="section-list">
         @foreach (var s in Model.TopLevelSections)
         {
-            <li style="margin-bottom: 16px;">
+            <li class="section-list__item">
                 <a asp-action="Browse" asp-route-id="@s.Id"
-                   style="font-size: 1.2em; font-weight: bold;">@s.Title</a>
+                   class="section-list__link">@s.Title</a>
             </li>
         }
     </ul>
