@@ -1,10 +1,10 @@
 @model SectionContentsViewModel
 @{ ViewData["Title"] = Model.TopLevelSection.Title; }
 
-<p style="font-size:0.85em; color:#888; margin-bottom:4px;">
+<p class="section-breadcrumb">
     <a asp-action="Index">@Model.ProjectName</a>
-    <span style="margin:0 6px;">&rsaquo;</span>
+    <span class="section-breadcrumb__sep">&rsaquo;</span>
 </p>
-<h2 style="margin-top:0;">@Model.TopLevelSection.Title</h2>
+<h2 class="section-title">@Model.TopLevelSection.Title</h2>
 
 @await Html.PartialAsync("_ContentGroups", Model.Groups)
