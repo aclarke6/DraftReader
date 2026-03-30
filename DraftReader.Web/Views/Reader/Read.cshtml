@@ -1,4 +1,4 @@
-@model ChapterReadViewModel
+﻿@model ChapterReadViewModel
 @{
     ViewData["Title"] = Model.Chapter.Title;
 
@@ -41,7 +41,7 @@
             }
             <a href="#chapter-comments"
                    class="reader__contents-link reader__contents-link--muted">
-                &#9998; Chapter Comments
+                @Icons.Edit() Chapter Comments
             </a>
         </div>
 
@@ -109,7 +109,7 @@
 
             <a href="#chapter-comments"
                    class="chapter-sidebar__link chapter-sidebar__link--muted chapter-sidebar__link--comments">
-                &#9998; Chapter Comments
+                @Icons.Edit() Chapter Comments
             </a>
 
             @if (Model.BookContents is not null && Model.BookContents.Groups.Any())
@@ -218,7 +218,7 @@
                                                    class="comment-action-btn"
                                                    title="Edit"
                                                    aria-label="Edit comment">
-                                                Edit
+                                                @Icons.Edit()
                                             </a>
                                         }
 
@@ -233,10 +233,10 @@
                                                 <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                                 <button type="submit"
-                                                        class="comment-action-btn"
+                                                        class="comment-action-btn comment-action-btn--danger"
                                                         title="@(c.UseModeratorDelete ? "Moderator delete" : "Delete")"
                                                         aria-label="@(c.UseModeratorDelete ? "Moderator delete comment" : "Delete comment")">
-                                                    &#128465;
+                                                    @Icons.Delete()
                                                 </button>
                                             </form>
                                         }
@@ -250,11 +250,19 @@
                                         <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                         <input type="text" name="body" value="@c.Comment.Body" class="comment-box__reply-input" />
-                                        <button type="submit" class="btn btn-xs">Save</button>
+                                        <button type="submit"
+                                                class="comment-action-btn comment-action-btn--primary"
+                                                title="Save"
+                                                aria-label="Save comment">
+                                            @Icons.Save()
+                                        </button>
+
                                         <a asp-action="Read"
                                                asp-route-id="@Model.Chapter.Id"
-                                               class="btn btn-xs">
-                                            Cancel
+                                               class="comment-action-btn"
+                                               title="Cancel"
+                                               aria-label="Cancel edit">
+                                            @Icons.Cancel()
                                         </a>
                                     </form>
                                 }
@@ -267,7 +275,12 @@
                                         <input type="hidden" name="SectionId" value="@item.Scene.Id" />
                                         <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                         <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
-                                        <button type="submit" class="btn btn-xs">Reply</button>
+                                        <button type="submit"
+                                                class="comment-action-btn comment-action-btn--reply"
+                                                title="Reply"
+                                                aria-label="Reply to comment">
+                                            @Icons.Reply()
+                                        </button>
                                     </form>
                                 }
                             </div>
@@ -295,7 +308,7 @@
                                                            class="comment-action-btn"
                                                            title="Edit"
                                                            aria-label="Edit reply">
-                                                        Edit
+                                                        @Icons.Edit()
                                                     </a>
                                                 }
 
@@ -310,10 +323,10 @@
                                                         <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                                         <button type="submit"
-                                                                class="comment-action-btn"
+                                                                class="comment-action-btn comment-action-btn--danger"
                                                                 title="@(r.UseModeratorDelete ? "Moderator delete" : "Delete")"
                                                                 aria-label="@(r.UseModeratorDelete ? "Moderator delete reply" : "Delete reply")">
-                                                            &#128465;
+                                                            @Icons.Delete()
                                                         </button>
                                                     </form>
                                                 }
@@ -327,11 +340,19 @@
                                                 <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                                 <input type="text" name="body" value="@r.Comment.Body" class="comment-box__reply-input" />
-                                                <button type="submit" class="btn btn-xs">Save</button>
+                                                <button type="submit"
+                                                        class="comment-action-btn comment-action-btn--primary"
+                                                        title="Save"
+                                                        aria-label="Save comment">
+                                                    @Icons.Save()
+                                                </button>
+
                                                 <a asp-action="Read"
                                                        asp-route-id="@Model.Chapter.Id"
-                                                       class="btn btn-xs">
-                                                    Cancel
+                                                       class="comment-action-btn"
+                                                       title="Cancel"
+                                                       aria-label="Cancel edit">
+                                                    @Icons.Cancel()
                                                 </a>
                                             </form>
                                         }
@@ -344,7 +365,12 @@
                                                 <input type="hidden" name="SectionId" value="@item.Scene.Id" />
                                                 <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                                 <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
-                                                <button type="submit" class="btn btn-xs">Reply</button>
+                                                <button type="submit"
+                                                        class="comment-action-btn comment-action-btn--reply"
+                                                        title="Reply"
+                                                        aria-label="Reply to comment">
+                                                    @Icons.Reply()
+                                                </button>
                                             </form>
                                         }
                                         
@@ -364,7 +390,12 @@
                                         <input type="checkbox" name="IsPrivate" />
                                         Private
                                     </label>
-                                    <button type="submit" class="btn btn-xs">Post</button>
+                                    <button type="submit"
+                                            class="comment-action-btn comment-action-btn--primary"
+                                            title="Post comment"
+                                            aria-label="Post comment">
+                                        @Icons.Send()
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -403,7 +434,7 @@
                                            class="comment-action-btn"
                                            title="Edit"
                                            aria-label="Edit chapter comment">
-                                        Edit
+                                        @Icons.Edit()
                                     </a>
                                 }
 
@@ -418,10 +449,10 @@
                                         <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                         <button type="submit"
-                                                class="comment-action-btn"
+                                                class="comment-action-btn comment-action-btn--danger"
                                                 title="@(c.UseModeratorDelete ? "Moderator delete" : "Delete")"
                                                 aria-label="@(c.UseModeratorDelete ? "Moderator delete comment" : "Delete comment")">
-                                            &#128465;
+                                            @Icons.Delete()
                                         </button>
                                     </form>
                                 }
@@ -435,11 +466,19 @@
                                 <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                 <input type="text" name="body" value="@c.Comment.Body" class="chapter-comment__reply-input" />
-                                <button type="submit" class="btn btn-sm">Save</button>
+                                <button type="submit"
+                                        class="comment-action-btn comment-action-btn--primary"
+                                        title="Save"
+                                        aria-label="Save comment">
+                                    @Icons.Save()
+                                </button>
+
                                 <a asp-action="Read"
                                        asp-route-id="@Model.Chapter.Id"
-                                       class="btn btn-sm">
-                                    Cancel
+                                       class="comment-action-btn"
+                                       title="Cancel"
+                                       aria-label="Cancel edit">
+                                    @Icons.Cancel()
                                 </a>
                             </form>
                         }
@@ -452,7 +491,12 @@
                                 <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
                                 <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                 <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
-                                <button type="submit" class="btn btn-sm">Reply</button>
+                                <button type="submit"
+                                        class="comment-action-btn comment-action-btn--reply"
+                                        title="Reply"
+                                        aria-label="Reply to comment">
+                                    @Icons.Reply()
+                                </button>
                             </form>
                         }
                     </div>
@@ -479,7 +523,7 @@
                                                    class="comment-action-btn"
                                                    title="Edit"
                                                    aria-label="Edit chapter reply">
-                                                Edit
+                                                @Icons.Edit()
                                             </a>
                                         }
 
@@ -494,10 +538,10 @@
                                                 <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                                 <button type="submit"
-                                                        class="comment-action-btn"
+                                                        class="comment-action-btn comment-action-btn--danger"
                                                         title="@(r.UseModeratorDelete ? "Moderator delete" : "Delete")"
                                                         aria-label="@(r.UseModeratorDelete ? "Moderator delete reply" : "Delete reply")">
-                                                    &#128465;
+                                                    @Icons.Delete()
                                                 </button>
                                             </form>
                                         }
@@ -511,11 +555,19 @@
                                         <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
                                         <input type="text" name="body" value="@r.Comment.Body" class="chapter-comment__reply-input" />
-                                        <button type="submit" class="btn btn-sm">Save</button>
+                                        <button type="submit"
+                                                class="comment-action-btn comment-action-btn--primary"
+                                                title="Save"
+                                                aria-label="Save comment">
+                                            @Icons.Save()
+                                        </button>
+
                                         <a asp-action="Read"
                                                asp-route-id="@Model.Chapter.Id"
-                                               class="btn btn-sm">
-                                            Cancel
+                                               class="comment-action-btn"
+                                               title="Cancel"
+                                               aria-label="Cancel edit">
+                                            @Icons.Cancel()
                                         </a>
                                     </form>
                                 }
@@ -528,7 +580,12 @@
                                         <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
                                         <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
                                         <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
-                                        <button type="submit" class="btn btn-sm">Reply</button>
+                                        <button type="submit"
+                                                class="comment-action-btn comment-action-btn--reply"
+                                                title="Reply"
+                                                aria-label="Reply to comment">
+                                            @Icons.Reply()
+                                        </button>
                                     </form>
                                 }
                             </div>
@@ -554,7 +611,12 @@
                                 Private - only you and the author can see this
                             </label>
 
-                            <button type="submit" class="btn">Post Comment</button>
+                            <button type="submit"
+                                    class="comment-action-btn comment-action-btn--primary"
+                                    title="Post comment"
+                                    aria-label="Post comment">
+                                @Icons.Send()
+                            </button>
                         </div>
                     </form>
                 </div>

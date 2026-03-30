@@ -166,18 +166,34 @@
         margin-top: var(--space-4);
     }
 
+    .comment-box__reply-form {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .comment-box__reply-input {
+        flex: 1;
+        width: auto;
+        margin-bottom: 0;
+    }
+
     .chapter-layout {
         display: block;
     }
 
     .chapter-comment__reply-form {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
     }
 
     .chapter-comment__reply-input {
-        width: 100%;
-        margin-bottom: var(--space-2);
+        flex: 1;
+        width: auto;
+        margin-bottom: 0;
     }
+
     .chapter-comment--reply {
         margin-left: var(--space-3);
     }
@@ -195,8 +211,17 @@
     }
 
     .comment-action-btn {
-        min-width: 32px;
-        min-height: 32px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .comment-action-btn--reply,
+    .comment-action-btn--primary {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+        top: -1px;
     }
 
     .stats-row {

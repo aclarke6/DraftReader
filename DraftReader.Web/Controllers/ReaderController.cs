@@ -9,6 +9,7 @@ using DraftReader.Web.Models;
 namespace DraftReader.Web.Controllers;
 
 [Authorize]
+#pragma warning disable CS9107
 public class ReaderController(
     IScrivenerProjectRepository projectRepo,
     ISectionRepository sectionRepo,

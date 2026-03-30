@@ -1,4 +1,4 @@
-@using DraftReader.Domain.Enumerations
+﻿@using DraftReader.Domain.Enumerations
 @model SectionViewModel
 @{ ViewData["Title"] = Model.Section.Title; }
 
@@ -76,7 +76,7 @@
             <details style="margin-top:4px;">
                 <summary style="font-size:var(--text-xs); color:var(--color-accent);
                                 cursor:pointer; list-style:none; user-select:none;">
-                    &#8617; Reply
+                    @Icons.Reply() Reply
                 </summary>
                 <form asp-action="ReplyToComment" method="post" style="margin-top:8px;">
                     @Html.AntiForgeryToken()
@@ -88,7 +88,7 @@
                                      border-radius:var(--radius-sm); box-sizing:border-box;
                                      resize:vertical;"></textarea>
                     <div style="margin-top:6px;">
-                        <button type="submit" class="btn btn--primary btn--sm">Post Reply</button>
+                        <button type="submit" class="btn btn--primary btn--sm">@Icons.Reply()</button>
                     </div>
                 </form>
             </details>
@@ -113,3 +113,4 @@
         _                      => "inherit"
     };
 }
+

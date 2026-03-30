@@ -318,6 +318,18 @@
     margin-bottom: var(--space-1);
 }
 
+/* Inline reply form alignment */
+.comment-box__reply-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+    .comment-box__reply-form .comment-box__reply-input {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
 .add-comment-mini {
     margin-top: var(--space-2);
 }
@@ -329,12 +341,22 @@
         font-family: var(--font-prose);
         box-sizing: border-box;
     }
-
 .add-comment-mini__actions {
     margin-top: var(--space-2);
     display: flex;
-    gap: var(--space-3);
     align-items: center;
+    gap: var(--space-3);
+}
+
+.add-comment-mini__private {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.add-comment-mini__actions .comment-action-btn {
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .add-comment-mini__private {
@@ -351,19 +373,50 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: none;
     background: transparent;
     color: var(--color-text-muted);
     cursor: pointer;
     line-height: 1;
+    font-size: 16px;
     border-radius: var(--radius-sm);
-    transition: color var(--transition), background-color var(--transition);
+    transition: color var(--transition), background-color var(--transition), transform var(--transition);
 }
 
-.comment-action-btn:hover {
+    .comment-action-btn:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-light);
+    }
+
+.comment-action-btn--reply,
+.comment-action-btn--primary {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    line-height: 1;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+}
+
+    .comment-action-btn--reply:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-light);
+    }
+
+.comment-action-btn--primary {
+    color: var(--color-text-muted);
+}
+
+    .comment-action-btn--primary:hover {
+        color: var(--color-accent);
+        background: var(--color-accent-light);
+    }
+
+.comment-action-btn--danger:hover {
     color: var(--color-danger);
     background: var(--color-danger-bg);
 }
@@ -465,8 +518,13 @@
     display: flex;
     gap: var(--space-5);
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
 }
+
+    .chapter-comment-form__actions .comment-action-btn {
+        flex-shrink: 0;
+    }
 
 .chapter-comment-form__private {
     font-size: var(--text-sm);
@@ -635,4 +693,3 @@
         color: var(--color-accent);
         text-decoration: underline;
     }
-
