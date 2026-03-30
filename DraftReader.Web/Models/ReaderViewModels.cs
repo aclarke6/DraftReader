@@ -58,6 +58,17 @@ public class SceneWithComments
     public IReadOnlyList<CommentDisplayViewModel> Comments { get; set; } = new List<CommentDisplayViewModel>();
 }
 
+/// <summary>
+/// Represents a comment prepared for display, including author name and UI flags
+/// derived from application rules.
+/// </summary>
+/// <remarks>
+/// This model does not contain business logic.
+/// It reflects decisions already made by the application layer:
+/// - CanEdit: only true for the comment owner
+/// - CanDelete: only true for the owner when the comment has no children
+/// - UseModeratorDelete: only true when the current user is a moderator and cannot delete as owner
+/// </remarks>
 public class CommentDisplayViewModel
 {
     public Comment Comment { get; set; } = default!;
@@ -72,10 +83,16 @@ public class CommentDisplayViewModel
     {
         get; set;
     }
+
     public bool IsModerator
     {
         get; set;
     }
+
+    public bool CanEdit
+    {
+        get; set;
+    }   // ADD THIS
 
     public bool UseModeratorDelete => !CanDelete && IsModerator;
 }

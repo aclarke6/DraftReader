@@ -1,6 +1,14 @@
 @model ChapterReadViewModel
 @{
     ViewData["Title"] = Model.Chapter.Title;
+
+    Guid? editCommentId = null;
+    var editCommentIdRaw = Context.Request.Query["editCommentId"].ToString();
+
+    if (Guid.TryParse(editCommentIdRaw, out var parsedEditCommentId))
+    {
+        editCommentId = parsedEditCommentId;
+    }
 }
 
 <div class="reader-page">
@@ -194,14 +202,26 @@
                                         <span class="comment-box__private">[Private]</span>
                                     }
 
-                                    @if (c.CanDelete || c.UseModeratorDelete)
-                                    {
-                                        <span class="comment-box__actions">
+                                    <span class="comment-box__actions">
+                                        @if (c.CanEdit)
+                                        {
+                                            <a asp-action="Read"
+                                                   asp-route-id="@Model.Chapter.Id"
+                                                   asp-route-editCommentId="@c.Comment.Id"
+                                                   class="comment-action-btn"
+                                                   title="Edit"
+                                                   aria-label="Edit comment">
+                                                Edit
+                                            </a>
+                                        }
+
+                                        @if (c.CanDelete || c.UseModeratorDelete)
+                                        {
                                             <form asp-action="@(c.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
-                                                    method="post"
-                                                    class="comment-delete-form"
-                                                    data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
-                                                    data-has-children="@(c.HasChildren ? "true" : "false")">
+                                                  method="post"
+                                                  class="comment-delete-form"
+                                                  data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
+                                                  data-has-children="@(c.HasChildren ? "true" : "false")">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
@@ -212,19 +232,37 @@
                                                     &#128465;
                                                 </button>
                                             </form>
-                                        </span>
-                                    }
+                                        }
+                                    </span>
                                 </div>
 
-                                <p class="comment-box__body">@c.Comment.Body</p>
+                                @if (editCommentId == c.Comment.Id)
+                                {
+                                    <form asp-action="EditComment" method="post" class="comment-box__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                        <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                        <input type="text" name="body" value="@c.Comment.Body" class="comment-box__reply-input" />
+                                        <button type="submit" class="btn btn-xs">Save</button>
+                                        <a asp-action="Read"
+                                               asp-route-id="@Model.Chapter.Id"
+                                               class="btn btn-xs">
+                                            Cancel
+                                        </a>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <p class="comment-box__body">@c.Comment.Body</p>
 
-                                <form asp-action="AddComment" method="post" class="comment-box__reply-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                    <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
-                                    <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
-                                    <button type="submit" class="btn btn-xs">Reply</button>
-                                </form>                                
+                                    <form asp-action="AddComment" method="post" class="comment-box__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="SectionId" value="@item.Scene.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
+                                        <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
+                                        <button type="submit" class="btn btn-xs">Reply</button>
+                                    </form>
+                                }
                             </div>
 
                             @if (replies.TryGetValue(c.Comment.Id, out var childReplies))
@@ -241,14 +279,26 @@
                                                 <span class="comment-box__private">[Private]</span>
                                             }
 
-                                            @if (r.CanDelete || r.UseModeratorDelete)
-                                            {
-                                                <span class="comment-box__actions">
+                                            <span class="comment-box__actions">
+                                                @if (r.CanEdit)
+                                                {
+                                                    <a asp-action="Read"
+                                                           asp-route-id="@Model.Chapter.Id"
+                                                           asp-route-editCommentId="@r.Comment.Id"
+                                                           class="comment-action-btn"
+                                                           title="Edit"
+                                                           aria-label="Edit reply">
+                                                        Edit
+                                                    </a>
+                                                }
+
+                                                @if (r.CanDelete || r.UseModeratorDelete)
+                                                {
                                                     <form asp-action="@(r.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
-                                                            method="post"
-                                                            class="comment-delete-form"
-                                                            data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
-                                                            data-has-children="@(r.HasChildren ? "true" : "false")">
+                                                          method="post"
+                                                          class="comment-delete-form"
+                                                          data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
+                                                          data-has-children="@(r.HasChildren ? "true" : "false")">
                                                         @Html.AntiForgeryToken()
                                                         <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
@@ -259,19 +309,37 @@
                                                             &#128465;
                                                         </button>
                                                     </form>
-                                                </span>
-                                            }
+                                                }
+                                            </span>
                                         </div>
 
-                                        <p class="comment-box__body">@r.Comment.Body</p>
+                                        @if (editCommentId == r.Comment.Id)
+                                        {
+                                            <form asp-action="EditComment" method="post" class="comment-box__reply-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="commentId" value="@r.Comment.Id" />
+                                                <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                                <input type="text" name="body" value="@r.Comment.Body" class="comment-box__reply-input" />
+                                                <button type="submit" class="btn btn-xs">Save</button>
+                                                <a asp-action="Read"
+                                                       asp-route-id="@Model.Chapter.Id"
+                                                       class="btn btn-xs">
+                                                    Cancel
+                                                </a>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <p class="comment-box__body">@r.Comment.Body</p>
 
-                                        <form asp-action="AddComment" method="post" class="comment-box__reply-form">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="SectionId" value="@item.Scene.Id" />
-                                            <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
-                                            <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
-                                            <button type="submit" class="btn btn-xs">Reply</button>
-                                        </form>
+                                            <form asp-action="AddComment" method="post" class="comment-box__reply-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="SectionId" value="@item.Scene.Id" />
+                                                <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
+                                                <input type="text" name="Body" placeholder="Reply..." class="comment-box__reply-input" />
+                                                <button type="submit" class="btn btn-xs">Reply</button>
+                                            </form>
+                                        }
                                         
                                     </div>
                                 }
@@ -319,14 +387,26 @@
                                 <span class="chapter-comment__private">[Private]</span>
                             }
 
-                            @if (c.CanDelete || c.UseModeratorDelete)
-                            {
-                                <span class="chapter-comment__actions">
+                            <span class="chapter-comment__actions">
+                                @if (c.CanEdit)
+                                {
+                                    <a asp-action="Read"
+                                           asp-route-id="@Model.Chapter.Id"
+                                           asp-route-editCommentId="@c.Comment.Id"
+                                           class="comment-action-btn"
+                                           title="Edit"
+                                           aria-label="Edit chapter comment">
+                                        Edit
+                                    </a>
+                                }
+
+                                @if (c.CanDelete || c.UseModeratorDelete)
+                                {
                                     <form asp-action="@(c.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
-                                            method="post"
-                                            class="comment-delete-form"
-                                            data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
-                                            data-has-children="@(c.HasChildren ? "true" : "false")">
+                                          method="post"
+                                          class="comment-delete-form"
+                                          data-delete-mode="@(c.UseModeratorDelete ? "moderator" : "normal")"
+                                          data-has-children="@(c.HasChildren ? "true" : "false")">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="commentId" value="@c.Comment.Id" />
                                         <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
@@ -337,19 +417,37 @@
                                             &#128465;
                                         </button>
                                     </form>
-                                </span>
-                            }
+                                }
+                            </span>
                         </div>
 
-                        <p class="chapter-comment__body">@c.Comment.Body</p>
+                        @if (editCommentId == c.Comment.Id)
+                        {
+                            <form asp-action="EditComment" method="post" class="chapter-comment__reply-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                <input type="text" name="body" value="@c.Comment.Body" class="chapter-comment__reply-input" />
+                                <button type="submit" class="btn btn-sm">Save</button>
+                                <a asp-action="Read"
+                                       asp-route-id="@Model.Chapter.Id"
+                                       class="btn btn-sm">
+                                    Cancel
+                                </a>
+                            </form>
+                        }
+                        else
+                        {
+                            <p class="chapter-comment__body">@c.Comment.Body</p>
 
-                        <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                            <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
-                            <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
-                            <button type="submit" class="btn btn-sm">Reply</button>
-                        </form>
+                            <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
+                                <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
+                                <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
+                                <button type="submit" class="btn btn-sm">Reply</button>
+                            </form>
+                        }
                     </div>
 
                     @if (chapterReplies.TryGetValue(c.Comment.Id, out var childReplies))
@@ -365,14 +463,26 @@
                                         <span class="chapter-comment__private">[Private]</span>
                                     }
 
-                                    @if (r.CanDelete || r.UseModeratorDelete)
-                                    {
-                                        <span class="chapter-comment__actions">
+                                    <span class="chapter-comment__actions">
+                                        @if (r.CanEdit)
+                                        {
+                                            <a asp-action="Read"
+                                                   asp-route-id="@Model.Chapter.Id"
+                                                   asp-route-editCommentId="@r.Comment.Id"
+                                                   class="comment-action-btn"
+                                                   title="Edit"
+                                                   aria-label="Edit chapter reply">
+                                                Edit
+                                            </a>
+                                        }
+
+                                        @if (r.CanDelete || r.UseModeratorDelete)
+                                        {
                                             <form asp-action="@(r.UseModeratorDelete ? "ModerateDeleteComment" : "DeleteComment")"
-                                                    method="post"
-                                                    class="comment-delete-form"
-                                                    data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
-                                                    data-has-children="@(r.HasChildren ? "true" : "false")">
+                                                  method="post"
+                                                  class="comment-delete-form"
+                                                  data-delete-mode="@(r.UseModeratorDelete ? "moderator" : "normal")"
+                                                  data-has-children="@(r.HasChildren ? "true" : "false")">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="commentId" value="@r.Comment.Id" />
                                                 <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
@@ -383,19 +493,37 @@
                                                     &#128465;
                                                 </button>
                                             </form>
-                                        </span>
-                                    }
+                                        }
+                                    </span>
                                 </div>
 
-                                <p class="chapter-comment__body">@r.Comment.Body</p>
+                                @if (editCommentId == r.Comment.Id)
+                                {
+                                    <form asp-action="EditComment" method="post" class="chapter-comment__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="commentId" value="@r.Comment.Id" />
+                                        <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                        <input type="text" name="body" value="@r.Comment.Body" class="chapter-comment__reply-input" />
+                                        <button type="submit" class="btn btn-sm">Save</button>
+                                        <a asp-action="Read"
+                                               asp-route-id="@Model.Chapter.Id"
+                                               class="btn btn-sm">
+                                            Cancel
+                                        </a>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <p class="chapter-comment__body">@r.Comment.Body</p>
 
-                                <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
-                                    <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
-                                    <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
-                                    <button type="submit" class="btn btn-sm">Reply</button>
-                                </form>
+                                    <form asp-action="AddComment" method="post" class="chapter-comment__reply-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="SectionId" value="@Model.Chapter.Id" />
+                                        <input type="hidden" name="ParentCommentId" value="@c.Comment.Id" />
+                                        <input type="text" name="Body" placeholder="Reply..." class="chapter-comment__reply-input" />
+                                        <button type="submit" class="btn btn-sm">Reply</button>
+                                    </form>
+                                }
                             </div>
                         }
                     }

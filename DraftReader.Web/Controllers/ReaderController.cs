@@ -177,6 +177,30 @@ public class ReaderController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditComment(Guid commentId, Guid chapterId, string body)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return Forbid();
+
+        try
+        {
+            await commentService.EditCommentAsync(commentId, user.Id, body);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to edit comment {CommentId} for user {UserId}", commentId, user.Id);
+            TempData["Error"] = "Failed to update comment.";
+        }
+
+        return RedirectToAction("Read", new
+        {
+            id = chapterId
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteComment(Guid commentId, Guid chapterId)
     {
         var user = await GetCurrentUserAsync();
@@ -239,6 +263,7 @@ public class ReaderController(
                     AuthorDisplayName = authorNames.TryGetValue(comment.AuthorId, out var name) ? name : "Unknown",
                     HasChildren = hasChildren,
                     CanDelete = canDelete,
+                    CanEdit = comment.AuthorId == currentUserId,
                     IsModerator = currentUserIsModerator
                 };
             })
