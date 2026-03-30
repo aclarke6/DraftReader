@@ -206,16 +206,20 @@ public class ReaderController(
     }
 
     private async Task<IReadOnlyList<CommentDisplayViewModel>> BuildCommentDisplayModelsAsync(
-        IReadOnlyList<Comment> comments,
-        Guid currentUserId,
-        bool currentUserIsModerator)
+     IReadOnlyList<Comment> comments,
+     Guid currentUserId,
+     bool currentUserIsModerator)
     {
-        var commentsByParentId = comments
+        var visibleComments = comments
+            .Where(c => !c.IsSoftDeleted)
+            .ToList();
+
+        var commentsByParentId = visibleComments
             .Where(c => c.ParentCommentId.HasValue)
             .GroupBy(c => c.ParentCommentId!.Value)
             .ToDictionary(g => g.Key, g => g.ToList());
 
-        var authorIds = comments.Select(c => c.AuthorId).Distinct().ToList();
+        var authorIds = visibleComments.Select(c => c.AuthorId).Distinct().ToList();
         var authorNames = new Dictionary<Guid, string>();
 
         foreach (var authorId in authorIds)
@@ -224,7 +228,7 @@ public class ReaderController(
             authorNames[authorId] = author?.DisplayName ?? "Unknown";
         }
 
-        return comments
+        return visibleComments
             .Select(comment =>
             {
                 var hasChildren = commentsByParentId.ContainsKey(comment.Id);
