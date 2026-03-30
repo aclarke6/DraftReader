@@ -154,6 +154,13 @@
         </aside>
 
         <main class="chapter-main">
+            @if (TempData["Error"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="validation-summary-errors" role="alert">
+                    @errorMessage
+                </div>
+            }
+            
             @if (Model.Breadcrumb.Any())
             {
                 <div class="chapter-breadcrumb">
