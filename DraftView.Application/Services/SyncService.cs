@@ -1,5 +1,6 @@
 ﻿using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
+using Microsoft.Extensions.Logging;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
@@ -14,7 +15,8 @@ public class SyncService(
     IRtfConverter converter,
     ILocalPathResolver pathResolver,
     ISyncProgressTracker progressTracker,
-    IDropboxConnectionChecker connectionChecker) : ISyncService
+    IDropboxConnectionChecker connectionChecker,
+    ILogger<SyncService> logger) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
     {
@@ -75,6 +77,7 @@ public class SyncService(
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Sync failed for project {ProjectId}: {Message}", projectId, ex.Message);
             project.UpdateSyncStatus(SyncStatus.Error, DateTime.UtcNow, ex.Message);
             progressTracker.Clear(projectId);
         }
@@ -177,3 +180,4 @@ public class SyncService(
         return null;
     }
 }
+

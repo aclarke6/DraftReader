@@ -1,4 +1,5 @@
 ﻿using Moq;
+using Microsoft.Extensions.Logging;
 using DraftView.Application.Services;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
@@ -18,6 +19,7 @@ public class SyncServiceTests
     private readonly Mock<ILocalPathResolver>          _pathResolver   = new();
     private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
     private readonly Mock<IDropboxConnectionChecker>   _connectionChecker = new();
+    private readonly Mock<ILogger<SyncService>>          _logger            = new();
 
     private SyncService CreateSut() => new(
         _projectRepo.Object,
@@ -27,7 +29,8 @@ public class SyncServiceTests
         _converter.Object,
         _pathResolver.Object,
         _progressTracker.Object,
-        _connectionChecker.Object);
+        _connectionChecker.Object,
+        _logger.Object);
 
     public SyncServiceTests()
     {
@@ -318,6 +321,8 @@ public class SyncServiceTests
             });
     }
 }
+
+
 
 
 
