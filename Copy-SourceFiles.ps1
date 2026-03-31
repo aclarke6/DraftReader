@@ -2,8 +2,15 @@
 Copy-SourceFiles.ps1
 
 Purpose
-  Copies the contents of source files (found by filename) into the clipboard,
-  preceded by a header containing the file name, repo-relative path, and full path.
+  Copies the contents of source files into the clipboard, preceded by a header
+  containing the file name, repo-relative path, and full path.
+
+  Each argument may be:
+    - A bare filename:        Reader.css
+    - A repo-relative path:   DraftView.Web\wwwroot\css\Reader.css
+
+  Bare filenames are located by recursive search under RootPath.
+  Relative paths are resolved directly against RootPath - no search needed.
 
 Usage
   .\Copy-SourceFiles.ps1 <file1> <file2> ... [options]
@@ -12,44 +19,41 @@ Usage
 
 Examples
   .\Copy-SourceFiles.ps1 Program.cs VaultReader.cs
-  .\Copy-SourceFiles.ps1 -Names Program.cs VaultReader.cs
-  .\Copy-SourceFiles.ps1 -Files Program.cs VaultReader.cs
-  .\Copy-SourceFiles.ps1 -RootPath C:\Users\alast\source\repos\VaultCoach Program.cs
+  .\Copy-SourceFiles.ps1 DraftView.Web\wwwroot\css\Reader.css
+  .\Copy-SourceFiles.ps1 Reader.css DraftView.Web\Views\Reader\Read.cshtml
+  .\Copy-SourceFiles.ps1 -RootPath C:\Users\alast\source\repos\DraftView Program.cs
   .\Copy-SourceFiles.ps1 -RootPath . -OutputFile Dump.txt Program.cs VaultReader.cs
   .\Copy-SourceFiles.ps1 -h
 #>
 
 [CmdletBinding()]
 param(
-    # Show help and exit
     [Alias("h")]
     [switch]$ShowHelp,
 
-    # Accept filenames positionally OR via -Names / -Files
     [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
     [Alias("Names", "Files")]
     [string[]]$FileNames,
 
-    # Repo root (defaults to current directory)
     [Parameter(Mandatory = $false)]
     [string]$RootPath = ".",
 
-    # If provided, also write the dump to a file (UTF-8)
     [Parameter(Mandatory = $false)]
     [string]$OutputFile = "",
 
-    # Maximum characters per clipboard chunk
     [Parameter(Mandatory = $false)]
     [int]$ChunkLimit = 100000
 )
 
 if ($ShowHelp -or -not $FileNames -or @($FileNames).Count -eq 0) {
-
     Write-Host @"
 Copy-SourceFiles.ps1
 -------------------
-Copies the contents of source files (found by filename) into the clipboard,
-preceded by a header containing the file name, repo-relative path, and full path.
+Copies the contents of source files into the clipboard, preceded by a header
+containing the file name, repo-relative path, and full path.
+
+Each argument may be a bare filename (Reader.css) or a repo-relative path
+(DraftView.Web\wwwroot\css\Reader.css).
 
 USAGE
   .\Copy-SourceFiles.ps1 <file1> <file2> ... [options]
@@ -58,44 +62,33 @@ USAGE
 
 OPTIONS
   -Names | -Files | (positional)
-      One or more filenames only (no paths).
-      Example: Program.cs VaultReader.cs
+      One or more filenames or repo-relative paths.
 
   -RootPath <path>
-      Root directory to search from.
-      Default: current directory (.)
+      Root directory to search from. Default: current directory (.)
 
   -OutputFile <path>
-      If provided, also writes the output to a file (UTF-8).
+      If provided, also writes each chunk to a numbered file (UTF-8).
 
   -ChunkLimit <int>
-      Maximum characters per clipboard chunk.
-      Default: 100000
+      Maximum characters per clipboard chunk. Default: 100000
 
   -h | -ShowHelp
       Show this help text and exit.
 
 NOTES
-  If you use positional filenames, put -RootPath, -OutputFile and -ChunkLimit BEFORE the filenames:
-    .\Copy-SourceFiles.ps1 -RootPath . -OutputFile Dump.txt Program.cs VaultReader.cs
+  Put -RootPath, -OutputFile and -ChunkLimit BEFORE positional arguments:
+    .\Copy-SourceFiles.ps1 -RootPath . -OutputFile Dump.txt Program.cs
 "@
     exit 0
 }
 
 $ErrorActionPreference = "Stop"
 
-$excludeDirs = @(
-    "bin",
-    "obj",
-    ".git",
-    ".vs",
-    ".idea",
-    "TestResults",
-    "node_modules"
-)
+$excludeDirs = @("bin", "obj", ".git", ".vs", ".idea", "TestResults", "node_modules")
 
 if (-not (Test-Path -LiteralPath $RootPath -PathType Container)) {
-    throw "RootPath '$RootPath' is not a directory. Pass -RootPath explicitly, e.g. -RootPath 'C:\Users\alast\source\repos\VaultCoach'."
+    throw "RootPath '$RootPath' is not a directory. Pass -RootPath explicitly."
 }
 
 $root = (Resolve-Path -LiteralPath $RootPath).Path
@@ -105,7 +98,6 @@ function Get-RepoRelativePath {
         [Parameter(Mandatory = $true)][string]$FullPath,
         [Parameter(Mandatory = $true)][string]$RootPathResolved
     )
-
     $rootWithSep = $RootPathResolved.TrimEnd('\') + '\'
     if ($FullPath.StartsWith($rootWithSep, [System.StringComparison]::OrdinalIgnoreCase)) {
         return $FullPath.Substring($rootWithSep.Length)
@@ -114,10 +106,7 @@ function Get-RepoRelativePath {
 }
 
 function Is-UnderExcludedDir {
-    param(
-        [Parameter(Mandatory = $true)][string]$FullPath
-    )
-
+    param([Parameter(Mandatory = $true)][string]$FullPath)
     $parts = $FullPath.Split([IO.Path]::DirectorySeparatorChar)
     foreach ($p in $parts) {
         if ($excludeDirs -contains $p) { return $true }
@@ -126,10 +115,7 @@ function Is-UnderExcludedDir {
 }
 
 function Find-FileByName {
-    param(
-        [Parameter(Mandatory = $true)][string]$FileName
-    )
-
+    param([Parameter(Mandatory = $true)][string]$FileName)
     Get-ChildItem -Path $root -Recurse -File -Force -ErrorAction SilentlyContinue |
         Where-Object {
             $_.Name -ieq $FileName -and
@@ -138,9 +124,29 @@ function Find-FileByName {
         Sort-Object FullName
 }
 
-$currentChunk      = New-Object System.Text.StringBuilder
-$script:chunkIndex = 1
-# Track which files have been fully flushed to the clipboard
+# Resolve an argument to an array of FileInfo objects.
+# If the argument contains a path separator it is treated as a repo-relative path
+# and resolved directly. Otherwise it is searched for by filename under $root.
+function Resolve-Argument {
+    param([Parameter(Mandatory = $true)][string]$Arg)
+
+    $looksLikePath = $Arg.Contains('\') -or $Arg.Contains('/')
+
+    if ($looksLikePath) {
+        $normalised = $Arg.Replace('/', '\')
+        $candidate  = Join-Path $root $normalised
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+            return @(Get-Item -LiteralPath $candidate)
+        }
+        return @()
+    }
+    else {
+        return @(Find-FileByName -FileName $Arg)
+    }
+}
+
+$currentChunk        = New-Object System.Text.StringBuilder
+$script:chunkIndex   = 1
 $script:filesInChunk = [System.Collections.Generic.List[string]]::new()
 
 function Emit-Chunk {
@@ -155,10 +161,10 @@ function Emit-Chunk {
     $wrapped = New-Object System.Text.StringBuilder
 
     if ($IsFinal) {
-        [void]$wrapped.AppendLine("<<< FINAL CHUNK $script:chunkIndex — all content is included >>>")
+        [void]$wrapped.AppendLine("<<< FINAL CHUNK $script:chunkIndex -- all content is included >>>")
     }
     else {
-        [void]$wrapped.AppendLine("<<< CHUNK $script:chunkIndex — more chunks will follow >>>")
+        [void]$wrapped.AppendLine("<<< CHUNK $script:chunkIndex -- more chunks will follow >>>")
     }
 
     [void]$wrapped.AppendLine("")
@@ -166,10 +172,10 @@ function Emit-Chunk {
     [void]$wrapped.AppendLine("")
 
     if ($IsFinal) {
-        [void]$wrapped.AppendLine("<<< END OF FINAL CHUNK — nothing further will follow >>>")
+        [void]$wrapped.AppendLine("<<< END OF FINAL CHUNK -- nothing further will follow >>>")
     }
     else {
-        [void]$wrapped.AppendLine("<<< END OF CHUNK $script:chunkIndex — Wait for more chunks! >>>")
+        [void]$wrapped.AppendLine("<<< END OF CHUNK $script:chunkIndex -- Wait for more chunks! >>>")
     }
 
     $finalText = $wrapped.ToString()
@@ -202,7 +208,7 @@ function Emit-Chunk {
 
     if ($IsFinal) {
         Write-Host ""
-        Write-Host "All done — final chunk is in the clipboard." -ForegroundColor Green
+        Write-Host "All done -- final chunk is in the clipboard." -ForegroundColor Green
         Write-Host ""
     }
     else {
@@ -216,10 +222,10 @@ function Emit-Chunk {
 
 foreach ($name in $FileNames) {
 
-    $fileBlock = New-Object System.Text.StringBuilder
-    $fileMatches = @(Find-FileByName -FileName $name)
+    $fileBlock   = New-Object System.Text.StringBuilder
+    $fileMatches = @(Resolve-Argument -Arg $name)
 
-    if (-not $fileMatches -or @($fileMatches).Count -eq 0) {
+    if (-not $fileMatches -or $fileMatches.Count -eq 0) {
         Write-Host "  NOT FOUND : $name" -ForegroundColor Red
         [void]$fileBlock.AppendLine("")
         [void]$fileBlock.AppendLine("============================================================")
@@ -249,7 +255,7 @@ foreach ($name in $FileNames) {
 
         [void]$fileBlock.AppendLine("")
         [void]$fileBlock.AppendLine("============================================================")
-        [void]$fileBlock.AppendLine("FILE NAME: $name")
+        [void]$fileBlock.AppendLine("FILE NAME: $($file.Name)")
         [void]$fileBlock.AppendLine("RELATIVE : $relative")
         [void]$fileBlock.AppendLine("FULL PATH: $absolute")
         [void]$fileBlock.AppendLine("============================================================")
@@ -261,16 +267,33 @@ foreach ($name in $FileNames) {
 
     $blockText = $fileBlock.ToString()
 
-    # If adding this block would breach the limit, flush the current chunk first
-    if (($currentChunk.Length + $blockText.Length) -gt $ChunkLimit) {
+    # Flush current chunk if adding this block would exceed the limit
+    if ($currentChunk.Length -gt 0 -and ($currentChunk.Length + $blockText.Length) -gt $ChunkLimit) {
         Emit-Chunk -Text $currentChunk.ToString() -IsFinal:$false -FilesIncluded $script:filesInChunk.ToArray()
         $currentChunk.Clear() | Out-Null
         $script:filesInChunk.Clear()
     }
 
-    [void]$currentChunk.Append($blockText)
-    $script:filesInChunk.Add($name)
+    # If the block itself exceeds the limit, split it across multiple chunks immediately
+    if ($blockText.Length -gt $ChunkLimit) {
+        $offset = 0
+        while ($offset -lt $blockText.Length) {
+            $slice  = $blockText.Substring($offset, [Math]::Min($ChunkLimit, $blockText.Length - $offset))
+            $offset += $slice.Length
+            $more   = $offset -lt $blockText.Length
+            if ($more) {
+                Emit-Chunk -Text $slice -IsFinal:$false -FilesIncluded @($name)
+            }
+            else {
+                [void]$currentChunk.Append($slice)
+                $script:filesInChunk.Add($name)
+            }
+        }
+    }
+    else {
+        [void]$currentChunk.Append($blockText)
+        $script:filesInChunk.Add($name)
+    }
 }
 
-# Emit final chunk — no ENTER prompt, just report and exit
 Emit-Chunk -Text $currentChunk.ToString() -IsFinal:$true -FilesIncluded $script:filesInChunk.ToArray()
