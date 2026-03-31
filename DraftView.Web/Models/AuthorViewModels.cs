@@ -22,9 +22,21 @@ public class SectionViewModel
     public int ReadCount { get; set; }
 }
 
+public enum ReaderStatus { Invited, Active, Inactive }
+
+public class ReaderRowViewModel
+{
+    public Guid   Id          { get; init; }
+    public string DisplayName { get; init; } = string.Empty;
+    public string Email       { get; init; } = string.Empty;
+    public ReaderStatus Status { get; init; }
+    public DateTime? ActivatedAt { get; init; }
+}
+
 public class InviteReaderViewModel
 {
     public string Email { get; set; } = string.Empty;
     public bool NeverExpires { get; set; } = true;
     public DateTime? ExpiresAt { get; set; }
 }
+

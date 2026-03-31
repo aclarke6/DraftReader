@@ -1,21 +1,18 @@
-@model IReadOnlyList<User>
+﻿@using DraftView.Web.Models
+@model IReadOnlyList<ReaderRowViewModel>
 @{ ViewData["Title"] = "Beta Readers"; }
-
 <div class="page-header">
     <div>
         <h1 class="page-title">Beta Readers</h1>
-        <p class="page-subtitle">@Model.Count(r => !r.IsSoftDeleted) reader(s)</p>
+        <p class="page-subtitle">@Model.Count reader(s)</p>
     </div>
     <a asp-action="InviteReader" class="btn btn--primary">Invite a Reader</a>
 </div>
-
-@if (!Model.Any(r => !r.IsSoftDeleted))
+@if (!Model.Any())
 {
     <div class="empty-state">
         <div class="empty-state__title">No readers yet</div>
-        <p class="empty-state__body">
-            Invite your first beta reader to get started.
-        </p>
+        <p class="empty-state__body">Invite your first beta reader to get started.</p>
     </div>
 }
 else
@@ -32,26 +29,30 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var r in Model.Where(r => !r.IsSoftDeleted).OrderBy(r => r.DisplayName))
+                @foreach (var r in Model)
                 {
                     <tr>
-                        <td>@(r.DisplayName ?? "-")</td>
+                        <td>@r.DisplayName</td>
                         <td style="color:var(--color-ink-muted);">@r.Email</td>
                         <td>
-                            @if (r.IsActive)
+                            @switch (r.Status)
                             {
-                                <span class="badge badge--success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge--neutral">Inactive</span>
+                                case ReaderStatus.Active:
+                                    <span class="badge badge--success">Active</span>
+                                    break;
+                                case ReaderStatus.Invited:
+                                    <span class="badge badge--neutral">Invited</span>
+                                    break;
+                                default:
+                                    <span class="badge badge--neutral">Inactive</span>
+                                    break;
                             }
                         </td>
                         <td style="color:var(--color-ink-muted); font-size:var(--text-sm);">
-                            @(r.ActivatedAt.HasValue ? r.ActivatedAt.Value.ToString("dd MMM yyyy") : "Pending")
+                            @(r.ActivatedAt.HasValue ? r.ActivatedAt.Value.ToString("dd MMM yyyy") : "-")
                         </td>
                         <td>
-                            @if (r.IsActive)
+                            @if (r.Status == ReaderStatus.Active)
                             {
                                 <form asp-action="DeactivateReader" method="post" style="display:inline">
                                     @Html.AntiForgeryToken()
@@ -59,7 +60,7 @@ else
                                     <button type="submit" class="btn btn--danger btn--sm">Deactivate</button>
                                 </form>
                             }
-                            else
+                            else if (r.Status == ReaderStatus.Inactive)
                             {
                                 <form asp-action="ReactivateReader" method="post" style="display:inline">
                                     @Html.AntiForgeryToken()

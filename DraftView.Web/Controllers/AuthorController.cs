@@ -9,7 +9,7 @@ using DraftView.Domain.Interfaces.Services;
 using DraftView.Web.Models;
 namespace DraftView.Web.Controllers;
 
-#pragma warning disable CS9107
+#pragma warning disable CS9107, CS9113
 [Authorize]
 public class AuthorController(
     IScrivenerProjectRepository projectRepo,
@@ -20,6 +20,7 @@ public class AuthorController(
     ISyncService syncService,
     IUserRepository userRepo,
     IScrivenerProjectDiscoveryService discoveryService,
+    IInvitationRepository invitationRepo,
     IServiceScopeFactory scopeFactory,
     ISyncProgressTracker progressTracker,
     ILogger<AuthorController> logger) : BaseController(userRepo)
@@ -217,7 +218,31 @@ public class AuthorController(
     public async Task<IActionResult> Readers()
     {
         var readers = await userRepo.GetAllBetaReadersAsync();
-        return View(readers);
+
+        var rows = new List<ReaderRowViewModel>();
+        foreach (var r in readers.Where(r => !r.IsSoftDeleted))
+        {
+            var invitation = await invitationRepo.GetByUserIdAsync(r.Id);
+            var isPending  = invitation is not null
+                          && invitation.Status == Domain.Enumerations.InvitationStatus.Pending;
+
+            var status = r.IsActive
+                ? ReaderStatus.Active
+                : isPending
+                    ? ReaderStatus.Invited
+                    : ReaderStatus.Inactive;
+
+            rows.Add(new ReaderRowViewModel
+            {
+                Id          = r.Id,
+                DisplayName = r.DisplayName == "Pending" ? "-" : r.DisplayName,
+                Email       = r.Email,
+                Status      = status,
+                ActivatedAt = r.ActivatedAt
+            });
+        }
+
+        return View(rows.OrderBy(r => r.DisplayName).ToList());
     }
 
     [HttpGet]
@@ -514,4 +539,11 @@ public class AuthorController(
         return result;
     }
 }
+
+
+
+
+
+
+
 
