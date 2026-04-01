@@ -6,6 +6,8 @@ namespace DraftView.Domain.Tests.Entities;
 
 public class ScrivenerProjectTests
 {
+    private static readonly Guid ValidAuthorId = Guid.NewGuid();
+
     // ---------------------------------------------------------------------------
     // Create
     // ---------------------------------------------------------------------------
@@ -13,11 +15,12 @@ public class ScrivenerProjectTests
     [Fact]
     public void Create_WithValidData_ReturnsProject()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
 
         Assert.NotEqual(Guid.Empty, project.Id);
         Assert.Equal("My Novel", project.Name);
         Assert.Equal("/dropbox/MyNovel.scriv", project.DropboxPath);
+        Assert.Equal(ValidAuthorId, project.AuthorId);
         Assert.False(project.IsReaderActive);
         Assert.False(project.IsSoftDeleted);
         Assert.Null(project.ReaderActivatedAt);
@@ -25,6 +28,15 @@ public class ScrivenerProjectTests
         Assert.Null(project.SyncErrorMessage);
         Assert.Null(project.SoftDeletedAt);
         Assert.Equal(SyncStatus.Stale, project.SyncStatus);
+    }
+
+    [Fact]
+    public void Create_WithEmptyAuthorId_ThrowsInvariantViolationException()
+    {
+        var ex = Assert.Throws<InvariantViolationException>(
+            () => ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", Guid.Empty));
+
+        Assert.Equal("I-PROJ-AUTHOR", ex.InvariantCode);
     }
 
     [Theory]
@@ -35,7 +47,7 @@ public class ScrivenerProjectTests
     {
 #pragma warning disable CS8604
         var ex = Assert.Throws<InvariantViolationException>(
-            () => ScrivenerProject.Create(name, "/dropbox/MyNovel.scriv"));
+            () => ScrivenerProject.Create(name, "/dropbox/MyNovel.scriv", ValidAuthorId));
 #pragma warning restore CS8604
 
         Assert.Equal("I-PROJ-NAME", ex.InvariantCode);
@@ -49,7 +61,7 @@ public class ScrivenerProjectTests
     {
 #pragma warning disable CS8604
         var ex = Assert.Throws<InvariantViolationException>(
-            () => ScrivenerProject.Create("My Novel", path));
+            () => ScrivenerProject.Create("My Novel", path, ValidAuthorId));
 #pragma warning restore CS8604
 
         Assert.Equal("I-PROJ-PATH", ex.InvariantCode);
@@ -62,7 +74,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void ActivateForReaders_SetsIsReaderActiveAndRecordsTimestamp()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         var before = DateTime.UtcNow;
 
         project.ActivateForReaders();
@@ -75,7 +87,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void ActivateForReaders_WhenSoftDeleted_ThrowsInvariantViolationException()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         project.SoftDelete();
 
         var ex = Assert.Throws<InvariantViolationException>(
@@ -91,7 +103,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void DeactivateForReaders_SetsIsReaderActiveFalse()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         project.ActivateForReaders();
 
         project.DeactivateForReaders();
@@ -102,7 +114,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void DeactivateForReaders_WhenAlreadyInactive_DoesNotThrow()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
 
         var ex = Record.Exception(() => project.DeactivateForReaders());
 
@@ -116,7 +128,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void UpdateSyncStatus_ToHealthy_ClearsSyncErrorMessage()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         var syncTime = DateTime.UtcNow;
 
         project.UpdateSyncStatus(SyncStatus.Healthy, syncTime, null);
@@ -129,7 +141,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void UpdateSyncStatus_ToStale_ClearsSyncErrorMessage()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
 
         project.UpdateSyncStatus(SyncStatus.Stale, DateTime.UtcNow, null);
 
@@ -140,7 +152,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void UpdateSyncStatus_ToError_WithMessage_SetsSyncErrorMessage()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
 
         project.UpdateSyncStatus(SyncStatus.Error, DateTime.UtcNow, "File not found.");
 
@@ -151,7 +163,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void UpdateSyncStatus_ToError_WithoutMessage_ThrowsInvariantViolationException()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
 
         var ex = Assert.Throws<InvariantViolationException>(
             () => project.UpdateSyncStatus(SyncStatus.Error, DateTime.UtcNow, null));
@@ -166,7 +178,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void SoftDelete_SetsFlagsAndRecordsTimestamp()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         var before = DateTime.UtcNow;
 
         project.SoftDelete();
@@ -179,7 +191,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void SoftDelete_DeactivatesReadersWhenActive()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         project.ActivateForReaders();
 
         project.SoftDelete();
@@ -191,7 +203,7 @@ public class ScrivenerProjectTests
     [Fact]
     public void SoftDelete_WhenAlreadyDeleted_DoesNotChangeSoftDeletedAt()
     {
-        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv");
+        var project = ScrivenerProject.Create("My Novel", "/dropbox/MyNovel.scriv", ValidAuthorId);
         project.SoftDelete();
         var firstDeletion = project.SoftDeletedAt;
 

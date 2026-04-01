@@ -11,15 +11,18 @@ namespace DraftView.Application.Tests.Services;
 
 public class SyncServiceTests
 {
-    private readonly Mock<IScrivenerProjectRepository> _projectRepo    = new();
-    private readonly Mock<ISectionRepository>          _sectionRepo    = new();
-    private readonly Mock<IUnitOfWork>                 _unitOfWork     = new();
-    private readonly Mock<IScrivenerProjectParser>     _parser         = new();
-    private readonly Mock<IRtfConverter>               _converter      = new();
-    private readonly Mock<ILocalPathResolver>          _pathResolver   = new();
+    private static readonly Guid ValidAuthorId = Guid.NewGuid();
+
+    private readonly Mock<IScrivenerProjectRepository> _projectRepo     = new();
+    private readonly Mock<ISectionRepository>          _sectionRepo     = new();
+    private readonly Mock<IUnitOfWork>                 _unitOfWork      = new();
+    private readonly Mock<IScrivenerProjectParser>     _parser          = new();
+    private readonly Mock<IRtfConverter>               _converter       = new();
+    private readonly Mock<ILocalPathResolver>          _pathResolver    = new();
     private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
     private readonly Mock<IDropboxConnectionChecker>   _connectionChecker = new();
-    private readonly Mock<ILogger<SyncService>>          _logger            = new();
+    private readonly Mock<IDropboxClientFactory>       _clientFactory   = new();
+    private readonly Mock<ILogger<SyncService>>        _logger          = new();
 
     private SyncService CreateSut() => new(
         _projectRepo.Object,
@@ -30,15 +33,18 @@ public class SyncServiceTests
         _pathResolver.Object,
         _progressTracker.Object,
         _connectionChecker.Object,
+        _clientFactory.Object,
         _logger.Object);
 
     public SyncServiceTests()
     {
         _connectionChecker.Setup(x => x.IsConnectedAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _connectionChecker.Setup(x => x.SetUserId(It.IsAny<Guid>()));
+        _pathResolver.Setup(x => x.SetUserId(It.IsAny<Guid>()));
     }
 
     private static ScrivenerProject MakeProject() =>
-        ScrivenerProject.Create("Test Novel", "/Apps/Scrivener/Test.scriv");
+        ScrivenerProject.Create("Test Novel", "/Apps/Scrivener/Test.scriv", ValidAuthorId);
 
     private void SetupPathResolver(ScrivenerProject project, string localPath = "/fake/path")
     {
@@ -321,8 +327,3 @@ public class SyncServiceTests
             });
     }
 }
-
-
-
-
-

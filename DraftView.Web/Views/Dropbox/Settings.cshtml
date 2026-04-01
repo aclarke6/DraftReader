@@ -1,0 +1,56 @@
+﻿@using DraftView.Domain.Entities
+@using DraftView.Domain.Enumerations
+@{
+    ViewData["Title"] = "Dropbox Settings";
+    var connection = ViewBag.Connection as DropboxConnection;
+    var isConnected = connection?.Status == DropboxConnectionStatus.Connected;
+}
+
+<div class="container">
+    <h1>Dropbox Connection</h1>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success">@success</div>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-error">@error</div>
+    }
+
+    @if (isConnected)
+    {
+        <p>
+            Your Dropbox account is <strong>connected</strong>.
+            @if (connection!.AuthorisedAt.HasValue)
+            {
+                <span>Connected on @connection.AuthorisedAt.Value.ToString("d MMM yyyy").</span>
+            }
+        </p>
+        <form method="post" asp-action="Disconnect" asp-controller="Dropbox">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn--secondary">Disconnect Dropbox</button>
+        </form>
+    }
+    else
+    {
+        <p>Connect your Dropbox account to enable Scrivener project sync.</p>
+
+        @if (connection?.Status == DropboxConnectionStatus.TokenExpired)
+        {
+            <p class="text--warning">Your Dropbox connection has expired. Please reconnect.</p>
+        }
+        @if (connection?.Status == DropboxConnectionStatus.Revoked)
+        {
+            <p class="text--warning">Dropbox access was revoked. Please reconnect.</p>
+        }
+        @if (connection?.Status == DropboxConnectionStatus.Error)
+        {
+            <p class="text--warning">Connection error: @connection.ErrorMessage</p>
+        }
+
+        <a href="/dropbox/connect" class="btn btn--primary">Connect Dropbox</a>
+    }
+
+    <p><a href="/Author/Dashboard">&larr; Back to Dashboard</a></p>
+</div>

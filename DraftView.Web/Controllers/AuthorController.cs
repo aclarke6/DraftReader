@@ -463,7 +463,7 @@ public class AuthorController(
                 }
                 else
                 {
-                    var project = ScrivenerProject.Create(d.Name, d.DropboxPath, d.ScrivenerRootUuid);
+                    var project = ScrivenerProject.Create(d.Name, d.DropboxPath, author.Id, d.ScrivenerRootUuid);
                     await projectRepo.AddAsync(project);
                     addedCount++;
                 }
@@ -545,6 +545,7 @@ public class AuthorController(
         return result;
     }
 }
+
 
 
 

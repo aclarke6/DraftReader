@@ -10,6 +10,7 @@ public sealed class ScrivenerProject
     // ---------------------------------------------------------------------------
 
     public Guid Id { get; private set; }
+    public Guid AuthorId { get; private set; }
     public string Name { get; private set; } = default!;
     public string DropboxPath { get; private set; } = default!;
 
@@ -37,7 +38,11 @@ public sealed class ScrivenerProject
     // Factory
     // ---------------------------------------------------------------------------
 
-    public static ScrivenerProject Create(string name, string dropboxPath, string? scrivenerRootUuid = null)
+    public static ScrivenerProject Create(
+        string name,
+        string dropboxPath,
+        Guid authorId,
+        string? scrivenerRootUuid = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new InvariantViolationException("I-PROJ-NAME",
@@ -47,14 +52,19 @@ public sealed class ScrivenerProject
             throw new InvariantViolationException("I-PROJ-PATH",
                 "Project Dropbox path must not be null or whitespace.");
 
+        if (authorId == Guid.Empty)
+            throw new InvariantViolationException("I-PROJ-AUTHOR",
+                "Project must be associated with a valid author.");
+
         return new ScrivenerProject {
-            Id = Guid.NewGuid(),
-            Name = name.Trim(),
-            DropboxPath = dropboxPath.Trim(),
+            Id                = Guid.NewGuid(),
+            AuthorId          = authorId,
+            Name              = name.Trim(),
+            DropboxPath       = dropboxPath.Trim(),
             ScrivenerRootUuid = scrivenerRootUuid?.Trim(),
-            IsReaderActive = false,
-            SyncStatus = SyncStatus.Stale,
-            IsSoftDeleted = false
+            IsReaderActive    = false,
+            SyncStatus        = SyncStatus.Stale,
+            IsSoftDeleted     = false
         };
     }
 
@@ -68,8 +78,8 @@ public sealed class ScrivenerProject
             throw new InvariantViolationException("I-PROJ-DELETED",
                 "A soft-deleted project cannot be activated for readers.");
 
-        IsReaderActive     = true;
-        ReaderActivatedAt  = DateTime.UtcNow;
+        IsReaderActive    = true;
+        ReaderActivatedAt = DateTime.UtcNow;
     }
 
     public void DeactivateForReaders()
@@ -113,7 +123,3 @@ public sealed class ScrivenerProject
             Name = updatedName.Trim();
     }
 }
-
-
-
-

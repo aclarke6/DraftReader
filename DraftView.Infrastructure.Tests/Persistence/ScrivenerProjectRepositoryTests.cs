@@ -8,6 +8,8 @@ namespace DraftView.Infrastructure.Tests.Persistence;
 
 public class ScrivenerProjectRepositoryTests : IDisposable
 {
+    private static readonly Guid ValidAuthorId = Guid.NewGuid();
+
     private readonly DraftViewDbContext _db;
     private readonly ScrivenerProjectRepository _sut;
 
@@ -24,7 +26,7 @@ public class ScrivenerProjectRepositoryTests : IDisposable
     public void Dispose() => _db.Dispose();
 
     private static ScrivenerProject MakeProject(string name, string uuid) =>
-        ScrivenerProject.Create(name, "/Apps/Scrivener/Test.scriv", uuid);
+        ScrivenerProject.Create(name, "/Apps/Scrivener/Test.scriv", ValidAuthorId, uuid);
 
     // ---------------------------------------------------------------------------
     // AddAsync - happy path
@@ -46,7 +48,7 @@ public class ScrivenerProjectRepositoryTests : IDisposable
     [Fact]
     public async Task AddAsync_ProjectWithNullUuid_AddsSuccessfully()
     {
-        var project = ScrivenerProject.Create("No UUID", "/Apps/Scrivener/Test.scriv");
+        var project = ScrivenerProject.Create("No UUID", "/Apps/Scrivener/Test.scriv", ValidAuthorId);
 
         await _sut.AddAsync(project);
         await _db.SaveChangesAsync();
@@ -58,8 +60,8 @@ public class ScrivenerProjectRepositoryTests : IDisposable
     [Fact]
     public async Task AddAsync_TwoProjectsWithNullUuid_BothAddSuccessfully()
     {
-        var p1 = ScrivenerProject.Create("No UUID 1", "/Apps/Scrivener/Test.scriv");
-        var p2 = ScrivenerProject.Create("No UUID 2", "/Apps/Scrivener/Test2.scriv");
+        var p1 = ScrivenerProject.Create("No UUID 1", "/Apps/Scrivener/Test.scriv", ValidAuthorId);
+        var p2 = ScrivenerProject.Create("No UUID 2", "/Apps/Scrivener/Test2.scriv", ValidAuthorId);
 
         await _sut.AddAsync(p1);
         await _db.SaveChangesAsync();

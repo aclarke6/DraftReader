@@ -7,6 +7,7 @@ using DraftView.Domain.Interfaces.Services;
 
 namespace DraftView.Application.Services;
 
+#pragma warning disable CS9113 // clientFactory used in download phase
 public class SyncService(
     IScrivenerProjectRepository projectRepo,
     ISectionRepository sectionRepo,
@@ -16,6 +17,7 @@ public class SyncService(
     ILocalPathResolver pathResolver,
     ISyncProgressTracker progressTracker,
     IDropboxConnectionChecker connectionChecker,
+    IDropboxClientFactory clientFactory,
     ILogger<SyncService> logger) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
@@ -23,12 +25,16 @@ public class SyncService(
         var project = await projectRepo.GetByIdAsync(projectId, ct)
             ?? throw new EntityNotFoundException(nameof(ScrivenerProject), projectId);
 
+        // Scope all per-author services to this project's author
+        connectionChecker.SetUserId(project.AuthorId);
+        pathResolver.SetUserId(project.AuthorId);
+
         if (!await connectionChecker.IsConnectedAsync(ct))
         {
             if (project.SyncStatus != SyncStatus.Stale)
             {
                 project.UpdateSyncStatus(SyncStatus.Stale, DateTime.UtcNow,
-                    "Dropbox not connected. Configure Dropbox to enable sync.");
+                    "Dropbox not connected. Connect your Dropbox account to enable sync.");
                 await unitOfWork.SaveChangesAsync(ct);
             }
             return;
@@ -87,11 +93,14 @@ public class SyncService(
 
     public async Task DetectContentChangesAsync(Guid projectId, CancellationToken ct = default)
     {
-        if (!await connectionChecker.IsConnectedAsync())
-            return;
-
         var project = await projectRepo.GetByIdAsync(projectId, ct)
             ?? throw new EntityNotFoundException(nameof(ScrivenerProject), projectId);
+
+        connectionChecker.SetUserId(project.AuthorId);
+        pathResolver.SetUserId(project.AuthorId);
+
+        if (!await connectionChecker.IsConnectedAsync(ct))
+            return;
 
         var localPath         = await pathResolver.ResolveAsync(project, ct);
         var publishedSections = await sectionRepo.GetPublishedByProjectIdAsync(projectId, ct);
@@ -180,4 +189,5 @@ public class SyncService(
         return null;
     }
 }
+
 

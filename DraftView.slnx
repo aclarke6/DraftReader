@@ -12,7 +12,15 @@
     <File Path="pg.ps1" />
     <File Path="PowerShell.md" />
     <File Path="Project Forweard Plan.Txt" />
+    <File Path="publish-draftview.ps1" />
     <File Path="Show-ProjectTree.ps1" />
+    <File Path="step1-authorid-tests.ps1" />
+    <File Path="step2-fix-callers.ps1" />
+    <File Path="step3-dropbox-entity.ps1" />
+    <File Path="step4-dropbox-tests.ps1" />
+    <File Path="step5-fix-migration.ps1" />
+    <File Path="step6-phase2-infrastructure.ps1" />
+    <File Path="step7-phase3-syncservice.ps1" />
     <File Path="TASKS.md" />
   </Folder>
   <Folder Name="/Tests/">

@@ -40,7 +40,9 @@ public class RtfConverter : IRtfConverter
         rtfText = ScrivCharStyleClose.Replace(rtfText, string.Empty);
         rtfText = ScrivParaStyleOpen.Replace(rtfText, string.Empty);
         rtfText = ScrivParaStyleClose.Replace(rtfText, string.Empty);
-        return Rtf.ToHtml(rtfText);
+        var html = Rtf.ToHtml(rtfText);
+        html = Regex.Replace(html, @" style=""[^""]*""", string.Empty, RegexOptions.None);
+        return html;
     }
 
     private static string ComputeHash(byte[] content) =>

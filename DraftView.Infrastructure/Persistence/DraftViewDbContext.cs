@@ -25,6 +25,7 @@ public class DraftViewDbContext(DbContextOptions<DraftViewDbContext> options)
     public DbSet<UserNotificationPreferences> NotificationPreferences { get; set; } = default!;
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } = default!;
     public DbSet<EmailDeliveryLog> EmailDeliveryLogs { get; set; } = default!;
+    public DbSet<DropboxConnection> DropboxConnections { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -35,4 +36,3 @@ public class DraftViewDbContext(DbContextOptions<DraftViewDbContext> options)
     Task<int> IUnitOfWork.SaveChangesAsync(CancellationToken ct) =>
         base.SaveChangesAsync(ct);
 }
-

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
+using DraftView.Infrastructure.Dropbox;
 using DraftView.Infrastructure.Persistence;
 
 namespace DraftView.Web.Data;
@@ -18,6 +19,7 @@ public static class DatabaseSeeder
         var db                 = scope.ServiceProvider.GetRequiredService<DraftViewDbContext>();
         var userManager        = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
         var logger             = scope.ServiceProvider.GetRequiredService<ILogger<DraftViewDbContext>>();
+        var dropboxSettings    = scope.ServiceProvider.GetRequiredService<DropboxClientSettings>();
 
         // ---------------------------------------------------------------------------
         // Seed Author IdentityUser (for login)
@@ -61,6 +63,35 @@ public static class DatabaseSeeder
         }
 
         // ---------------------------------------------------------------------------
+        // Seed DropboxConnection stub for author
+        // If a legacy access token exists in config, seed it as connected.
+        // The author should reconnect via OAuth to get a proper refresh token.
+        // ---------------------------------------------------------------------------
+        var authorUser = db.AppUsers.First(u => u.Email == authorEmail);
+        var existingConnection = db.DropboxConnections.FirstOrDefault(d => d.UserId == authorUser.Id);
+        if (existingConnection is null)
+        {
+            var connection = DropboxConnection.CreateStub(authorUser.Id);
+
+            if (!string.IsNullOrWhiteSpace(dropboxSettings.AccessToken))
+            {
+                // Seed legacy token â€” no refresh token available, will need reconnect when expired
+                connection.Authorise(
+                    dropboxSettings.AccessToken,
+                    "legacy-no-refresh-token",
+                    DateTime.UtcNow.AddDays(1)); // conservative expiry â€” prompt reconnect soon
+                logger.LogWarning(
+                    "Seeded legacy Dropbox access token for {Email}. " +
+                    "Please reconnect via /dropbox/settings to get a proper refresh token.",
+                    authorEmail);
+            }
+
+            db.DropboxConnections.Add(connection);
+            await db.SaveChangesAsync();
+            logger.LogInformation("DropboxConnection created for author {Email}", authorEmail);
+        }
+
+        // ---------------------------------------------------------------------------
         // Seed Test.scriv > Book 1 project
         // ---------------------------------------------------------------------------
         var existingProject = db.Projects.FirstOrDefault(p => p.Name == "Test - Book 1");
@@ -69,6 +100,7 @@ public static class DatabaseSeeder
             var project = ScrivenerProject.Create(
                 "Test - Book 1",
                 scrivTestProjectDropboxPath,
+                authorUser.Id,
                 "DF1031AB-818A-41EB-AD49-F26D5C44F3D4");
             db.Projects.Add(project);
             await db.SaveChangesAsync();
@@ -76,4 +108,3 @@ public static class DatabaseSeeder
         }
     }
 }
-

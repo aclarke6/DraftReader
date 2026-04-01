@@ -10,6 +10,9 @@ public class ScrivenerProjectConfiguration : IEntityTypeConfiguration<ScrivenerP
     {
         builder.HasKey(p => p.Id);
 
+        builder.Property(p => p.AuthorId)
+            .IsRequired();
+
         builder.Property(p => p.Name)
             .IsRequired()
             .HasMaxLength(200);
@@ -27,6 +30,11 @@ public class ScrivenerProjectConfiguration : IEntityTypeConfiguration<ScrivenerP
 
         builder.Property(p => p.IsSoftDeleted)
             .IsRequired();
+
+        builder.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(p => p.AuthorId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany<Section>()
             .WithOne()

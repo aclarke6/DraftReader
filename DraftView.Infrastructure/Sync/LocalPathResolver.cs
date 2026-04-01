@@ -6,21 +6,36 @@ namespace DraftView.Infrastructure.Sync;
 public class LocalPathResolver : ILocalPathResolver
 {
     private readonly string _localCachePath;
+    private Guid _userId;
 
     public LocalPathResolver(string localCachePath)
     {
         _localCachePath = localCachePath;
     }
 
+    public void SetUserId(Guid userId) => _userId = userId;
+
     public Task<string> ResolveAsync(ScrivenerProject project, CancellationToken ct = default)
     {
-        var path = string.IsNullOrWhiteSpace(_localCachePath)
-            ? project.DropboxPath
-            : Path.Combine(
-                _localCachePath,
-                Path.GetFileName(project.DropboxPath.TrimEnd('/').TrimEnd('\\')));
+        string basePath;
 
-        return Task.FromResult(path);
+        if (string.IsNullOrWhiteSpace(_localCachePath))
+        {
+            basePath = project.DropboxPath;
+        }
+        else
+        {
+            // Scope cache path per user: {cachePath}/{userId}/{projectFolder}
+            var userCachePath = _userId != Guid.Empty
+                ? Path.Combine(_localCachePath, _userId.ToString())
+                : _localCachePath;
+
+            basePath = Path.Combine(
+                userCachePath,
+                Path.GetFileName(project.DropboxPath.TrimEnd('/').TrimEnd('\\')));
+        }
+
+        return Task.FromResult(basePath);
     }
 
     public async Task<string> ResolveScrivxAsync(ScrivenerProject project, CancellationToken ct = default)

@@ -33,7 +33,6 @@ builder.Services.AddSingleton(dropboxSettings);
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
-
 builder.Services.AddDbContext<DraftViewDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -66,6 +65,16 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddControllersWithViews();
 
 // ---------------------------------------------------------------------------
+// Session (required for OAuth state)
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(10);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+// ---------------------------------------------------------------------------
 // Repositories
 // ---------------------------------------------------------------------------
 builder.Services.AddScoped<IUnitOfWork>(sp =>
@@ -78,6 +87,7 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IReadEventRepository, ReadEventRepository>();
 builder.Services.AddScoped<IUserNotificationPreferencesRepository, UserNotificationPreferencesRepository>();
 builder.Services.AddScoped<IEmailDeliveryLogRepository, EmailDeliveryLogRepository>();
+builder.Services.AddScoped<IDropboxConnectionRepository, DropboxConnectionRepository>();
 
 // ---------------------------------------------------------------------------
 // Application services
@@ -101,12 +111,8 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 // ---------------------------------------------------------------------------
 builder.Services.AddSingleton<IScrivenerProjectParser, ScrivenerProjectParser>();
 builder.Services.AddSingleton<IRtfConverter, RtfConverter>();
-
-if (!string.IsNullOrWhiteSpace(dropboxSettings.AccessToken))
-{
-    builder.Services.AddSingleton<IDropboxClient>(
-        new DraftView.Infrastructure.Dropbox.DropboxClient(dropboxSettings));
-}
+builder.Services.AddScoped<IDropboxConnectionChecker, DropboxConnectionChecker>();
+builder.Services.AddScoped<IDropboxClientFactory, DropboxClientFactory>();
 
 // ---------------------------------------------------------------------------
 // Email sender
@@ -119,7 +125,6 @@ else
 // ---------------------------------------------------------------------------
 // Path resolver
 // ---------------------------------------------------------------------------
-builder.Services.AddSingleton<IDropboxConnectionChecker, DropboxConnectionChecker>();
 builder.Services.AddScoped<ILocalPathResolver>(_ =>
     new LocalPathResolver(scrivenerSettings.ResolvedLocalCachePath));
 
@@ -169,6 +174,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -177,13 +183,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
-
-
-
-
-
-
-
-
 
