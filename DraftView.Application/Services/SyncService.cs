@@ -7,7 +7,7 @@ using DraftView.Domain.Interfaces.Services;
 
 namespace DraftView.Application.Services;
 
-#pragma warning disable CS9113 // clientFactory used in download phase
+#pragma warning disable CS9113 // clientFactory used internally by DropboxFileDownloader
 public class SyncService(
     IScrivenerProjectRepository projectRepo,
     ISectionRepository sectionRepo,
@@ -18,6 +18,7 @@ public class SyncService(
     ISyncProgressTracker progressTracker,
     IDropboxConnectionChecker connectionChecker,
     IDropboxClientFactory clientFactory,
+    IDropboxFileDownloader fileDownloader,
     ILogger<SyncService> logger) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
@@ -42,6 +43,9 @@ public class SyncService(
 
         try
         {
+            // Download latest files from Dropbox into per-author cache
+            await fileDownloader.DownloadProjectAsync(project, project.AuthorId, ct);
+
             var scrivxPath = await pathResolver.ResolveScrivxAsync(project, ct);
             var parsed     = parser.Parse(scrivxPath);
             var localPath  = await pathResolver.ResolveAsync(project, ct);
@@ -189,5 +193,4 @@ public class SyncService(
         return null;
     }
 }
-
 

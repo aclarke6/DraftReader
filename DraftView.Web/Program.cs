@@ -113,6 +113,7 @@ builder.Services.AddSingleton<IScrivenerProjectParser, ScrivenerProjectParser>()
 builder.Services.AddSingleton<IRtfConverter, RtfConverter>();
 builder.Services.AddScoped<IDropboxConnectionChecker, DropboxConnectionChecker>();
 builder.Services.AddScoped<IDropboxClientFactory, DropboxClientFactory>();
+builder.Services.AddScoped<IDropboxFileDownloader, DropboxFileDownloader>();
 
 // ---------------------------------------------------------------------------
 // Email sender
@@ -183,4 +184,5 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
 

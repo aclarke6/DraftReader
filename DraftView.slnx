@@ -15,6 +15,7 @@
     <File Path="publish-draftview.ps1" />
     <File Path="Show-ProjectTree.ps1" />
     <File Path="step1-authorid-tests.ps1" />
+    <File Path="step10-file-downloader.ps1" />
     <File Path="step2-fix-callers.ps1" />
     <File Path="step3-dropbox-entity.ps1" />
     <File Path="step4-dropbox-tests.ps1" />

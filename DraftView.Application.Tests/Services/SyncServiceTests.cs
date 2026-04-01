@@ -22,6 +22,7 @@ public class SyncServiceTests
     private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
     private readonly Mock<IDropboxConnectionChecker>   _connectionChecker = new();
     private readonly Mock<IDropboxClientFactory>       _clientFactory   = new();
+    private readonly Mock<IDropboxFileDownloader>      _fileDownloader  = new();
     private readonly Mock<ILogger<SyncService>>        _logger          = new();
 
     private SyncService CreateSut() => new(
@@ -34,6 +35,7 @@ public class SyncServiceTests
         _progressTracker.Object,
         _connectionChecker.Object,
         _clientFactory.Object,
+        _fileDownloader.Object,
         _logger.Object);
 
     public SyncServiceTests()
@@ -41,6 +43,9 @@ public class SyncServiceTests
         _connectionChecker.Setup(x => x.IsConnectedAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _connectionChecker.Setup(x => x.SetUserId(It.IsAny<Guid>()));
         _pathResolver.Setup(x => x.SetUserId(It.IsAny<Guid>()));
+        _fileDownloader.Setup(x => x.DownloadProjectAsync(
+            It.IsAny<ScrivenerProject>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("/fake/path");
     }
 
     private static ScrivenerProject MakeProject() =>
