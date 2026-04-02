@@ -103,7 +103,7 @@
                                         <span class="badge badge--accent" id="sync-badge-@p.Id">Syncing...</span>
                                         <div id="sync-count-@p.Id" style="font-size:0.75rem; color:var(--color-ink-muted); margin-top:2px;">Starting...</div>
                                         <div style="margin-top:4px; width:120px; height:4px; background:var(--color-border); border-radius:2px; overflow:hidden; position:relative;">
-                                            <div id="sync-bar-@p.Id" style="height:100%; width:30%; background:var(--color-accent); border-radius:2px; position:absolute; animation: syncsweep 1.6s ease-in-out infinite;"></div>
+                                            <div id="sync-bar-@p.Id" style="height:100%; width:0%; background:var(--color-accent); border-radius:2px; position:absolute; transition:width 0.4s ease;"></div>
                                         </div>
                                     }
                                     else
@@ -366,11 +366,14 @@
                         } else {
                             var countEl = document.getElementById('sync-count-' + projectId);
                             if (countEl) {
+                                var barEl = document.getElementById('sync-bar-' + projectId);
                                 if (data.filesDownloaded > 0 && data.sectionsProcessed === 0) {
                                     var total = data.totalFiles > 0 ? ' / ' + data.totalFiles : '';
                                     countEl.textContent = 'Downloading... ' + data.filesDownloaded + total + ' files';
+                                    if (barEl && data.totalFiles > 0) { barEl.style.width = Math.round((data.filesDownloaded / data.totalFiles) * 100) + '%'; }
                                 } else if (data.sectionsProcessed > 0) {
                                     countEl.textContent = data.filesDownloaded + ' files • ' + data.sectionsProcessed + ' sections processed';
+                                    if (barEl) { barEl.style.width = '100%'; }
                                 }
                             }
                         }
@@ -386,6 +389,8 @@
         setTimeout(pollSyncStatus, 2000);
     </script>
 }
+
+
 
 
 
