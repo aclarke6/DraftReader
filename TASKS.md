@@ -29,6 +29,16 @@ Do not build the full `Tenancy` / `TenancyMembership` entity model until billing
 ### TDD Required for Domain Entities
 All new domain entities require tests before implementation. No exceptions.
 
+### CSS Version — MANDATORY on Every CSS Change
+Every script that modifies any `.css` file must also bump `--css-version` in `DraftView.Core.css`. Format: `v{YYYY}-{MM}-{DD}-{n}` where n increments if multiple changes on the same day. Never skip this step.
+
+### Controller Action Guards — MANDATORY
+Every public action in `AuthorController` must call `RequireAuthorAsync()` or `GetAuthorAsync()` as the first statement. No exceptions. Before adding any new action, verify the guard is present. When auditing, use:
+```
+Select-String -Path "AuthorController.cs" -Pattern "public async Task<IActionResult>|GetAuthorAsync|RequireAuthorAsync"
+```
+and confirm every action has a guard on the following line.
+
 ### Replacement Scripts Must Verify — MANDATORY
 Every PowerShell string replacement MUST verify the change applied before proceeding to the next step or building. This is not optional. Pattern:
 1. Apply replacement
@@ -39,6 +49,17 @@ Silent failures cause cascading bugs and wasted cycles. No exceptions.
 
 ### Full File Rewrites Over Regex Patching
 For complex files, prefer full rewrites delivered as `.ps1` files over inline regex patching.
+
+---
+
+## BUGS - High Priority
+
+### Scene Status Not Updating on Sync
+- **Reported:** 2026-04-02, production
+- **Symptom:** Scenes updated in Scrivener (e.g. Chapter 13 scenes marked First Draft) are not reflecting updated status after sync. Chapter remains unpublishable.
+- **Likely cause:** SyncService reconciliation creates new sections but does not update `Status` field on existing sections when Scrivener label changes.
+- **Impact:** Author cannot publish chapters where scenes were previously unstatused and later updated in Scrivener.
+- **Fix:** Review `SyncService` reconciliation — ensure existing section `Status` is updated from parsed Scrivener data on every sync, not just on creation.
 
 ---
 
@@ -54,7 +75,7 @@ For complex files, prefer full rewrites delivered as `.ps1` files over inline re
 - [DONE] ReaderController.Read uses chapter.ProjectId (fixes multi-project prose display)
 - [DONE] Dual-list project assignment UI (Author/ManageReaderAccess)
 - [DONE] Readers list redesign — name as link, icon buttons (NoSymbol, Restore, Delete)
-- Fix AuthorController access control — readers can currently access author pages
+- [DONE] AuthorController access control — RequireAuthorAsync guard on all actions
 - Fix Reader/Read LHS sidebar — position:sticky not working, parent container issue
 - Reader Dashboard layout redesign — LHS sticky book list, RHS chapter list for selected book
 - Reader Account page (/Reader/Account) — display name, password change, email change

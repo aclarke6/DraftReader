@@ -15,10 +15,16 @@
     <File Path="publish-draftview.ps1" />
     <File Path="Show-ProjectTree.ps1" />
     <File Path="Step1-Thur-Dual-List.ps1" />
+    <File Path="Step10-Thur-Dashboard-Scroll.ps1" />
+    <File Path="Step11-Thur-Dashboard-Sticky.ps1" />
     <File Path="Step2-Thur-Fix-Readers.ps1" />
     <File Path="Step3-Thur-Readers-Redesign.ps1" />
     <File Path="Step4-Thur-Reader-Icons.ps1" />
     <File Path="Step5-Thur-AccessControl.ps1" />
+    <File Path="Step6-Thur-AccessControl-Full.ps1" />
+    <File Path="Step7-Thur-Sticky-Sidebar.ps1" />
+    <File Path="Step8-Thur-Sticky-Sidebar-v2.ps1" />
+    <File Path="Step9-Thur-Dashboard-Layout.ps1" />
     <File Path="TASKS.md" />
   </Folder>
   <Folder Name="/Solution Items/OldScripts/">
