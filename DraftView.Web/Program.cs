@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HttpOverrides;
 using DraftView.Domain.Enumerations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -178,6 +178,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions { ForwardedHeaders = Forward
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseMiddleware<DraftView.Web.Middleware.MobileDetectionMiddleware>();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
