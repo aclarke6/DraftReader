@@ -87,8 +87,9 @@ For complex files, prefer full rewrites delivered as `.ps1` files over inline re
 - [DONE] Dual-list project assignment UI (Author/ManageReaderAccess)
 - [DONE] Readers list redesign — name as link, icon buttons (NoSymbol, Restore, Delete)
 - [DONE] AuthorController access control — RequireAuthorAsync guard on all actions
-- [HELD] Fix Reader/Read LHS sidebar — position:sticky not working, parent container issue
-- [HELD] Reader Dashboard layout redesign — LHS sticky book list, RHS chapter list for selected book
+- [DONE] Fix Reader/Read LHS sidebar — position:sticky not working, parent container issue
+- [DONE] Reader mobile and desktop versions — mobile hides sidebar, desktop shows it (responsive design)
+- [DONE] Reader Dashboard layout redesign — LHS sticky book list, RHS chapter list for selected book
 - Invitation flow: existing account → skip to project assignment UI
 - Auto-assign when author adds project — prompt to assign existing readers
 - Fix Deactivate to also revoke all ReaderAccess records for this author
