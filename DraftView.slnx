@@ -15,22 +15,6 @@
     <File Path="Project Forweard Plan.Txt" />
     <File Path="publish-draftview.ps1" />
     <File Path="Show-ProjectTree.ps1" />
-    <File Path="Step1-Fri-RenameDesktopReader.ps1" />
-    <File Path="Step10-Fri-MobileAwareActionSelector.ps1" />
-    <File Path="Step11-Fri-FixActionSelectorWarnings.ps1" />
-    <File Path="Step12-Fri-FixActionSelectorCircularDep.ps1" />
-    <File Path="Step13-Fri-UnifyReaderController.ps1" />
-    <File Path="Step14-Fri-MobileReadBottomNav.ps1" />
-    <File Path="Step2-Fri-BaseReaderController.ps1" />
-    <File Path="Step3-Fri-FixBaseReaderWarnings.ps1" />
-    <File Path="Step4-Fri-MobileDetectionMiddleware.ps1" />
-    <File Path="Step5-Fri-MobileReaderController.ps1" />
-    <File Path="Step5b-Fri-GetLastReadEventImpl.ps1" />
-    <File Path="Step5c-Fri-FixDuplicateGetLastReadEvent.ps1" />
-    <File Path="Step6-Fri-FixDuplicateReadingProgressService.ps1" />
-    <File Path="Step7-Fri-FixDuplicateTests.ps1" />
-    <File Path="Step8-Fri-MobileReaderController.ps1" />
-    <File Path="Step9-Fri-MobileViews.ps1" />
     <File Path="TASKS.md" />
   </Folder>
   <Folder Name="/Solution Items/OldScripts/" />
@@ -64,6 +48,21 @@
     <File Path="OldScripts/02-04-26/Step7-Thur-Sticky-Sidebar.ps1" />
     <File Path="OldScripts/02-04-26/Step8-Thur-Sticky-Sidebar-v2.ps1" />
     <File Path="OldScripts/02-04-26/Step9-Thur-Dashboard-Layout.ps1" />
+  </Folder>
+  <Folder Name="/Solution Items/OldScripts/03-03-26/">
+    <File Path="OldScripts/03-04-26/Step1-Fri-RenameDesktopReader.ps1" />
+    <File Path="OldScripts/03-04-26/Step10-Fri-MobileAwareActionSelector.ps1" />
+    <File Path="OldScripts/03-04-26/Step11-Fri-FixActionSelectorWarnings.ps1" />
+    <File Path="OldScripts/03-04-26/Step12-Fri-FixActionSelectorCircularDep.ps1" />
+    <File Path="OldScripts/03-04-26/Step13-Fri-UnifyReaderController.ps1" />
+    <File Path="OldScripts/03-04-26/Step14-Fri-MobileReadBottomNav.ps1" />
+    <File Path="OldScripts/03-04-26/Step2-Fri-BaseReaderController.ps1" />
+    <File Path="OldScripts/03-04-26/Step3-Fri-FixBaseReaderWarnings.ps1" />
+    <File Path="OldScripts/03-04-26/Step4-Fri-MobileDetectionMiddleware.ps1" />
+    <File Path="OldScripts/03-04-26/Step6-Fri-FixDuplicateReadingProgressService.ps1" />
+    <File Path="OldScripts/03-04-26/Step7-Fri-FixDuplicateTests.ps1" />
+    <File Path="OldScripts/03-04-26/Step8-Fri-MobileReaderController.ps1" />
+    <File Path="OldScripts/03-04-26/Step9-Fri-MobileViews.ps1" />
   </Folder>
   <Folder Name="/Solution Items/OldScripts/31-03-2026/">
     <File Path="OldScripts/30-03-26/ChatGPT-Mobile-Fix1.ps1" />
