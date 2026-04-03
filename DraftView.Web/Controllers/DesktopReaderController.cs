@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
@@ -10,14 +10,14 @@ namespace DraftView.Web.Controllers;
 
 [Authorize]
 #pragma warning disable CS9107
-public class ReaderController(
+public class DesktopReaderController(
     IScrivenerProjectRepository projectRepo,
     ISectionRepository sectionRepo,
     ICommentService commentService,
     IReadingProgressService progressService,
     IUserRepository userRepository,
     IReaderAccessRepository readerAccessRepo,
-    ILogger<ReaderController> logger) : BaseController(userRepository)
+    ILogger<DesktopReaderController> logger) : BaseController(userRepository)
 {
     public async Task<IActionResult> Dashboard()
     {
@@ -35,7 +35,7 @@ public class ReaderController(
                 .Select(a => a.ProjectId)
                 .ToList();
 
-        var viewModel = new ReaderDashboardViewModel();
+        var viewModel = new DesktopDashboardViewModel();
 
         foreach (var projectId in projectIds)
         {
@@ -57,17 +57,17 @@ public class ReaderController(
                 .ThenBy(s => s.SortOrder)
                 .ToList();
 
-            var chaptersWithProgress = new List<ChapterProgressViewModel>();
+            var chaptersWithProgress = new List<DesktopChapterProgressViewModel>();
             foreach (var chapter in publishedChapters)
             {
                 var hasRead = await progressService.HasReadSectionAsync(user.Id, chapter.Id);
-                chaptersWithProgress.Add(new ChapterProgressViewModel {
+                chaptersWithProgress.Add(new DesktopChapterProgressViewModel {
                     Chapter = chapter,
                     HasRead = hasRead
                 });
             }
 
-            viewModel.Projects.Add(new ReaderProjectViewModel {
+            viewModel.Projects.Add(new DesktopProjectViewModel {
                 ProjectId       = project.Id,
                 ProjectName     = project.Name,
                 TotalChapters   = publishedChapters.Count,
@@ -76,7 +76,7 @@ public class ReaderController(
             });
         }
 
-        return View(viewModel);
+        return View("DesktopDashboard", viewModel);
     }
 
     public async Task<IActionResult> Index() => RedirectToAction("Dashboard");
@@ -92,7 +92,7 @@ public class ReaderController(
         if (topSection is null)
             return NotFound();
 
-        return View(new SectionContentsViewModel {
+        return View("DesktopBrowse", new DesktopSectionContentsViewModel {
             TopLevelSection = topSection,
             Groups = BuildContentGroups(topSection, allSections),
             ProjectName = project.Name
@@ -145,17 +145,17 @@ public class ReaderController(
         var breadcrumb = BuildBreadcrumb(chapter, allSections);
         var topAncestor = GetTopLevelAncestor(chapter, allSections);
 
-        SectionContentsViewModel? bookContents = null;
+        DesktopSectionContentsViewModel? bookContents = null;
         if (topAncestor is not null)
         {
-            bookContents = new SectionContentsViewModel {
+            bookContents = new DesktopSectionContentsViewModel {
                 TopLevelSection = topAncestor,
                 Groups = BuildContentGroups(topAncestor, allSections),
                 ProjectName = project?.Name ?? string.Empty
             };
         }
 
-        return View(new ChapterReadViewModel {
+        return View("DesktopRead", new DesktopChapterReadViewModel {
             Chapter = chapter,
             Breadcrumb = breadcrumb,
             Scenes = scenesWithComments,

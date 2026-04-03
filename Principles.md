@@ -23,6 +23,8 @@
   $core = $core -replace '--css-version: "v[^"]+";', '--css-version: "v2026-04-02-1";'
   if ($core -notmatch 'v2026-04-02-1') { Write-Host "ERROR: bump failed" -ForegroundColor Red; exit 1 }
   ```
+- Every script touching CSS `?v=` query strings must update ALL of the stylesheet css link calls
+  in `_Layout.cshtml` to match the new `--css-version` value — never leave any on a stale version
 - Verify the bump applied before saving
 
 ## Controller Guards — MANDATORY

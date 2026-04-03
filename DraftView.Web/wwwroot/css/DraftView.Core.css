@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    DraftView Core Styles
 
    Global design tokens, base/reset rules, and shared layout scaffolding.
@@ -13,7 +13,7 @@
    -------------------------------------------------------------------------- */
 :root {
     /* Update for every change */
-    --css-version: "v2026-04-02-3";
+    --css-version: "v2026-04-04-1";
     /* Colour palette */
     --color-bg: #F7F4EF;
     --color-surface: #FFFFFF;

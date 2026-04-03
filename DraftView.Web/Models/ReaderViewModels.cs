@@ -1,14 +1,14 @@
-﻿using DraftView.Domain.Entities;
+using DraftView.Domain.Entities;
 
 namespace DraftView.Web.Models;
 
-public class TopLevelViewModel
+public class DesktopTopLevelViewModel
 {
     public IReadOnlyList<Section> TopLevelSections { get; set; } = new List<Section>();
     public string ProjectName { get; set; } = string.Empty;
 }
 
-public class SectionContentsViewModel
+public class DesktopSectionContentsViewModel
 {
     public Section TopLevelSection { get; set; } = default!;
     public IReadOnlyList<ContentGroup> Groups { get; set; } = new List<ContentGroup>();
@@ -24,13 +24,13 @@ public class ContentGroup
     public IReadOnlyList<ContentGroup> SubGroups { get; set; } = new List<ContentGroup>();
 }
 
-public class ChapterReadViewModel
+public class DesktopChapterReadViewModel
 {
     public Section Chapter { get; set; } = default!;
     public IReadOnlyList<string> Breadcrumb { get; set; } = new List<string>();
     public IReadOnlyList<SceneWithComments> Scenes { get; set; } = new List<SceneWithComments>();
     public IReadOnlyList<CommentDisplayViewModel> ChapterComments { get; set; } = new List<CommentDisplayViewModel>();
-    public SectionContentsViewModel? BookContents { get; set; }
+    public DesktopSectionContentsViewModel? BookContents { get; set; }
     public string ProjectName { get; set; } = string.Empty;
     public Guid CurrentUserId { get; set; }
     public bool CurrentUserIsModerator { get; set; }
@@ -64,27 +64,27 @@ public class AddCommentViewModel
 /// <summary>
 /// Progress and chapter list for a single project on the reader dashboard.
 /// </summary>
-public class ReaderProjectViewModel
+public class DesktopProjectViewModel
 {
     public Guid ProjectId { get; set; }
     public string ProjectName { get; set; } = string.Empty;
     public int TotalChapters { get; set; }
     public int ReadChapters { get; set; }
-    public List<ChapterProgressViewModel> PublishedChapters { get; set; } = new();
+    public List<DesktopChapterProgressViewModel> PublishedChapters { get; set; } = new();
     public int ProgressPercent => TotalChapters > 0
         ? (int)((double)ReadChapters / TotalChapters * 100)
         : 0;
 }
 
-public class ReaderDashboardViewModel
+public class DesktopDashboardViewModel
 {
-    public List<ReaderProjectViewModel> Projects { get; set; } = new();
+    public List<DesktopProjectViewModel> Projects { get; set; } = new();
     public bool HasProjects => Projects.Any();
     public int TotalReadChapters => Projects.Sum(p => p.ReadChapters);
     public int TotalChapters => Projects.Sum(p => p.TotalChapters);
 }
 
-public class ChapterProgressViewModel
+public class DesktopChapterProgressViewModel
 {
     public Section Chapter { get; set; } = default!;
     public bool HasRead { get; set; }
