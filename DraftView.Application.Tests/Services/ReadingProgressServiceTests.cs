@@ -209,7 +209,7 @@ public class ReadingProgressServiceTests
 
         var ev1 = ReadEvent.Create(section1, userId);
         var ev2 = ReadEvent.Create(section2, userId);
-        ev2.RecordOpen(); // gives ev2 a later LastOpenedAt
+        ev2.RecordOpen();
 
         _readEventRepo.Setup(r => r.GetByProjectIdAsync(projectId, default))
             .ReturnsAsync(new List<ReadEvent> { ev1, ev2 });
