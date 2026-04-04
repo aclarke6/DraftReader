@@ -63,6 +63,14 @@ public class UserTests
         Assert.Equal(Role.Author, user.Role);
     }
 
+    [Fact]
+    public void Create_SystemSupportRole_SetsRoleCorrectly()
+    {
+        var user = User.Create("support@draftview.co.uk", "DraftView Support", Role.SystemSupport);
+
+        Assert.Equal(Role.SystemSupport, user.Role);
+    }
+
     // ---------------------------------------------------------------------------
     // Activate
     // ---------------------------------------------------------------------------
