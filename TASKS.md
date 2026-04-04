@@ -128,7 +128,7 @@ For complex files, prefer full rewrites delivered as `.ps1` files over inline re
 - [DONE] Progress bar during sync
 - [DONE] Live file download count: "Downloading... 180 / 1771 files" (Steps 12-14)
 - [DONE] Real progress bar driven by filesDownloaded/totalFiles percentage (Step 14)
-- Show cache file count per project on dashboard (visible sync health indicator)
+- [DONE] Show cache file count per project on dashboard (visible sync health indicator)
 - Show last download timestamp alongside last sync timestamp
 
 ### Config: Move Non-Secret Settings Out of User Secrets

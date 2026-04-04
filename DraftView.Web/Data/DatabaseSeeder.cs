@@ -13,13 +13,40 @@ public static class DatabaseSeeder
         string authorEmail,
         string authorPassword,
         string authorDisplayName,
-        string scrivTestProjectDropboxPath)
+        string scrivTestProjectDropboxPath,
+        string supportEmail,
+        string supportPassword,
+        string supportDisplayName)
     {
         using var scope        = services.CreateScope();
-        var db                 = scope.ServiceProvider.GetRequiredService<DraftViewDbContext>();
-        var userManager        = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-        var logger             = scope.ServiceProvider.GetRequiredService<ILogger<DraftViewDbContext>>();
-        var dropboxSettings    = scope.ServiceProvider.GetRequiredService<DropboxClientSettings>();
+        var db = scope.ServiceProvider.GetRequiredService<DraftViewDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DraftViewDbContext>>();
+        var dropboxSettings = scope.ServiceProvider.GetRequiredService<DropboxClientSettings>();
+
+        // ---------------------------------------------------------------------------
+        // Seed Identity roles
+        // ---------------------------------------------------------------------------
+        if (!await roleManager.RoleExistsAsync(Role.Author.ToString()))
+        {
+            var result = await roleManager.CreateAsync(new IdentityRole(Role.Author.ToString()));
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to create role {Role.Author}: {errors}");
+            }
+        }
+
+        if (!await roleManager.RoleExistsAsync(Role.SystemSupport.ToString()))
+        {
+            var result = await roleManager.CreateAsync(new IdentityRole(Role.SystemSupport.ToString()));
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to create role {Role.SystemSupport}: {errors}");
+            }
+        }
 
         // ---------------------------------------------------------------------------
         // Seed Author IdentityUser (for login)
@@ -27,10 +54,9 @@ public static class DatabaseSeeder
         var existingIdentityUser = await userManager.FindByEmailAsync(authorEmail);
         if (existingIdentityUser is null)
         {
-            var identityUser = new IdentityUser
-            {
-                UserName       = authorEmail,
-                Email          = authorEmail,
+            var identityUser = new IdentityUser {
+                UserName = authorEmail,
+                Email = authorEmail,
                 EmailConfirmed = true
             };
 
@@ -41,7 +67,51 @@ public static class DatabaseSeeder
                 throw new InvalidOperationException($"Failed to create author Identity user: {errors}");
             }
 
+            existingIdentityUser = identityUser;
             logger.LogInformation("Author Identity user created: {Email}", authorEmail);
+        }
+
+        if (!await userManager.IsInRoleAsync(existingIdentityUser, Role.Author.ToString()))
+        {
+            var result = await userManager.AddToRoleAsync(existingIdentityUser, Role.Author.ToString());
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to assign author role: {errors}");
+            }
+        }
+
+        // ---------------------------------------------------------------------------
+        // Seed Support IdentityUser (for login)
+        // ---------------------------------------------------------------------------
+        var existingSupportIdentityUser = await userManager.FindByEmailAsync(supportEmail);
+        if (existingSupportIdentityUser is null)
+        {
+            var identityUser = new IdentityUser {
+                UserName = supportEmail,
+                Email = supportEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(identityUser, supportPassword);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to create support Identity user: {errors}");
+            }
+
+            existingSupportIdentityUser = identityUser;
+            logger.LogInformation("Support Identity user created: {Email}", supportEmail);
+        }
+
+        if (!await userManager.IsInRoleAsync(existingSupportIdentityUser, Role.SystemSupport.ToString()))
+        {
+            var result = await userManager.AddToRoleAsync(existingSupportIdentityUser, Role.SystemSupport.ToString());
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to assign support role: {errors}");
+            }
         }
 
         // ---------------------------------------------------------------------------
@@ -60,6 +130,20 @@ public static class DatabaseSeeder
 
             await db.SaveChangesAsync();
             logger.LogInformation("Author domain user created: {Email}", authorEmail);
+        }
+
+        // ---------------------------------------------------------------------------
+        // Seed Support domain User
+        // ---------------------------------------------------------------------------
+        var existingSupportDomainUser = db.AppUsers.FirstOrDefault(u => u.Email == supportEmail);
+        if (existingSupportDomainUser is null)
+        {
+            var support = User.Create(supportEmail, supportDisplayName, Role.SystemSupport);
+            support.Activate();
+            db.AppUsers.Add(support);
+
+            await db.SaveChangesAsync();
+            logger.LogInformation("Support domain user created: {Email}", supportEmail);
         }
 
         // ---------------------------------------------------------------------------

@@ -3,5 +3,6 @@
 public enum Role
 {
     Author,
-    BetaReader
+    BetaReader,
+    SystemSupport
 }

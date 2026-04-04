@@ -11,6 +11,7 @@ using DraftView.Infrastructure.Sync;
 using DraftView.Infrastructure.Persistence;
 using DraftView.Infrastructure.Persistence.Repositories;
 using DraftView.Web;
+using DraftView.Web.Extensions;
 using DraftView.Web.Data;
 using DraftView.Web.Services;
 
@@ -19,46 +20,22 @@ var builder = WebApplication.CreateBuilder(args);
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-var scrivenerSettings = new DraftViewSettings();
-builder.Configuration.GetSection("DraftView").Bind(scrivenerSettings);
-builder.Services.AddSingleton(scrivenerSettings);
+// Configure settings (Options pattern + singletons for legacy resolution)
+builder.Services.AddConfiguredSettings(builder.Configuration);
 
-var emailSettings = new EmailSettings();
-builder.Configuration.GetSection("Email").Bind(emailSettings);
-builder.Services.AddSingleton(emailSettings);
-
-var dropboxSettings = new DropboxClientSettings();
-builder.Configuration.GetSection("Dropbox").Bind(dropboxSettings);
-builder.Services.AddSingleton(dropboxSettings);
+// Note: avoid calling BuildServiceProvider here (creates duplicate singletons).
+// Read configuration values directly for decisions that must be made at startup
+// and resolve services from the provider when registering services that need them.
 
 // ---------------------------------------------------------------------------
-// Database
+// Persistence (database + repositories)
 // ---------------------------------------------------------------------------
-builder.Services.AddDbContext<DraftViewDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddPersistenceServices(builder.Configuration);
 
 // ---------------------------------------------------------------------------
 // ASP.NET Core Identity
 // ---------------------------------------------------------------------------
-builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit           = true;
-    options.Password.RequiredLength         = 8;
-    options.Password.RequireUppercase       = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.SignIn.RequireConfirmedEmail     = false;
-})
-.AddEntityFrameworkStores<DraftViewDbContext>()
-.AddDefaultTokenProviders();
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath         = "/Account/Login";
-    options.LogoutPath        = "/Account/Logout";
-    options.AccessDeniedPath  = "/Account/AccessDenied";
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan    = TimeSpan.FromDays(14);
-});
+builder.Services.AddIdentityServices();
 
 // ---------------------------------------------------------------------------
 // MVC
@@ -75,38 +52,12 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// ---------------------------------------------------------------------------
-// Repositories
-// ---------------------------------------------------------------------------
-builder.Services.AddScoped<IUnitOfWork>(sp =>
-    sp.GetRequiredService<DraftViewDbContext>());
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
-builder.Services.AddScoped<IScrivenerProjectRepository, ScrivenerProjectRepository>();
-builder.Services.AddScoped<ISectionRepository, SectionRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<IReadEventRepository, ReadEventRepository>();
-builder.Services.AddScoped<IUserNotificationPreferencesRepository, UserNotificationPreferencesRepository>();
-builder.Services.AddScoped<IEmailDeliveryLogRepository, EmailDeliveryLogRepository>();
-builder.Services.AddScoped<IDropboxConnectionRepository, DropboxConnectionRepository>();
-builder.Services.AddScoped<IReaderAccessRepository, ReaderAccessRepository>();
+// (moved to AddPersistenceServices extension)
 
 // ---------------------------------------------------------------------------
 // Application services
 // ---------------------------------------------------------------------------
-builder.Services.AddScoped<ISyncService, SyncService>();
-builder.Services.AddScoped<IPublicationService, PublicationService>();
-builder.Services.AddSingleton<ISyncProgressTracker, SyncProgressTracker>();
-builder.Services.AddScoped<IScrivenerProjectDiscoveryService, ScrivenerProjectDiscoveryService>();
-builder.Services.AddSingleton(new DiscoveryServiceOptions
-{
-    LocalCachePath = builder.Configuration["Dropbox:LocalCachePath"] ?? string.Empty
-});
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IReadingProgressService, ReadingProgressService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddApplicationServices();
 
 // ---------------------------------------------------------------------------
 // Parsing and Dropbox
@@ -120,7 +71,8 @@ builder.Services.AddScoped<IDropboxFileDownloader, DropboxFileDownloader>();
 // ---------------------------------------------------------------------------
 // Email sender
 // ---------------------------------------------------------------------------
-if (emailSettings.Provider == "Console")
+var emailProvider = builder.Configuration["Email:Provider"] ?? string.Empty;
+if (emailProvider == "Console")
     builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 else
     builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -128,8 +80,12 @@ else
 // ---------------------------------------------------------------------------
 // Path resolver
 // ---------------------------------------------------------------------------
-builder.Services.AddScoped<ILocalPathResolver>(_ =>
-    new LocalPathResolver(scrivenerSettings.ResolvedLocalCachePath));
+// Resolve DraftViewSettings from DI so we don't need to build a service provider here.
+builder.Services.AddScoped<ILocalPathResolver>(sp =>
+{
+    var settings = sp.GetRequiredService<DraftViewSettings>();
+    return new LocalPathResolver(settings.ResolvedLocalCachePath);
+});
 
 // ---------------------------------------------------------------------------
 // Background sync service
@@ -147,13 +103,23 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// Seed initial data
-var seedEmail    = builder.Configuration["Seed:AuthorEmail"]    ?? "author@draftview.local";
+var seedEmail = builder.Configuration["Seed:AuthorEmail"] ?? "author@draftview.local";
 var seedPassword = builder.Configuration["Seed:AuthorPassword"] ?? "Password1!";
-var seedName     = builder.Configuration["Seed:AuthorName"]     ?? "Author";
-var seedPath     = builder.Configuration["Seed:TestProjectPath"] ?? "/Apps/Scrivener/Test.scriv";
+var seedName = builder.Configuration["Seed:AuthorName"] ?? "Author";
+var seedPath = builder.Configuration["Seed:TestProjectPath"] ?? "/Apps/Scrivener/Test.scriv";
+var supportEmail = builder.Configuration["Seed:SupportEmail"] ?? "support@draftview.co.uk";
+var supportPassword = builder.Configuration["Seed:SupportPassword"] ?? "Password1!";
+var supportDisplayName = builder.Configuration["Seed:SupportName"] ?? "DraftView Support";
 
-await DatabaseSeeder.SeedAsync(app.Services, seedEmail, seedPassword, seedName, seedPath);
+await DatabaseSeeder.SeedAsync(
+    app.Services,
+    seedEmail,
+    seedPassword,
+    seedName,
+    seedPath,
+    supportEmail,
+    supportPassword,
+    supportDisplayName);
 
 // Reset any projects stuck in Syncing state from a previous crashed sync
 using (var startupScope = app.Services.CreateScope())
