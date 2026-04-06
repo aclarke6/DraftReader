@@ -100,3 +100,11 @@ public class ResetPasswordViewModel
     public string ConfirmPassword { get; set; } = string.Empty;
 }
 
+public class AccessDeniedViewModel
+{
+    public string Heading { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public string ActionText { get; set; } = string.Empty;
+    public string ActionController { get; set; } = string.Empty;
+    public string ActionAction { get; set; } = string.Empty;
+}

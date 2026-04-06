@@ -28,12 +28,8 @@
 - Verify the bump applied before saving
 
 ## Controller Guards — MANDATORY
-- Every public action in `AuthorController` must have `RequireAuthorAsync()` or `GetAuthorAsync()` as first statement
-- Audit after adding any new action:
-  ```powershell
-  Select-String -Path "AuthorController.cs" -Pattern "public async Task<IActionResult>|GetAuthorAsync|RequireAuthorAsync"
-  ```
-  and confirm every action has a guard on the following line.
+- Every public action must use ASP.Net Core's `[Authorize]` attribute to guard against unauthorized access
+  
 
 ## Build and Test
 - Always build before running the app: `dotnet build DraftView.slnx --no-restore -v q`

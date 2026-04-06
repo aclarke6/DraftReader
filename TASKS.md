@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-02
+Last updated: 2026-04-06
 
 ---
 
@@ -33,16 +33,16 @@ All new domain entities, application service changes, and infrastructure changes
 Every script that modifies any `.css` file must also bump `--css-version` in `DraftView.Core.css`. Format: `v{YYYY}-{MM}-{DD}-{n}` where n increments if multiple changes on the same day. Never skip this step.
 
 Always use regex replace so it matches whatever version is currently there — never hardcode the expected current value:
-```powershell
+powershell
 $core = $core -replace '--css-version: "v[^"]+";', '--css-version: "v2026-04-02-1";'
 if ($core -notmatch 'v2026-04-02-1') { Write-Host "ERROR: bump failed" -ForegroundColor Red; exit 1 }
-```
+
 
 ### Controller Action Guards — MANDATORY
 Every public action in `AuthorController` must call `RequireAuthorAsync()` or `GetAuthorAsync()` as the first statement. No exceptions. Before adding any new action, verify the guard is present. When auditing, use:
-```
+
 Select-String -Path "AuthorController.cs" -Pattern "public async Task<IActionResult>|GetAuthorAsync|RequireAuthorAsync"
-```
+
 and confirm every action has a guard on the following line.
 
 ### Replacement Scripts Must Verify — MANDATORY
@@ -82,7 +82,10 @@ Stage 1 — Web surface (Author / BetaReader)
 - [ ] Inventory controllers/views/helpers that check `AppUsers.Role` (test checklist)
 - [Done] Add `RequireAuthorPolicy` and `RequireBetaReaderPolicy` in identity setup
 - [Done] Update `DatabaseSeeder` to ensure Identity role membership and add backfill script
-- [In progress] Replace manual domain-role guards with `[Authorize(Roles = "Author")]` / policies
+- [Done] Replace manual domain-role guards with ASP.NET Identity role enforcement
+  - [Done] `ReaderController` secured via BaseReaderController `[Authorize(Roles = "Author,BetaReader")]`
+  - [Done] `SystemSupport` explicitly excluded from Reader flows
+  - [Done] `HomeController` role-based routing implemented (Support → Author → Reader)
   - [Done] `AuthorController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
   - [Done] `DropboxController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
 - [Done] Use claim-based ViewBag population in `BaseController` (views can now rely on `ViewBag.IsAuthor` / `ViewBag.IsReader` populated from Identity)
@@ -334,6 +337,67 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 ---
 
 ## DONE (this project)
+
+---
+
+## RECENT WORK — AUTHORIZATION & SUPPORT (2026-04-06)
+- [DONE] ReaderController secured with role-based authorization (Author,BetaReader)
+- [DONE] BaseReaderController enforces reader access boundary
+- [DONE] SystemSupport isolated from Reader flows
+- [DONE] SupportController and SystemSupport dashboard scaffolded
+- [DONE] HomeController role-based routing (Support → Author → Reader)
+- [DONE] CSS versioning automation script implemented and validated
+
+### Reader Authorization Model — FINAL DECISION
+
+- Reader surface is restricted to:
+  - Author (acts as moderator)
+  - BetaReader (true reader role)
+
+- SystemSupport:
+  - Explicitly excluded from ReaderController
+  - Must use impersonation for read-only inspection
+
+- No dual-role model (Author ≠ Reader)
+  - Author is treated as elevated reader at runtime
+  - Avoids role duplication and data ambiguity
+
+- Enforcement:
+  - BaseReaderController uses `[Authorize(Roles = "Author,BetaReader")]`
+
+---
+
+### System Support Dashboard (Initial Implementation)
+
+- [DONE] SupportController with `[Authorize(Roles = "SystemSupport")]`
+- [DONE] SupportDashboardViewModel
+- [DONE] Dashboard view scaffold
+- [DONE] HomeController routing for SystemSupport users
+
+Current scope (view-only):
+- System status overview
+- User management (defined, not implemented)
+- Support message management (placeholder only)
+
+---
+
+### Impersonation — REQUIRED (NOT IMPLEMENTED)
+
+Support users must be able to:
+
+- View the system as another user
+- See exactly what that user sees
+- Never perform mutations while impersonating
+
+Constraints:
+
+- Read-only enforcement at controller level (block POST/PUT/DELETE)
+- Must not reuse normal authentication identity silently
+- Must be explicit enter / exit mode
+
+Status:
+- Not implemented
+- Design agreed
 
 - [DONE] Step17-18: RtfConverter case-insensitive path fix (Linux content bug), chapter ordering fix, email-as-nav-link
 - [DONE] Step15-16: Account/Settings page — display name, email, password change; Dropbox panel for authors

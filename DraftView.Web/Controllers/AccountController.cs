@@ -300,7 +300,60 @@ public class AccountController(
     [HttpGet]
     public IActionResult ResetPasswordInvalid() => View();
 
-    public IActionResult AccessDenied() => View();
+    [HttpGet]
+    public IActionResult AccessDenied()
+    {
+        var model = new AccessDeniedViewModel {
+            Heading = "Access denied",
+            Message = "You do not have permission to view that page.",
+            ActionText = "Go home",
+            ActionController = "Home",
+            ActionAction = "Index"
+        };
+
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            model = new AccessDeniedViewModel {
+                Heading = "Sign in required",
+                Message = "You need to sign in to view that page.",
+                ActionText = "Go to sign in",
+                ActionController = "Account",
+                ActionAction = "Login"
+            };
+        }
+        else if (User.IsInRole("SystemSupport"))
+        {
+            model = new AccessDeniedViewModel {
+                Heading = "Access denied",
+                Message = "That page is not available in the System Support role.",
+                ActionText = "Go to System Dashboard",
+                ActionController = "Support",
+                ActionAction = "Dashboard"
+            };
+        }
+        else if (User.IsInRole("Author"))
+        {
+            model = new AccessDeniedViewModel {
+                Heading = "Access denied",
+                Message = "That page is not available in the Author role.",
+                ActionText = "Go to Author Dashboard",
+                ActionController = "Author",
+                ActionAction = "Dashboard"
+            };
+        }
+        else
+        {
+            model = new AccessDeniedViewModel {
+                Heading = "Access denied",
+                Message = "That page is not available in the Reader role.",
+                ActionText = "Go to My Reading",
+                ActionController = "Reader",
+                ActionAction = "Dashboard"
+            };
+        }
+
+        return View(model);
+    }
 
     // ---------------------------------------------------------------------------
     // Settings

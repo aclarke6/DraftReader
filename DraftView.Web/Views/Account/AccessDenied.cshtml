@@ -1,12 +1,23 @@
-@{ ViewData["Title"] = "Access Denied"; }
-<div class="login-wrap">
-    <div class="login-header">
-        <h1>Access denied</h1>
-        <p>You do not have permission to view that page.</p>
-    </div>
-    <div style="text-align:center; margin-top:var(--space-6);">
-        <a asp-controller="Home" asp-action="Index" class="btn btn--secondary">
-            Go home
-        </a>
+@model DraftView.Web.Models.AccessDeniedViewModel
+
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="access-denied-page">
+    <div class="access-denied-hero">
+        <div class="access-denied">
+            <div class="access-denied__card">
+                <div class="access-denied__header">
+                    <h1 class="access-denied__title">@Model.Heading</h1>
+                    <p class="access-denied__message">@Model.Message</p>
+                </div>
+                <div class="access-denied__actions">
+                    <a asp-controller="@Model.ActionController" asp-action="@Model.ActionAction" class="btn btn--secondary">
+                        @Model.ActionText
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
