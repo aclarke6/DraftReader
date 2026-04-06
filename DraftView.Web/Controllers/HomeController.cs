@@ -18,4 +18,11 @@ public class HomeController(IUserRepository userRepo) : BaseController(userRepo)
 
         return RedirectToAction("Dashboard", "Reader");
     }
+
+    [HttpGet]
+    public IActionResult NotFoundPage()
+    {
+        Response.StatusCode = StatusCodes.Status404NotFound;
+        return View("NotFound");
+    }
 }
