@@ -36,12 +36,19 @@ public abstract class BaseController(IUserRepository userRepo) : Controller
 
     protected async Task<bool> IsAuthorAsync(CancellationToken ct = default)
     {
+        // Prefer claim-based role checks (Identity) for performance; fallback to domain user if claims absent
+        if (User?.Identity?.IsAuthenticated == true)
+            return User.IsInRole(Role.Author.ToString());
+
         var user = await GetCurrentUserAsync(ct);
         return user?.Role == Role.Author;
     }
 
     protected async Task<bool> IsReaderAsync(CancellationToken ct = default)
     {
+        if (User?.Identity?.IsAuthenticated == true)
+            return User.IsInRole(Role.BetaReader.ToString());
+
         var user = await GetCurrentUserAsync(ct);
         return user?.Role == Role.BetaReader;
     }
@@ -77,9 +84,12 @@ public abstract class BaseController(IUserRepository userRepo) : Controller
     {
         if (User.Identity?.IsAuthenticated == true)
         {
+            // Use Identity role claims where available to avoid DB lookup for simple role checks
+            ViewBag.IsAuthor = User.IsInRole(Role.Author.ToString());
+            ViewBag.IsReader = User.IsInRole(Role.BetaReader.ToString());
+
+            // Still populate CurrentUser for views that need domain info
             var user = await GetCurrentUserAsync();
-            ViewBag.IsAuthor = user?.Role == Role.Author;
-            ViewBag.IsReader = user?.Role == Role.BetaReader;
             ViewBag.CurrentUser = user;
         }
         else

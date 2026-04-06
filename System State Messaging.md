@@ -59,11 +59,14 @@ Completed work (Stage 1 so far):
 - Policies `RequireAuthorPolicy` and `RequireBetaReaderPolicy` have been added to DI via `AddIdentityServices`.
 - A unit test project `DraftView.Web.Tests` and `AuthorizationPolicyRegistrationTests` were added to verify policy registration.
 - `TASKS.md` updated to mark policy registration and test scaffolding as Done for Stage 1.
+- `DatabaseSeeder` now ensures `BetaReader` role exists and backfills Identity role membership for existing domain users by email (idempotent; logs failures).
+- `AuthorController` and `DropboxController` are decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`.
+- `BaseController` now populates `ViewBag.IsAuthor` and `ViewBag.IsReader` using claim-based `User.IsInRole(...)`, falling back to domain lookup when necessary.
 
 Next Stage 1 tasks (remaining):
-- Inventory and replace manual controller guards with policy attributes or policy checks.
-- Update `DatabaseSeeder` to ensure Identity role membership and provide backfill script.
-- Convert view role checks to use `User.IsInRole` or a ViewBag populated from claims.
+- Inventory and replace remaining manual controller guards with policy attributes or policy checks (work in progress).
+- Update views to use `User.IsInRole` or rely on the claim-populated `ViewBag` (individual view updates remain).
+- Add controller integration tests asserting unauthorised access is blocked (xUnit + Moq).
 
 ---
 

@@ -84,8 +84,10 @@ Stage 1 — Web surface (Author / BetaReader)
 - [Done] Update `DatabaseSeeder` to ensure Identity role membership and add backfill script
 - [In progress] Replace manual domain-role guards with `[Authorize(Roles = "Author")]` / policies
   - [Done] `AuthorController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
-- [ ] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims
-- [ ] Add xUnit + Moq controller tests asserting role-based access
+  - [Done] `DropboxController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
+- [Done] Use claim-based ViewBag population in `BaseController` (views can now rely on `ViewBag.IsAuthor` / `ViewBag.IsReader` populated from Identity)
+- [In progress] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
+- [Done] Add xUnit + Moq controller tests asserting role-related attributes (policy registration + controller attribute tests added)
 - [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
 
 Stage 2 — Application layer enforcement
