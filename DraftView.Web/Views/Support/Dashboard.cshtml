@@ -1,0 +1,79 @@
+﻿@model DraftView.Web.Models.SupportDashboardViewModel
+
+@{
+    ViewData["Title"] = "System Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">System Dashboard</h1>
+        <p class="page-subtitle">System support operations and service status</p>
+    </div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-card__label">System Status</div>
+        <div class="stat-card__value">@Model.SystemStatus</div>
+        <div class="stat-card__sub">Current platform state</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Active Authors</div>
+        <div class="stat-card__value">@Model.ActiveAuthors</div>
+        <div class="stat-card__sub">Author accounts currently active</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__label">Active Readers</div>
+        <div class="stat-card__value">@Model.ActiveReaders</div>
+        <div class="stat-card__sub">Reader accounts currently active</div>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <section class="card">
+        <div class="card__header">
+            <span class="card__title">User Account Management</span>
+        </div>
+        <div class="card__body">
+            <p class="support-dashboard__intro">
+                Manage platform users at system level. This area is for operational administration, not author workspace management.
+            </p>
+
+            <ul class="support-dashboard__list">
+                <li>Invite author</li>
+                <li>Force password reset email</li>
+                <li>Update user email</li>
+                <li>Change user display name</li>
+                <li>Change user roles</li>
+                <li>Activate user</li>
+                <li>Deactivate user</li>
+                <li>Soft delete user</li>
+                <li>Review created, activated, login, notification, and soft delete timestamps</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card__header">
+            <span class="card__title">Support Messages</span>
+        </div>
+        <div class="card__body">
+            <p class="support-dashboard__intro">
+                View support messages and prepare the management surface. Backend support for these actions is not yet implemented.
+            </p>
+
+            <ul class="support-dashboard__list">
+                <li>View support messages, latest first</li>
+                <li>Revoke a message</li>
+                <li>Set expiry date for a message</li>
+                <li>Update message text</li>
+                <li>Add new support message</li>
+            </ul>
+
+            <div class="support-dashboard__placeholder">
+                Support message management is view-only placeholder work at this stage.
+            </div>
+        </div>
+    </section>
+</div>
