@@ -434,3 +434,45 @@
     color: var(--color-danger-dark, #991b1b);
     border: 1px solid var(--color-danger, #ef4444);
 }
+
+/* --------------------------------------------------------------------------
+   8. Access Denied
+   -------------------------------------------------------------------------- */
+.access-denied {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--space-8);
+}
+
+.access-denied__card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-8);
+}
+
+.access-denied__header {
+    text-align: center;
+}
+
+.access-denied__title {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-text);
+    margin-bottom: var(--space-3);
+}
+
+.access-denied__message {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+}
+
+.access-denied__actions {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-6);
+}
