@@ -1,0 +1,68 @@
+﻿@model DraftView.Web.Models.ErrorPageViewModel
+
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="error-page">
+    <div class="error-hero">
+        <div class="error">
+            <div class="error__card">
+                <div class="error__header">
+                    <h1 class="error__title">@Model.Heading</h1>
+                    <p class="error__message">@Model.Message</p>
+                </div>
+
+                <div class="error__meta">
+                    <div class="error__detail-grid">
+                        <div>
+                            <div class="error__detail-label">Reference</div>
+                            <div class="error__detail-value">@Model.ErrorReference</div>
+                        </div>
+                        <div>
+                            <div class="error__detail-label">Request Path</div>
+                            <div class="error__detail-value">@Model.RequestPath</div>
+                        </div>
+                        <div>
+                            <div class="error__detail-label">Source Area</div>
+                            <div class="error__detail-value">@Model.SourceArea</div>
+                        </div>
+                        <div>
+                            <div class="error__detail-label">System</div>
+                            <div class="error__detail-value">@(string.IsNullOrWhiteSpace(Model.SystemName) ? "DraftView" : Model.SystemName)</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.ShowTechnicalDetails)
+                {
+                    <div class="error__technical">
+                        <div class="error__detail-label">Exception Type</div>
+                        <div class="error__detail-value">@Model.ExceptionType</div>
+
+                        <div class="error__detail-label">Exception Message</div>
+                        <pre class="error__pre">@Model.ExceptionMessage</pre>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.InnerException))
+                        {
+                            <div class="error__detail-label">Inner Exception</div>
+                            <pre class="error__pre">@Model.InnerException</pre>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.StackTrace))
+                        {
+                            <div class="error__detail-label">Stack Trace</div>
+                            <pre class="error__pre">@Model.StackTrace</pre>
+                        }
+                    </div>
+                }
+
+                <div class="error__actions">
+                    <a asp-controller="Home" asp-action="Index" class="btn btn--secondary">
+                        Go home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

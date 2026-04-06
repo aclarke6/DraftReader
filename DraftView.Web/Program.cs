@@ -60,9 +60,10 @@ await app.MigrateDatabaseAsync();
 await app.SeedDatabaseAsync();
 await app.ResetStaleSyncProjectsAsync();
 
+app.UseExceptionHandler("/Home/Error");
+
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
