@@ -11,20 +11,23 @@ namespace DraftView.Application.Tests.Services;
 
 public class UserServiceTests
 {
-    private readonly Mock<IUserRepository>                       _userRepo    = new();
-    private readonly Mock<IInvitationRepository>                 _inviteRepo  = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> _prefsRepo   = new();
-    private readonly Mock<IEmailSender>                          _emailSender = new();
-    private readonly Mock<IUnitOfWork>                           _unitOfWork  = new();
-    private readonly Mock<IConfiguration>                        _config      = new();
+    private readonly Mock<IUserRepository>                       UserRepo    = new();
+    private readonly Mock<IInvitationRepository>                 InviteRepo  = new();
+    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo   = new();
+    private readonly Mock<IEmailSender>                          EmailSender = new();
+    private readonly Mock<IUnitOfWork>                           UnitOfWork  = new();
+    private readonly Mock<IConfiguration>                        Config      = new();
+    private readonly Mock<IReaderAccessRepository>               ReaderAccessRepo = new();
+
 
     private UserService CreateSut() => new(
-        _userRepo.Object,
-        _inviteRepo.Object,
-        _prefsRepo.Object,
-        _emailSender.Object,
-        _unitOfWork.Object,
-        _config.Object);
+        UserRepo.Object,
+        InviteRepo.Object,
+        PrefsRepo.Object,
+        EmailSender.Object,
+        UnitOfWork.Object,
+        Config.Object,
+        ReaderAccessRepo.Object);
 
     private static User MakeAuthor()
     {
@@ -43,24 +46,24 @@ public class UserServiceTests
         var author = MakeAuthor();
         var sut    = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
-        _userRepo.Setup(r => r.EmailExistsAsync("reader@example.com", default)).ReturnsAsync(false);
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        UserRepo.Setup(r => r.EmailExistsAsync("reader@example.com", default)).ReturnsAsync(false);
 
         User? addedUser         = null;
         Invitation? addedInvite = null;
 
-        _userRepo.Setup(r => r.AddAsync(It.IsAny<User>(), default))
+        UserRepo.Setup(r => r.AddAsync(It.IsAny<User>(), default))
             .Callback<User, CancellationToken>((u, _) => addedUser = u);
-        _inviteRepo.Setup(r => r.AddAsync(It.IsAny<Invitation>(), default))
+        InviteRepo.Setup(r => r.AddAsync(It.IsAny<Invitation>(), default))
             .Callback<Invitation, CancellationToken>((i, _) => addedInvite = i);
-        _prefsRepo.Setup(r => r.AddAsync(It.IsAny<UserNotificationPreferences>(), default));
+        PrefsRepo.Setup(r => r.AddAsync(It.IsAny<UserNotificationPreferences>(), default));
 
         await sut.IssueInvitationAsync("reader@example.com", ExpiryPolicy.AlwaysOpen, null, author.Id);
 
         Assert.NotNull(addedUser);
         Assert.NotNull(addedInvite);
         Assert.Equal("reader@example.com", addedUser!.Email);
-        _emailSender.Verify(e => e.SendAsync(
+        EmailSender.Verify(e => e.SendAsync(
             It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), default), Times.Once);
     }
@@ -72,7 +75,7 @@ public class UserServiceTests
         reader.Activate();
         var sut = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
 
         await Assert.ThrowsAsync<UnauthorisedOperationException>(
             () => sut.IssueInvitationAsync("other@example.com", ExpiryPolicy.AlwaysOpen, null, reader.Id));
@@ -84,8 +87,8 @@ public class UserServiceTests
         var author = MakeAuthor();
         var sut    = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
-        _userRepo.Setup(r => r.EmailExistsAsync("existing@example.com", default)).ReturnsAsync(true);
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        UserRepo.Setup(r => r.EmailExistsAsync("existing@example.com", default)).ReturnsAsync(true);
 
         await Assert.ThrowsAsync<InvariantViolationException>(
             () => sut.IssueInvitationAsync("existing@example.com", ExpiryPolicy.AlwaysOpen, null, author.Id));
@@ -102,8 +105,8 @@ public class UserServiceTests
         var invitation = Invitation.CreateAlwaysOpen(user.Id);
         var sut        = CreateSut();
 
-        _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
-        _userRepo.Setup(r => r.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
+        InviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
+        UserRepo.Setup(r => r.GetByIdAsync(user.Id, default)).ReturnsAsync(user);
 
         await sut.AcceptInvitationAsync(invitation.Token, "Reader Name");
 
@@ -116,7 +119,7 @@ public class UserServiceTests
     {
         var sut = CreateSut();
 
-        _inviteRepo.Setup(r => r.GetByTokenAsync("badtoken", default))
+        InviteRepo.Setup(r => r.GetByTokenAsync("badtoken", default))
             .ReturnsAsync((Invitation?)null);
 
         await Assert.ThrowsAsync<EntityNotFoundException>(
@@ -131,7 +134,7 @@ public class UserServiceTests
         invitation.Cancel();
         var sut = CreateSut();
 
-        _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
+        InviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, default)).ReturnsAsync(invitation);
 
         await Assert.ThrowsAsync<InvariantViolationException>(
             () => sut.AcceptInvitationAsync(invitation.Token, "Name"));
@@ -149,8 +152,8 @@ public class UserServiceTests
         reader.Activate();
         var sut = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
-        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
 
         await sut.DeactivateUserAsync(reader.Id, author.Id);
 
@@ -169,8 +172,8 @@ public class UserServiceTests
         reader.Activate();
         var sut = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
-        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
 
         await sut.SoftDeleteUserAsync(reader.Id, author.Id);
 
@@ -184,10 +187,10 @@ public class UserServiceTests
         author.Activate();
         var sut = CreateSut();
 
-        _userRepo.Setup(r => r.GetByIdAsync(author.Id, It.IsAny<CancellationToken>()))
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(author);
 
-        _userRepo.Setup(r => r.EmailExistsAsync("reader@example.com", It.IsAny<CancellationToken>()))
+        UserRepo.Setup(r => r.EmailExistsAsync("reader@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var ex = await Assert.ThrowsAsync<InvariantViolationException>(() =>
@@ -199,6 +202,28 @@ public class UserServiceTests
                 CancellationToken.None));
 
         Assert.Equal("I-INVITE-EXPIRY-REQUIRED", ex.InvariantCode);
+    }
+
+    // ---------------------------------------------------------------------------
+    // DeactivateUserAsync -- revokes ReaderAccess
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task DeactivateUserAsync_RevokesAllReaderAccess()
+    {
+        var author = MakeAuthor();
+        var reader = User.Create("reader@test.com", "Reader", Role.BetaReader);
+        reader.Activate();
+
+        UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+
+        var sut = CreateSut();
+        await sut.DeactivateUserAsync(reader.Id, author.Id);
+
+        ReaderAccessRepo.Verify(
+            r => r.RevokeAllForReaderAsync(reader.Id, author.Id, default),
+            Times.Once);
     }
 }
 

@@ -15,4 +15,7 @@ public interface IReaderAccessRepository
 
     /// <summary>Adds a new ReaderAccess record.</summary>
     Task AddAsync(ReaderAccess access, CancellationToken ct = default);
+
+    /// <summary>Revokes all active access records for a reader scoped to an author's projects.</summary>
+    Task RevokeAllForReaderAsync(Guid readerId, Guid authorId, CancellationToken ct = default);
 }

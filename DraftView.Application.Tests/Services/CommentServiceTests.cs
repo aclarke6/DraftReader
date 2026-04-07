@@ -148,7 +148,7 @@ public class CommentServiceTests
     //    var sut     = CreateSut();
 
     //    _commentRepo.Setup(r => r.GetByIdAsync(comment.Id, default)).ReturnsAsync(comment);
-    //    _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+    //    UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
 
     //    await sut.EditCommentAsync(comment.Id, reader.Id, "Updated.");
 

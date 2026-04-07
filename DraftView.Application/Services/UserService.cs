@@ -13,7 +13,8 @@ public class UserService(
     IUserNotificationPreferencesRepository prefsRepo,
     IEmailSender emailSender,
     IUnitOfWork unitOfWork,
-    IConfiguration configuration) : IUserService
+    IConfiguration configuration,
+    IReaderAccessRepository readerAccessRepo) : IUserService
 {
     public async Task<Invitation> IssueInvitationAsync(
         string email, ExpiryPolicy expiryPolicy, DateTime? expiresAt,
@@ -117,6 +118,7 @@ public class UserService(
         var target = await userRepo.GetByIdAsync(targetUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), targetUserId);
 
+        await readerAccessRepo.RevokeAllForReaderAsync(targetUserId, authorId, ct);
         target.Deactivate();
         await unitOfWork.SaveChangesAsync(ct);
     }

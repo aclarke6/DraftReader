@@ -11,33 +11,35 @@ namespace DraftView.Application.Tests.Services;
 
 public class UserServiceInvitationIssuanceTests
 {
-    private readonly Mock<IUserRepository> _userRepo = new();
-    private readonly Mock<IInvitationRepository> _inviteRepo = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> _prefsRepo = new();
-    private readonly Mock<IEmailSender> _emailSender = new();
-    private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly Mock<IConfiguration> _config = new();
+    private readonly Mock<IUserRepository> UserRepo = new();
+    private readonly Mock<IInvitationRepository> InviteRepo = new();
+    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo = new();
+    private readonly Mock<IEmailSender> EmailSender = new();
+    private readonly Mock<IUnitOfWork> UnitOfWork = new();
+    private readonly Mock<IConfiguration> Config = new();
+    private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
 
-    private readonly User _author;
+    private readonly User Author;
 
     public UserServiceInvitationIssuanceTests()
     {
-        _author = User.Create("author@example.com", "Author", Role.Author);
+        Author = User.Create("author@example.com", "Author", Role.Author);
 
-        _userRepo.Setup(r => r.GetByIdAsync(_author.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(_author);
-        _userRepo.Setup(r => r.EmailExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        UserRepo.Setup(r => r.GetByIdAsync(Author.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Author);
+        UserRepo.Setup(r => r.EmailExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
-        _config.Setup(c => c["App:BaseUrl"]).Returns("https://app.draftview.co.uk");
+        Config.Setup(c => c["App:BaseUrl"]).Returns("https://app.draftview.co.uk");
     }
 
     private UserService CreateSut() => new(
-        _userRepo.Object,
-        _inviteRepo.Object,
-        _prefsRepo.Object,
-        _emailSender.Object,
-        _unitOfWork.Object,
-        _config.Object);
+        UserRepo.Object,
+        InviteRepo.Object,
+        PrefsRepo.Object,
+        EmailSender.Object,
+        UnitOfWork.Object,
+        Config.Object,
+        ReaderAccessRepo.Object);
 
     // -------------------------------------------------------------------------
     // 1B - Expiry information in email body
@@ -49,9 +51,9 @@ public class UserServiceInvitationIssuanceTests
         var sut = CreateSut();
 
         await sut.IssueInvitationAsync(
-            "reader@example.com", ExpiryPolicy.AlwaysOpen, null, _author.Id);
+            "reader@example.com", ExpiryPolicy.AlwaysOpen, null, Author.Id);
 
-        _emailSender.Verify(e => e.SendAsync(
+        EmailSender.Verify(e => e.SendAsync(
             "reader@example.com",
             It.IsAny<string>(),
             It.IsAny<string>(),
@@ -66,9 +68,9 @@ public class UserServiceInvitationIssuanceTests
         var sut = CreateSut();
 
         await sut.IssueInvitationAsync(
-            "reader@example.com", ExpiryPolicy.ExpiresAt, expiresAt, _author.Id);
+            "reader@example.com", ExpiryPolicy.ExpiresAt, expiresAt, Author.Id);
 
-        _emailSender.Verify(e => e.SendAsync(
+        EmailSender.Verify(e => e.SendAsync(
             "reader@example.com",
             It.IsAny<string>(),
             It.IsAny<string>(),
@@ -86,9 +88,9 @@ public class UserServiceInvitationIssuanceTests
         var sut = CreateSut();
 
         await sut.IssueInvitationAsync(
-            "becca.dunlop@example.com", ExpiryPolicy.AlwaysOpen, null, _author.Id);
+            "becca.dunlop@example.com", ExpiryPolicy.AlwaysOpen, null, Author.Id);
 
-        _emailSender.Verify(e => e.SendAsync(
+        EmailSender.Verify(e => e.SendAsync(
             "becca.dunlop@example.com",
             "becca.dunlop",
             It.IsAny<string>(),
@@ -103,9 +105,9 @@ public class UserServiceInvitationIssuanceTests
         var sut = CreateSut();
 
         await sut.IssueInvitationAsync(
-            "hilary.royston@example.com", ExpiryPolicy.ExpiresAt, expiresAt, _author.Id);
+            "hilary.royston@example.com", ExpiryPolicy.ExpiresAt, expiresAt, Author.Id);
 
-        _emailSender.Verify(e => e.SendAsync(
+        EmailSender.Verify(e => e.SendAsync(
             "hilary.royston@example.com",
             "hilary.royston",
             It.IsAny<string>(),

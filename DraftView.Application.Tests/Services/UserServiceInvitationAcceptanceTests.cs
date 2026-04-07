@@ -11,20 +11,22 @@ namespace DraftView.Application.Tests.Services;
 
 public class UserServiceInvitationAcceptanceTests
 {
-    private readonly Mock<IUserRepository> _userRepo = new();
-    private readonly Mock<IInvitationRepository> _inviteRepo = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> _prefsRepo = new();
-    private readonly Mock<IEmailSender> _emailSender = new();
-    private readonly Mock<IUnitOfWork> _unitOfWork = new();
-    private readonly Mock<IConfiguration> _config = new();
+    private readonly Mock<IUserRepository> UserRepo = new();
+    private readonly Mock<IInvitationRepository> InviteRepo = new();
+    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo = new();
+    private readonly Mock<IEmailSender> EmailSender = new();
+    private readonly Mock<IUnitOfWork> UnitOfWork = new();
+    private readonly Mock<IConfiguration> Config = new();
+    private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
 
     private UserService CreateSut() => new(
-        _userRepo.Object,
-        _inviteRepo.Object,
-        _prefsRepo.Object,
-        _emailSender.Object,
-        _unitOfWork.Object,
-        _config.Object);
+        UserRepo.Object,
+        InviteRepo.Object,
+        PrefsRepo.Object,
+        EmailSender.Object,
+        UnitOfWork.Object,
+        Config.Object,
+        ReaderAccessRepo.Object);
 
     [Fact]
     public async Task AcceptInvitationAsync_ValidToken_PersistsEnteredDisplayName()
@@ -33,9 +35,9 @@ public class UserServiceInvitationAcceptanceTests
         var invitation = Invitation.CreateAlwaysOpen(user.Id);
         var sut = CreateSut();
 
-        _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
+        InviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invitation);
-        _userRepo.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+        UserRepo.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var result = await sut.AcceptInvitationAsync(invitation.Token, "Reader Four", CancellationToken.None);
@@ -45,7 +47,7 @@ public class UserServiceInvitationAcceptanceTests
         Assert.True(user.IsActive);
         Assert.Equal(InvitationStatus.Accepted, invitation.Status);
 
-        _unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        UnitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -55,9 +57,9 @@ public class UserServiceInvitationAcceptanceTests
         var invitation = Invitation.CreateAlwaysOpen(user.Id);
         var sut = CreateSut();
 
-        _inviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
+        InviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(invitation);
-        _userRepo.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+        UserRepo.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(user);
 
         var ex = await Assert.ThrowsAsync<InvariantViolationException>(() =>
