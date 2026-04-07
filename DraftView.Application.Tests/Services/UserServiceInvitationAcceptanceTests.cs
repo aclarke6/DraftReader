@@ -18,6 +18,7 @@ public class UserServiceInvitationAcceptanceTests
     private readonly Mock<IUnitOfWork> UnitOfWork = new();
     private readonly Mock<IConfiguration> Config = new();
     private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
+    private readonly Mock<IAuthorizationFacade> AuthFacade = new();
 
     private UserService CreateSut() => new(
         UserRepo.Object,
@@ -26,7 +27,8 @@ public class UserServiceInvitationAcceptanceTests
         EmailSender.Object,
         UnitOfWork.Object,
         Config.Object,
-        ReaderAccessRepo.Object);
+        ReaderAccessRepo.Object,
+        AuthFacade.Object);
 
     [Fact]
     public async Task AcceptInvitationAsync_ValidToken_PersistsEnteredDisplayName()

@@ -18,6 +18,7 @@ public class UserServiceInvitationIssuanceTests
     private readonly Mock<IUnitOfWork> UnitOfWork = new();
     private readonly Mock<IConfiguration> Config = new();
     private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
+    private readonly Mock<IAuthorizationFacade> AuthFacade = new();
 
     private readonly User Author;
 
@@ -30,8 +31,10 @@ public class UserServiceInvitationIssuanceTests
         UserRepo.Setup(r => r.EmailExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         Config.Setup(c => c["App:BaseUrl"]).Returns("https://app.draftview.co.uk");
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
     }
 
+    
     private UserService CreateSut() => new(
         UserRepo.Object,
         InviteRepo.Object,
@@ -39,7 +42,8 @@ public class UserServiceInvitationIssuanceTests
         EmailSender.Object,
         UnitOfWork.Object,
         Config.Object,
-        ReaderAccessRepo.Object);
+        ReaderAccessRepo.Object,
+        AuthFacade.Object);
 
     // -------------------------------------------------------------------------
     // 1B - Expiry information in email body

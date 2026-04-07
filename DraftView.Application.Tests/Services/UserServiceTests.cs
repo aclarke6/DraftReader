@@ -18,6 +18,7 @@ public class UserServiceTests
     private readonly Mock<IUnitOfWork>                           UnitOfWork  = new();
     private readonly Mock<IConfiguration>                        Config      = new();
     private readonly Mock<IReaderAccessRepository>               ReaderAccessRepo = new();
+    private readonly Mock<IAuthorizationFacade>                  AuthFacade = new();
 
 
     private UserService CreateSut() => new(
@@ -27,7 +28,8 @@ public class UserServiceTests
         EmailSender.Object,
         UnitOfWork.Object,
         Config.Object,
-        ReaderAccessRepo.Object);
+        ReaderAccessRepo.Object,
+        AuthFacade.Object);
 
     private static User MakeAuthor()
     {
@@ -57,6 +59,7 @@ public class UserServiceTests
         InviteRepo.Setup(r => r.AddAsync(It.IsAny<Invitation>(), default))
             .Callback<Invitation, CancellationToken>((i, _) => addedInvite = i);
         PrefsRepo.Setup(r => r.AddAsync(It.IsAny<UserNotificationPreferences>(), default));
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
 
         await sut.IssueInvitationAsync("reader@example.com", ExpiryPolicy.AlwaysOpen, null, author.Id);
 
@@ -76,6 +79,7 @@ public class UserServiceTests
         var sut = CreateSut();
 
         UserRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(false);
 
         await Assert.ThrowsAsync<UnauthorisedOperationException>(
             () => sut.IssueInvitationAsync("other@example.com", ExpiryPolicy.AlwaysOpen, null, reader.Id));
@@ -89,6 +93,7 @@ public class UserServiceTests
 
         UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
         UserRepo.Setup(r => r.EmailExistsAsync("existing@example.com", default)).ReturnsAsync(true);
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
 
         await Assert.ThrowsAsync<InvariantViolationException>(
             () => sut.IssueInvitationAsync("existing@example.com", ExpiryPolicy.AlwaysOpen, null, author.Id));
@@ -149,6 +154,7 @@ public class UserServiceTests
     {
         var author = MakeAuthor();
         var reader = User.Create("reader@example.com", "Reader", Role.BetaReader);
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
         reader.Activate();
         var sut = CreateSut();
 
@@ -170,6 +176,7 @@ public class UserServiceTests
         var author = MakeAuthor();
         var reader = User.Create("reader@example.com", "Reader", Role.BetaReader);
         reader.Activate();
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
         var sut = CreateSut();
 
         UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
@@ -192,6 +199,7 @@ public class UserServiceTests
 
         UserRepo.Setup(r => r.EmailExistsAsync("reader@example.com", It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
 
         var ex = await Assert.ThrowsAsync<InvariantViolationException>(() =>
             sut.IssueInvitationAsync(
@@ -213,6 +221,7 @@ public class UserServiceTests
     {
         var author = MakeAuthor();
         var reader = User.Create("reader@test.com", "Reader", Role.BetaReader);
+        AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
         reader.Activate();
 
         UserRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);

@@ -166,9 +166,9 @@ public class DropboxController(
     private async Task<User?> GetAuthorAsync()
     {
         var email = User.Identity?.Name;
-        if (email is null) return null;
-        var user = await userRepo.GetByEmailAsync(email);
-        return user?.Role == Role.Author ? user : null;
+        if (email is null)
+            return null;
+        return await userRepo.GetByEmailAsync(email);
     }
 
     private string BuildRedirectUri()

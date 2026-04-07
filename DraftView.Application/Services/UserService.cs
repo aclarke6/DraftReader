@@ -14,16 +14,15 @@ public class UserService(
     IEmailSender emailSender,
     IUnitOfWork unitOfWork,
     IConfiguration configuration,
-    IReaderAccessRepository readerAccessRepo) : IUserService
+    IReaderAccessRepository readerAccessRepo,
+    IAuthorizationFacade authFacade) : IUserService
+
 {
     public async Task<Invitation> IssueInvitationAsync(
         string email, ExpiryPolicy expiryPolicy, DateTime? expiresAt,
         Guid authorId, CancellationToken ct = default)
     {
-        var actor = await userRepo.GetByIdAsync(authorId, ct)
-            ?? throw new EntityNotFoundException(nameof(User), authorId);
-
-        if (actor.Role != Role.Author)
+        if (!authFacade.IsAuthor())
             throw new UnauthorisedOperationException("Only the Author may issue invitations.");
 
         if (await userRepo.EmailExistsAsync(email, ct))
@@ -97,10 +96,7 @@ public class UserService(
     public async Task CancelInvitationAsync(
         Guid invitationId, Guid authorId, CancellationToken ct = default)
     {
-        var actor = await userRepo.GetByIdAsync(authorId, ct)
-            ?? throw new EntityNotFoundException(nameof(User), authorId);
-
-        if (actor.Role != Role.Author)
+        if (!authFacade.IsAuthor())
             throw new UnauthorisedOperationException("Only the Author may cancel invitations.");
 
         var invitation = await invitationRepo.GetByIdAsync(invitationId, ct)
@@ -113,7 +109,7 @@ public class UserService(
     public async Task DeactivateUserAsync(
         Guid targetUserId, Guid authorId, CancellationToken ct = default)
     {
-        await RequireAuthorAsync(authorId, ct);
+        OnlyAllowAuthorOrSystemSupport();
 
         var target = await userRepo.GetByIdAsync(targetUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), targetUserId);
@@ -123,10 +119,11 @@ public class UserService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
+
     public async Task ReactivateUserAsync(
         Guid targetUserId, Guid authorId, CancellationToken ct = default)
     {
-        await RequireAuthorAsync(authorId, ct);
+        OnlyAllowAuthorOrSystemSupport();
 
         var target = await userRepo.GetByIdAsync(targetUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), targetUserId);
@@ -138,7 +135,7 @@ public class UserService(
     public async Task SoftDeleteUserAsync(
         Guid targetUserId, Guid authorId, CancellationToken ct = default)
     {
-        await RequireAuthorAsync(authorId, ct);
+        OnlyAllowAuthorOrSystemSupport();
 
         var target = await userRepo.GetByIdAsync(targetUserId, ct)
             ?? throw new EntityNotFoundException(nameof(User), targetUserId);
@@ -166,13 +163,16 @@ public class UserService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
-    private async Task RequireAuthorAsync(Guid actorId, CancellationToken ct)
+    /// <summary>
+    /// Only Allow the Author or SystemSupport to perform the action.
+    /// This is used for actions that may be performed by SystemSupport on behalf of the Author, such as
+    /// deactivating a user who has requested support with account access issues.
+    /// </summary>
+    /// <exception cref="UnauthorisedOperationException"></exception>
+    private void OnlyAllowAuthorOrSystemSupport()
     {
-        var actor = await userRepo.GetByIdAsync(actorId, ct)
-            ?? throw new EntityNotFoundException(nameof(User), actorId);
-
-        if (actor.Role != Role.Author)
-            throw new UnauthorisedOperationException("Only the Author may perform this action.");
+        if (!authFacade.IsAuthor() && !authFacade.IsSystemSupport())
+            throw new UnauthorisedOperationException("Only the Author or SystemSupport may perform this action.");
     }
 }
 

@@ -104,15 +104,15 @@ Stage 1 — Web surface (Author / BetaReader)
 - [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
 - [Done] Remove dead `RedirectToLocal` sync-over-async helper from AccountController
 - [Done] Replace domain role checks in AccountController and DropboxController with Identity claims
-- [ ] Remove `RequireAuthorAsync()` / `GetAuthorAsync()` domain-role controller helpers — replace with class-level `[Authorize]` attributes
-- [ ] Fix `AccountController.cs:507` — post-login redirect uses domain role check, replace with `User.IsInRole()`- 
+- [Done] Remove `RequireAuthorAsync()` / `GetAuthorAsync()` domain-role controller helpers — replace with class-level `[Authorize]` attributes
+- [Done ] Fix `AccountController.cs:507` — post-login redirect uses domain role check, replace with `User.IsInRole()`- 
 
 Stage 2 — Application layer enforcement
-- [DONE] Design and add `IAuthorizationFacade` (testable wrapper around `IAuthorizationService`)
-- [ ] Audit application services for methods requiring role checks
-- [ ] Inject and enforce role policies inside critical service methods
-- [ ] Add service-level unit tests (xUnit + Moq) for authorized/unauthorized callers
-- [ ] Define background service identity model (service account / impersonation)
+- [Done] Design and add `IAuthorizationFacade`
+- [In progress] Audit application services for methods requiring role checks — UserService audited, CommentService pending
+- [In progress] Inject and enforce role policies — UserService partially updated, facade not yet injected
+- [In progress] Add service-level unit tests
+- [ ] Define background service identity model
 
 Stage 3 — SystemSupport & System State Messaging
 - [ ] Seed `SystemSupport` Identity role and backfill support user
