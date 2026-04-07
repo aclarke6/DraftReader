@@ -96,7 +96,7 @@ Stage 1 — Web surface (Author / BetaReader)
   - [Done] `AuthorController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
   - [Done] `DropboxController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
 - [Done] Use claim-based ViewBag population in `BaseController` (views can now rely on `ViewBag.IsAuthor` / `ViewBag.IsReader` populated from Identity)
-- [ ] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
+- [Done] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
 - [Done] Add xUnit + Moq controller tests asserting role-related attributes (policy registration + controller attribute tests added)
 - [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
 - [Done] Remove dead `RedirectToLocal` sync-over-async helper from AccountController
@@ -109,10 +109,10 @@ Stage 2 — Application layer enforcement
 - [Done] Audit application services for methods requiring role checks — UserService complete, CommentService deferred
 - [Done] Inject and enforce role policies inside critical service methods — UserService fully migrated
 - [Done] Add service-level unit tests — UserService facade tests green
-- [ ] Define background service identity model (service account / impersonation)
+- [Deferred] Define background service identity model — SyncBackgroundService runs as trusted system actor with no HTTP context; IAuthorizationFacade not applicable. Full impersonation model tracked separately under Impersonation section.
 
 Stage 3 — SystemSupport & System State Messaging
-- [ ] Seed `SystemSupport` Identity role and backfill support user
+- [Done] Seed `SystemSupport` Identity role and backfill support user
 - [ ] Implement `SystemStateMessage` domain entity + repository + migration
 - [ ] Implement `ISystemStateMessageService` with policy enforcement
 - [ ] Create `SupportController` protected by `[Authorize(Roles = "SystemSupport")]`

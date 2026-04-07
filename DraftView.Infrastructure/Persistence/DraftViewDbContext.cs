@@ -27,6 +27,7 @@ public class DraftViewDbContext(DbContextOptions<DraftViewDbContext> options)
     public DbSet<EmailDeliveryLog> EmailDeliveryLogs { get; set; } = default!;
     public DbSet<DropboxConnection> DropboxConnections { get; set; } = default!;
     public DbSet<ReaderAccess> ReaderAccess { get; set; } = default!;
+    public DbSet<SystemStateMessage> SystemStateMessages { get; set; } = default!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
