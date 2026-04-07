@@ -47,9 +47,6 @@ Every controller that accesses data or performs mutations must be protected by a
 - `DropboxController` → `[Authorize(Policy = "RequireAuthorPolicy")]`
 - `AccountController` → individual actions use `[Authorize]` where needed
 
-No per-action domain-role guards (`RequireAuthorAsync`, `GetAuthorAsync`) should be used
-in new code. Existing usages are technical debt tracked under Role Migration Stage 1.
-
 Audit pattern — verify class-level attributes are present:
 
 Get-ChildItem "C:\Users\alast\source\repos\DraftView\DraftView.Web\Controllers" -Filter "*.cs" |
@@ -99,7 +96,7 @@ Stage 1 — Web surface (Author / BetaReader)
   - [Done] `AuthorController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
   - [Done] `DropboxController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
 - [Done] Use claim-based ViewBag population in `BaseController` (views can now rely on `ViewBag.IsAuthor` / `ViewBag.IsReader` populated from Identity)
-- [In progress] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
+- [ ] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
 - [Done] Add xUnit + Moq controller tests asserting role-related attributes (policy registration + controller attribute tests added)
 - [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
 - [Done] Remove dead `RedirectToLocal` sync-over-async helper from AccountController
@@ -109,10 +106,10 @@ Stage 1 — Web surface (Author / BetaReader)
 
 Stage 2 — Application layer enforcement
 - [Done] Design and add `IAuthorizationFacade`
-- [In progress] Audit application services for methods requiring role checks — UserService audited, CommentService pending
-- [In progress] Inject and enforce role policies — UserService partially updated, facade not yet injected
-- [In progress] Add service-level unit tests
-- [ ] Define background service identity model
+- [Done] Audit application services for methods requiring role checks — UserService complete, CommentService deferred
+- [Done] Inject and enforce role policies inside critical service methods — UserService fully migrated
+- [Done] Add service-level unit tests — UserService facade tests green
+- [ ] Define background service identity model (service account / impersonation)
 
 Stage 3 — SystemSupport & System State Messaging
 - [ ] Seed `SystemSupport` Identity role and backfill support user
@@ -311,7 +308,6 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 
 ### Phase 1 - Stabilise single-tenancy
 - Fix SmtpEmailSender From vs FromAddress
-- Remove sync-over-async from RedirectToLocal
 - Pass CancellationToken consistently in SyncService
 - Validate section existence in ReadingProgressService.RecordOpenAsync
 - Define and enforce active/inactive/soft-deleted user rules
@@ -422,6 +418,7 @@ Status:
 - Not implemented
 - Design agreed
 
+- [DONE] Stage 2: IAuthorizationFacade injected into UserService, RequireAuthorAsync removed, OnlyAllowAuthorOrSystemSupport() added, SystemSupport can deactivate/reactivate users
 - [DONE] Step17-18: RtfConverter case-insensitive path fix (Linux content bug), chapter ordering fix, email-as-nav-link
 - [DONE] Step15-16: Account/Settings page — display name, email, password change; Dropbox panel for authors
 - [DONE] Step15-16: ReaderController.Read fixed — uses chapter.ProjectId
@@ -468,4 +465,4 @@ Status:
 - [DONE] pg.ps1 helper script
 - [DONE] PowerShell.md scripting standards document
 - [DONE] PRINCIPLES.md scripting standards document
-- [DONE] 347 tests, all green
+- [DONE] 351 tests, all green
