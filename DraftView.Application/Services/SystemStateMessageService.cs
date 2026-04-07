@@ -1,4 +1,5 @@
 using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
@@ -10,7 +11,10 @@ public class SystemStateMessageService(
     IUnitOfWork unitOfWork,
     IAuthorizationFacade authFacade) : ISystemStateMessageService
 {
-    public async Task<SystemStateMessage> CreateMessageAsync(string message, CancellationToken ct = default)
+    public async Task<SystemStateMessage> CreateMessageAsync(
+        string message,
+        SystemStateMessageSeverity severity = SystemStateMessageSeverity.Info,
+        CancellationToken ct = default)
     {
         if (!authFacade.IsSystemSupport())
             throw new UnauthorisedOperationException("Only SystemSupport may create system state messages.");
@@ -18,7 +22,7 @@ public class SystemStateMessageService(
         var active = await messageRepo.GetActiveAsync(ct);
         active?.Deactivate();
 
-        var newMessage = SystemStateMessage.Create(message, Guid.Empty);
+        var newMessage = SystemStateMessage.Create(message, Guid.Empty, severity);
         await messageRepo.AddAsync(newMessage, ct);
         await unitOfWork.SaveChangesAsync(ct);
 

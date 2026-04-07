@@ -1,6 +1,7 @@
 using Moq;
 using DraftView.Application.Services;
 using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
@@ -60,6 +61,30 @@ public class SystemStateMessageServiceTests
 
         Assert.False(existing.IsActive);
         Assert.NotNull(existing.DeactivatedAt);
+    }
+
+    [Fact]
+    public async Task CreateMessageAsync_WithWarningSeverity_PassesSeverityToEntity()
+    {
+        AuthFacade.Setup(f => f.IsSystemSupport()).Returns(true);
+        MessageRepo.Setup(r => r.GetActiveAsync(default)).ReturnsAsync((SystemStateMessage?)null);
+
+        var sut    = CreateSut();
+        var result = await sut.CreateMessageAsync("Maintenance.", SystemStateMessageSeverity.Warning);
+
+        Assert.Equal(SystemStateMessageSeverity.Warning, result.Severity);
+    }
+
+    [Fact]
+    public async Task CreateMessageAsync_DefaultSeverity_IsInfo()
+    {
+        AuthFacade.Setup(f => f.IsSystemSupport()).Returns(true);
+        MessageRepo.Setup(r => r.GetActiveAsync(default)).ReturnsAsync((SystemStateMessage?)null);
+
+        var sut    = CreateSut();
+        var result = await sut.CreateMessageAsync("Maintenance.");
+
+        Assert.Equal(SystemStateMessageSeverity.Info, result.Severity);
     }
 
     // ---------------------------------------------------------------------------

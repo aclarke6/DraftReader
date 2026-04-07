@@ -13,7 +13,7 @@
    -------------------------------------------------------------------------- */
 :root {
     /* Update for every change */
-    --css-version: "v2026-04-06-6";
+    --css-version: "v2026-04-07-1";
     /* Colour palette */
     --color-bg: #F7F4EF;
     --color-surface: #FFFFFF;
@@ -235,6 +235,10 @@ a {
     background: rgba(255,255,255,0.6);
     white-space: nowrap;
 }
+
+.site-footer__status--info { color: #1a6fa8; font-weight: 600; }
+.site-footer__status--warning { color: #b7600a; font-weight: 600; }
+.site-footer__status--critical { color: #c0392b; font-weight: 600; }
 
 /* Button stands alone again */
 .site-footer__report-btn {

@@ -1,4 +1,5 @@
 using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 
 namespace DraftView.Domain.Tests.Entities;
@@ -49,6 +50,30 @@ public class SystemStateMessageTests
         var msg = SystemStateMessage.Create("  hello  ", Guid.NewGuid());
 
         Assert.Equal("hello", msg.Message);
+    }
+
+    [Fact]
+    public void Create_DefaultSeverity_IsInfo()
+    {
+        var msg = SystemStateMessage.Create("msg", Guid.NewGuid());
+
+        Assert.Equal(SystemStateMessageSeverity.Info, msg.Severity);
+    }
+
+    [Fact]
+    public void Create_WithWarningSeverity_SetsSeverity()
+    {
+        var msg = SystemStateMessage.Create("msg", Guid.NewGuid(), SystemStateMessageSeverity.Warning);
+
+        Assert.Equal(SystemStateMessageSeverity.Warning, msg.Severity);
+    }
+
+    [Fact]
+    public void Create_WithCriticalSeverity_SetsSeverity()
+    {
+        var msg = SystemStateMessage.Create("msg", Guid.NewGuid(), SystemStateMessageSeverity.Critical);
+
+        Assert.Equal(SystemStateMessageSeverity.Critical, msg.Severity);
     }
 
     // ---------------------------------------------------------------------------

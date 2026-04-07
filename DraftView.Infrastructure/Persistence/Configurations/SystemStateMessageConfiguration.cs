@@ -20,5 +20,6 @@ public class SystemStateMessageConfiguration : IEntityTypeConfiguration<SystemSt
         builder.Property(m => m.CreatedAt).IsRequired();
         builder.Property(m => m.IsActive).IsRequired();
         builder.Property(m => m.DeactivatedAt).IsRequired(false);
+        builder.Property(m => m.Severity).IsRequired();
     }
 }
