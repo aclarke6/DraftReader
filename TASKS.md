@@ -94,7 +94,7 @@ Stage 1 — Web surface (Author / BetaReader)
 - [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
 
 Stage 2 — Application layer enforcement
-- [ ] Design and add `IAuthorizationFacade` (testable wrapper around `IAuthorizationService`)
+- [DONE] Design and add `IAuthorizationFacade` (testable wrapper around `IAuthorizationService`)
 - [ ] Audit application services for methods requiring role checks
 - [ ] Inject and enforce role policies inside critical service methods
 - [ ] Add service-level unit tests (xUnit + Moq) for authorized/unauthorized callers
@@ -135,7 +135,7 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 - [DONE] Reader Dashboard layout redesign — LHS sticky book list, RHS chapter list for selected book
 - Invitation flow: existing account → skip to project assignment UI
 - Auto-assign when author adds project — prompt to assign existing readers
-- Fix Deactivate to also revoke all ReaderAccess records for this author
+- [DONE] Fix Deactivate to also revoke all ReaderAccess records for this author
 
 ---
 
@@ -347,6 +347,12 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 - [DONE] SupportController and SystemSupport dashboard scaffolded
 - [DONE] HomeController role-based routing (Support → Author → Reader)
 - [DONE] CSS versioning automation script implemented and validated
+- [DONE] IAuthorizationFacade + HttpContextAuthorizationFacade (DI registered, 6 tests)
+- [DONE] UserService.DeactivateUserAsync revokes all ReaderAccess records (TDD)
+- [DONE] RevokeAllForReaderAsync on IReaderAccessRepository + ReaderAccessRepository (3 tests)
+- [DONE] Mobile reader flow — BaseReaderController, unified ReaderController with IsMobile() view selection, MobileChapters/MobileScenes/MobileRead views, DraftView.MobileReader.css
+- [DONE] GetLastReadEventAsync on IReadingProgressService (TDD, 4 tests)
+- [DONE] Desktop reader views renamed to Desktop prefix throughout- 
 
 ### Reader Authorization Model — FINAL DECISION
 
@@ -445,4 +451,4 @@ Status:
 - [DONE] pg.ps1 helper script
 - [DONE] PowerShell.md scripting standards document
 - [DONE] PRINCIPLES.md scripting standards document
-- [DONE] 331 tests, all green
+- [DONE] 347 tests, all green
