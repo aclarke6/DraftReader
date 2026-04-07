@@ -56,7 +56,7 @@ All css files are included here to ensure consistent styling across the site.
                         {
                             <a asp-controller="Support" asp-action="Dashboard" class="site-nav__link">System Dashboard</a>
                         }
-                        else if (ViewBag.IsAuthor == true)
+                        else if (User.IsInRole("Author"))
                         {
                             <a asp-controller="Author" asp-action="Dashboard" class="site-nav__link">Dashboard</a>
                             <a asp-controller="Reader" asp-action="Index" class="site-nav__link">Reader View</a>
