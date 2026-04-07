@@ -27,4 +27,17 @@ public class ReaderAccessRepository(DraftViewDbContext db) : IReaderAccessReposi
 
     public async Task AddAsync(ReaderAccess access, CancellationToken ct = default) =>
         await db.ReaderAccess.AddAsync(access, ct);
+
+    public async Task RevokeAllForReaderAsync(
+    Guid readerId, Guid authorId, CancellationToken ct = default)
+    {
+        var records = await db.ReaderAccess
+            .Where(r => r.ReaderId == readerId
+                     && r.AuthorId == authorId
+                     && r.RevokedAt == null)
+            .ToListAsync(ct);
+
+        foreach (var record in records)
+            record.Revoke();
+    }
 }
