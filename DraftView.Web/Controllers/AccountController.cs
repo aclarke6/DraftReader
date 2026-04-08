@@ -213,11 +213,20 @@ public class AccountController(
                 <p>If you did not request this, you can ignore this email.</p>
                 """;
 
-            await emailSender.SendAsync(
-                model.Email,
-                user.DisplayName ?? "Reader",
-                "Reset your DraftView password",
-                body);
+            try
+            {
+
+                await emailSender.SendAsync(
+                    model.Email,
+                    user.DisplayName ?? "Reader",
+                    "Reset your DraftView password",
+                    body);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to send password reset email to {Email}", model.Email);
+                // Don't reveal email sending failure to user - just log it
+            }
         }
 
         // Always redirect to confirmation - never reveal if email exists
