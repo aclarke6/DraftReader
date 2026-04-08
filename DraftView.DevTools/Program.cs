@@ -5,6 +5,15 @@ using DraftView.Infrastructure.Parsing;
 using DraftView.DevTools;
 
 // ---------------------------------------------------------------------------
+// email-test mode
+// ---------------------------------------------------------------------------
+if (args.Length > 0 && args[0] == "email-test")
+{
+    Banner("DraftView DevTools — Email Test");
+    return await EmailTest.RunAsync(args[1..]);
+}
+
+// ---------------------------------------------------------------------------
 // --import mode
 // ---------------------------------------------------------------------------
 if (args.Length > 0 && args[0] == "--import")
