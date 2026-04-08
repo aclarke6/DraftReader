@@ -116,7 +116,7 @@ Goal: migrate authorization to use ASP.NET Identity roles as single source of tr
 - [Done] Implement `SystemStateMessage` domain entity + repository + migration (6 domain tests)
 - [Done] Implement `ISystemStateMessageService` with policy enforcement (7 application tests)
 - [Done] Create `SupportController` protected by `[Authorize(Roles = "SystemSupport")]`
-- [Done] Footer integration: read-only active message render, safe-to-fail, severity-coded colours (Info/Warning/Critical)
+- [Done] Footer integration: read-only active message render, safe-to-fail, severity-coded colours (Info/Warning/Critical), authenticated users only, footer sticky to viewport bottom
 - [Done] Add domain, application and infra tests — domain (6), application (14) complete
 
 ### Stage 4 — System State Message Management UI
@@ -137,13 +137,13 @@ Goal: Give the SystemSupport user a fully functional message management surface 
 - Add form uses severity dropdown with Info as default
 
 #### Tasks:
-- [ ] Extend SupportDashboardViewModel with ActiveMessage and MessageHistory
-- [ ] Update SupportController.Dashboard to load messages via ISystemStateMessageService
-- [ ] Add SupportController.PostMessage action (POST) — creates new message, auto-revokes existing active
-- [ ] Add SupportController.RevokeMessage action (POST) — revokes active message
-- [ ] Update Support/Dashboard.cshtml — replace placeholder panel with working message management UI
-- [ ] Add controller tests for PostMessage and RevokeMessage authorization
-- [ ] UAT — support user can post, view history, and revoke messages end to end
+- [Done] Extend SupportDashboardViewModel with ActiveMessage and MessageHistory
+- [Done] Update SupportController.Dashboard to load messages via ISystemStateMessageService
+- [Done] Add SupportController.PostMessage action (POST) — creates new message, auto-revokes existing active
+- [Done] Add SupportController.RevokeMessage action (POST) — revokes active message
+- [Done] Update Support/Dashboard.cshtml — replace placeholder panel with working message management UI
+- [Done] Add controller tests for PostMessage and RevokeMessage authorization
+- [Done] UAT — support user can post, view history, and revoke messages end to end
 
 Cross-stage
 - [ ] Documentation: dev guide on roles as canonical source
@@ -447,6 +447,11 @@ Status:
 - Not implemented
 - Design agreed
 
+- [DONE] Stage 4: System State Message Management UI complete — post/revoke/history on Support Dashboard
+- [DONE] SystemStateMessageSeverity — Info/Warning/Critical with colour-coded footer
+- [DONE] Footer auth guard — status message hidden from unauthenticated users
+- [DONE] Footer sticky layout fix — visible without scrolling on short pages
+- [DONE] Footer status message wrapping fix — max-width, no overflow
 - [DONE] Stage 2: IAuthorizationFacade injected into UserService, RequireAuthorAsync removed, OnlyAllowAuthorOrSystemSupport() added, SystemSupport can deactivate/reactivate users
 - [DONE] Step17-18: RtfConverter case-insensitive path fix (Linux content bug), chapter ordering fix, email-as-nav-link
 - [DONE] Step15-16: Account/Settings page — display name, email, password change; Dropbox panel for authors
@@ -494,4 +499,4 @@ Status:
 - [DONE] pg.ps1 helper script
 - [DONE] PowerShell.md scripting standards document
 - [DONE] PRINCIPLES.md scripting standards document
-- [DONE] 364 tests, all green
+- [DONE] 376 tests, all green

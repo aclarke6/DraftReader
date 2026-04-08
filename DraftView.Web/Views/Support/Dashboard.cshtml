@@ -59,21 +59,76 @@
             <span class="card__title">Support Messages</span>
         </div>
         <div class="card__body">
-            <p class="support-dashboard__intro">
-                View support messages and prepare the management surface. Backend support for these actions is not yet implemented.
-            </p>
 
-            <ul class="support-dashboard__list">
-                <li>View support messages, latest first</li>
-                <li>Revoke a message</li>
-                <li>Set expiry date for a message</li>
-                <li>Update message text</li>
-                <li>Add new support message</li>
-            </ul>
+            @if (Model.ActiveMessage != null)
+            {
+                <div class="support-messages__active">
+                    <p class="support-messages__active-text"><strong>@Model.ActiveMessage.Message</strong></p>
+                    <p class="support-messages__active-meta">
+                        <span class="support-messages__badge support-messages__badge--@Model.ActiveMessage.Severity.ToString().ToLower()">@Model.ActiveMessage.Severity</span>
+                        <span>@Model.ActiveMessage.CreatedAt.ToString("dd MMM yyyy HH:mm")</span>
+                    </p>
+                    <form method="post" asp-action="RevokeMessage">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="messageId" value="@Model.ActiveMessage.Id" />
+                        <button type="submit" class="btn btn--danger">Revoke</button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <p class="support-messages__none">No active system message.</p>
+            }
 
-            <div class="support-dashboard__placeholder">
-                Support message management is view-only placeholder work at this stage.
-            </div>
+            <form method="post" asp-action="PostMessage" class="support-messages__form">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" class="form-control" required maxlength="500" rows="3"
+                              placeholder="Enter system state message..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="severity">Severity</label>
+                    <select id="severity" name="severity" class="form-control">
+                        <option value="0" selected>Info</option>
+                        <option value="1">Warning</option>
+                        <option value="2">Critical</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn--primary">Post Message</button>
+            </form>
+
+            @if (Model.MessageHistory.Any())
+            {
+                <table class="support-messages__history">
+                    <thead>
+                        <tr>
+                            <th>Message</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Deactivated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var msg in Model.MessageHistory)
+                        {
+                            <tr class="@(!msg.IsActive ? "support-messages__row--revoked" : "")">
+                                <td>@msg.Message</td>
+                                <td>@msg.Severity</td>
+                                <td>@(msg.IsActive ? "Active" : "Revoked")</td>
+                                <td>@msg.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                <td>@(msg.DeactivatedAt.HasValue ? msg.DeactivatedAt.Value.ToString("dd MMM yyyy HH:mm") : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="support-messages__none">No message history.</p>
+            }
+
         </div>
     </section>
 </div>
