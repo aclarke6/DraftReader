@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-06
+Last updated: 2026-04-09
 
 ---
 
@@ -33,9 +33,10 @@ All new domain entities, application service changes, and infrastructure changes
 Every script that modifies any `.css` file must also bump `--css-version` in `DraftView.Core.css`. [Done] CSS versioning automated via Update-CssVersion.ps1
 
 Always use regex replace so it matches whatever version is currently there — never hardcode the expected current value:
-powershell
+```powershell
 $core = $core -replace '--css-version: "v[^"]+";', '--css-version: "v2026-04-02-1";'
 if ($core -notmatch 'v2026-04-02-1') { Write-Host "ERROR: bump failed" -ForegroundColor Red; exit 1 }
+```
 
 ### Controller Action Guards — MANDATORY
 Every controller that accesses data or performs mutations must be protected by an
@@ -48,9 +49,10 @@ Every controller that accesses data or performs mutations must be protected by a
 - `AccountController` → individual actions use `[Authorize]` where needed
 
 Audit pattern — verify class-level attributes are present:
-
+```powershell
 Get-ChildItem "C:\Users\alast\source\repos\DraftView\DraftView.Web\Controllers" -Filter "*.cs" |
     Select-String -Pattern "^\[Authorize" | Select-Object Path, Line
+```
 
 ### Replacement Scripts Must Verify — MANDATORY
 Every PowerShell string replacement MUST verify the change applied before proceeding to the next step or building. This is not optional. Pattern:
@@ -83,18 +85,56 @@ For complex files, prefer full rewrites delivered as `.ps1` files over inline re
 
 ## ROLE MIGRATION - ASP.NET Identity rollout (3-stage)
 
-Goal: migrate authorization to use ASP.NET Identity roles as single source of truth and implement SystemSupport-managed System State Messaging.
-
 Cross-stage
 - [Deferred] Documentation: dev guide on roles as canonical source
 - [ ] Logging: failed authorization attempts
 - [Deferred] Backfill/migration scripts and rollback notes
 
-Exit criteria: Identity roles are canonical; web and app services enforce roles; SystemSupport implemented and tested.
+---
+
+## SPRINT 1 — Pre-Beta Push (Current)
+
+- [DONE] Fix prose font in reader view (Scrivener monospace overriding Georgia)
+- [DONE ] Fix comment author display name (hardcoded "Reader")
+- [DONE ] Reactivate reader flow (UI exists, needs wiring)
 
 ---
 
-## IMMEDIATE - Current Sprint
+## SPRINT 2 — Reader Experience
+
+- [ ] Fix scene-level Published labels in sections view (Part 2 / Chapter 3 showing Publish buttons incorrectly)
+- [ ] Project switcher — dropdown or tab strip when >1 project accessible
+- [ ] Remember last selected project (cookie or session)
+- [ ] Kindle-style resume on login — redirect to last read chapter/scene
+- [ ] Author comment response UI from dashboard
+- [ ] Reader font preferences — font face and size selectable from Account/Settings page, persisted per reader, applied to reader view
+
+---
+
+## SPRINT 3 — Platform Hardening
+
+- [ ] Fail2ban setup on production VM
+- [ ] Report Fault modal — HomeController POST + _Layout.cshtml modal + CSS
+- [ ] SystemStateMessage expiry — add ExpiresAt nullable DateTime, GetActiveAsync filters expired
+- [ ] Add Project discovery flow (IScrivenerProjectDiscoveryService + Projects page UI)
+
+## GO-LIVE GATE
+
+These items are completed on the day of go-live, not before:
+- [ ] Send password reset emails to Becca (becca@the-dunlops.co.uk) and Hilary (hilaryrrb@gmail.com)
+- [ ] Confirm Becca and Hilary can log in and access The Fractured Lattice
+
+# Post Go Live
+
+## SPRINT 4 — Billing & Multi-tenancy
+
+- [ ] IBillingProvider abstraction (Creem preferred, Paddle alternative)
+- [ ] Subscription tiers: Free / Basic / Full (1 / 3 / unlimited active projects)
+- [ ] ReaderTenant model (AuthorId, IsActive, IsDeleted, KnownAs)
+- [ ] Account / TenancyMembership model (per v3 business model doc)
+- [ ] Mark intentional single-tenancy seams for future refactor
+
+---
 
 ## SHORT TERM - Go-Live Requirements
 
@@ -102,12 +142,8 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 - [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
 
 ### Reader UX
-- Project switcher for readers/authors with multiple projects
-  - Dropdown or tab strip when >1 project accessible
-  - Remember last selected project (cookie or session)
-- Kindle-style resume on login
-  - Redirect reader to last chapter/scene they were reading
-  - Derive from most recent ReadEvent for the reader
+- Project switcher for readers/authors with multiple projects (→ Sprint 2)
+- Kindle-style resume on login (→ Sprint 2)
 
 ### Dropbox Sync (DONE - production live)
 - [DONE] Per-author DropboxConnection entity (TDD)
@@ -129,24 +165,24 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 
 ### Author Dashboard - Sync Visibility
 - [DONE] Progress bar during sync
-- [DONE] Live file download count: "Downloading... 180 / 1771 files" (Steps 12-14)
-- [DONE] Real progress bar driven by filesDownloaded/totalFiles percentage (Step 14)
-- [DONE] Show cache file count per project on dashboard (visible sync health indicator)
+- [DONE] Live file download count
+- [DONE] Real progress bar driven by filesDownloaded/totalFiles percentage
+- [DONE] Show cache file count per project on dashboard
 - Show last download timestamp alongside last sync timestamp
 
 ### Config: Move Non-Secret Settings Out of User Secrets
-- [DONE] `LocalCachePath` moved to `appsettings.json` (was incorrectly in user secrets)
+- [DONE] `LocalCachePath` moved to `appsettings.json`
 - Audit remaining user secrets — anything not a password/token/key belongs in appsettings
 
 ### Mobile Author Views
-- Readers page mobile: name, status, Deactivate only (table scrolls - acceptable)
+- Readers page mobile: name, status, Deactivate only
 - Author/Comments view: per chapter, all scenes comments, reply/delete inline
 - Recent Activity: tap to open Author/Comments for that scene
 
 ### Author Chapter Page (Author/Chapter/{id})
 - Full chapter view with all scenes
 - Scene comments on RHS sidebar
-- Chapter level comments in floating bar at bottom (BetaBooks comments land here)
+- Chapter level comments in floating bar at bottom
 - Reader progress: who has read it, date last visited
 - Link from Sections list chapter rows
 
@@ -154,29 +190,22 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 - Link back to parent chapter page
 - "2 readers" hover showing which readers have read this scene
 
-### Floating Footer Bar (both reader and author views)
-- Copyright details
-- System status / outages indicator
-- Report Fault button -> popup form (not full page)
-  - Pre-populate user email and name from DB
-  - Subject + comment box + Send/Cancel
-  - Emails support@draftview.co.uk -> alastair_clarke@yahoo.com
-- Cloudflare email routing setup for support@draftview.co.uk
-
-### Email Infrastructure
-- Wire up SMTP (Resend) into IEmailSender (currently Console only)
-- Cloudflare email routing: support@draftview.co.uk -> alastair_clarke@yahoo.com
+### Floating Footer Bar
+- [DONE] Copyright details
+- [DONE] System status / outages indicator
+- [Deferred → Sprint 3] Report Fault button → popup form
+- [DONE] Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
 
 ### Reader Flow
-- Reactivate reader flow UI (exists but needs wiring)
+- Reactivate reader flow UI (→ Sprint 1)
 - Reader notification emails (new chapter published)
 
 ### Production - Pre-Beta Push
-- Fix prose font in reader view (verify after sync)
-- Reactivate reader flow
+- Fix prose font in reader view (→ Sprint 1)
+- Reactivate reader flow (→ Sprint 1)
 - [DONE] Wire up SMTP email
-- Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com
-- Fail2ban setup on production VM
+- Send password reset emails to Becca and Hilary (→ Sprint 1)
+- Fail2ban setup on production VM (→ Sprint 3)
 
 ---
 
@@ -198,52 +227,37 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 - [DONE] Reader accounts created with real emails
 - Importer scoped to project name (prevents cross-project contamination)
 
-### Add Project Discovery
+### Add Project Discovery (→ Sprint 3)
 - Add The Fractured Lattice as Books 2, 3 (UUIDs known)
 - Dropbox vault scanning
-
-### System State Messaging
-- [ ] SystemStateMessage expiry — add ExpiresAt nullable DateTime, GetActiveAsync filters expired messages
-
-### Report Fault
-- [ ] Add `ReportFault(string subject, string message)` POST action to `HomeController` — sends email to support@draftview.co.uk, returns JSON
-- [ ] Report Fault modal in `_Layout.cshtml` — triggered by footer button, pre-populated sender email, subject + message fields, Send/Cancel
-- [ ] CSS for modal overlay and dialog
-- [ ] UAT — submit fault report, verify email received at support@draftview.co.uk
 
 ---
 
 ## LONGER TERM - Business Model Features
 
-### Multi-tenancy
+### Multi-tenancy (→ Sprint 4)
 - Account / TenancyMembership model (per v3 business model doc)
 - Mark intentional single-tenancy seams for future refactor
-- Concurrent per-tenant sync — each tenant's sync runs independently; SyncWorker uses one Task per tenant with isolated failure handling
+- Concurrent per-tenant sync
 
 ### System Admin
 - Prerequisite: tenancy model in place
-- System Admin page — tenant list, connection status, reader count, disk/data size, tier (Free/Basic/Unlimited)
+- System Admin page — tenant list, connection status, reader count, disk/data size, tier
 - SystemAdmin role attached to support@draftview.co.uk
 - Tenant-level actions: suspend, unsuspend, view audit log
 
 ### ReaderTenant (Tenancy Phase)
-- New table scoping reader state per author/tenant:
-  - ReaderId, AuthorId, IsActive, IsDeleted, KnownAs, CreatedAt, DeactivatedAt, DeletedAt
-- Deactivate = sets ReaderTenant.IsActive = false + revokes all ReaderAccess (tenant-scoped)
-- Bin/Delete = sets ReaderTenant.IsDeleted = true (hidden from author's Readers list)
+- ReaderId, AuthorId, IsActive, IsDeleted, KnownAs, CreatedAt, DeactivatedAt, DeletedAt
+- Deactivate = sets ReaderTenant.IsActive = false + revokes all ReaderAccess
+- Bin/Delete = sets ReaderTenant.IsDeleted = true
 - KnownAs = author's private nickname for this reader
-- Replaces current User.IsActive / User.IsSoftDeleted for tenant-scoped operations
 
 ### Reader Marketplace (Tenancy Phase)
 - Reader can make themselves discoverable to other authors
-- ReaderProfile entity:
-  - BragSheet (RTF field) — reader's self-description as a beta reader
-  - GenreList (many-to-many) — genres they enjoy beta reading
+- ReaderProfile entity: BragSheet (RTF), GenreList (many-to-many)
 - Genre table seeded with common fiction genres
-- Author can browse available readers and invite directly
-- Reader Account/Settings page gains BragSheet and Genre fields at this point
 
-### Subscription / Billing
+### Subscription / Billing (→ Sprint 4)
 - Creem preferred (0% fee on first EUR1k/month)
 - Paddle as alternative
 - Backend-agnostic IBillingProvider abstraction
@@ -251,11 +265,7 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 
 ### Standalone Sync Worker (DraftView.SyncWorker)
 - Extract SyncBackgroundService into a separate worker service project
-- Shares DraftView.Application and DraftView.Infrastructure
-- Cycles through all tenants' projects independently of web app restarts
-- Deployable as a separate process or cheap VM
 - Prerequisite: multi-tenancy model in place
-- Design note: current interfaces are already clean enough for extraction
 
 ### Scrivener Write-back (Phase 2)
 - RTF annotations
@@ -265,7 +275,7 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 ## ARCHITECTURE - Phase 1-5 Review (stored, not started)
 
 ### Phase 1 - Stabilise single-tenancy
-- Fix SmtpEmailSender From vs FromAddress
+- [DONE] Fix SmtpEmailSender From vs FromAddress
 - Pass CancellationToken consistently in SyncService
 - Validate section existence in ReadingProgressService.RecordOpenAsync
 - Define and enforce active/inactive/soft-deleted user rules
@@ -306,212 +316,68 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 
 ## DONE (this project)
 
-## Email Sprint
-
-### Goal
-Wire up working email in dev and production, then build the Report Fault modal using it.
-
-### Email Infrastructure
-- [DONE] Investigate Yahoo SMTP settings for dev (smtp.mail.yahoo.com, port 587, app password required)
-- [DONE] Configure SmtpEmailSender to use appsettings.json — provider-agnostic (same code, config-only swap)
-- [DONE] Dev config: Yahoo SMTP via appsettings.Development.json (not user secrets — not a password, it's a config)
+### Email Sprint (2026-04-08)
+- [DONE] Yahoo SMTP for dev (smtp.mail.yahoo.com, port 587, app password)
+- [DONE] SmtpEmailSender provider-agnostic via appsettings.json
+- [DONE] Dev config: Yahoo SMTP via appsettings.Development.json (excluded from git)
 - [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
-- [DONE] Test email send end-to-end in dev (send to alastair_clarke@yahoo.com)
-- [DONE] Wire up Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
-- [DONE] Dev-safe email addresses for Becca and Hilary (becca.dev@draftview.local, hilary.dev@draftview.local)
-- [DEFERRED] Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com
-- [DONE] Oracle Email Delivery configured — DKIM active (draftview-prod selector), SPF updated, approved senders added, production SMTP credentials in appsettings.Production.json
+- [DONE] Oracle Email Delivery: DKIM active (draftview-prod selector), SPF updated, approved senders
 - [DONE] Cloudflare DKIM CNAME added for draftview.co.uk
+- [DONE] Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
+- [DONE] SmtpEmailSender migrated to MailKit 4.15.1 (fixes Oracle STARTTLS auth)
+- [DONE] MimeKit vulnerability CVE-2026-30227 patched (4.7.1 → 4.15.1)
+- [DONE] SQLite packages removed from solution
+- [DONE] DraftView.Integration.Tests project added; SmtpEmailSenderIntegrationTests green
+- [DONE] Test-OracleSmtp.ps1 helper script for Oracle SMTP credential testing
+- [DONE] ForgotPassword SMTP failure caught and logged — no longer crashes page
+- [DONE] Dev-safe email addresses for Becca and Hilary (becca.dev@draftview.local, hilary.dev@draftview.local)
+- [DEFERRED] Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com (→ Sprint 1)
 
-### Notes
-- [DONE] Yahoo SMTP requires an app password (not account password) — generate at Yahoo Account Security
-- [DONE] Oracle Email Delivery credentials go in appsettings.Production.json (already on server)
-- [DONE] `SmtpEmailSender` already exists but has a `From` vs `FromAddress` bug (Phase 1 item) — fix as part of this sprint
-- [DONE] `noreply@draftview.co.uk` is the send-from address for production
-
-## ROLE MIGRATION - ASP.NET Identity rollout (3-stage)
-
-Goal: migrate authorization to use ASP.NET Identity roles as single source of truth and implement SystemSupport-managed System State Messaging.
-
-### Stage 1 — Web surface (Author / BetaReader)
-- [Done] Inventory controllers/views/helpers that check `AppUsers.Role` (test checklist)
-- [Done] Add `RequireAuthorPolicy` and `RequireBetaReaderPolicy` in identity setup
-- [Done] Update `DatabaseSeeder` to ensure Identity role membership and add backfill script
-- [Done] Replace manual domain-role guards with ASP.NET Identity role enforcement
-  - [Done] `ReaderController` secured via BaseReaderController `[Authorize(Roles = "Author,BetaReader")]`
-  - [Done] `SystemSupport` explicitly excluded from Reader flows
-  - [Done] `HomeController` role-based routing implemented (Support → Author → Reader)
-  - [Done] `AuthorController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
-  - [Done] `DropboxController` decorated with `[Authorize(Policy = "RequireAuthorPolicy")]`
-- [Done] Use claim-based ViewBag population in `BaseController` (views can now rely on `ViewBag.IsAuthor` / `ViewBag.IsReader` populated from Identity)
-- [Done] Update views to use `User.IsInRole("Author")` or ViewBag populated from claims (individual view updates remain)
-- [Done] Add xUnit + Moq controller tests asserting role-related attributes (policy registration + controller attribute tests added)
-- [Done] Create `DraftView.Web.Tests` project and add policy registration unit test
-- [Done] Remove dead `RedirectToLocal` sync-over-async helper from AccountController
-- [Done] Replace domain role checks in AccountController and DropboxController with Identity claims
-- [Done] Remove `RequireAuthorAsync()` / `GetAuthorAsync()` domain-role controller helpers — replace with class-level `[Authorize]` attributes
-- [Done] Fix `AccountController.cs:507` — post-login redirect uses domain role check, replace with `User.IsInRole()`- 
-
-### Stage 2 — Application layer enforcement
-- [Done] Design and add `IAuthorizationFacade`
-- [Done] Audit application services for methods requiring role checks — UserService complete, CommentService deferred
-- [Done] Inject and enforce role policies inside critical service methods — UserService fully migrated
-- [Done] Add service-level unit tests — UserService facade tests green
-- [Deferred] Define background service identity model — SyncBackgroundService runs as trusted system actor with no HTTP context; IAuthorizationFacade not applicable. Full impersonation model tracked separately under Impersonation section.
-
-### Stage 3 — SystemSupport & System State Messaging
-- [Done] Seed `SystemSupport` Identity role and backfill support user
-- [Done] Implement `SystemStateMessage` domain entity + repository + migration (6 domain tests)
-- [Done] Implement `ISystemStateMessageService` with policy enforcement (7 application tests)
-- [Done] Create `SupportController` protected by `[Authorize(Roles = "SystemSupport")]`
-- [Done] Footer integration: read-only active message render, safe-to-fail, severity-coded colours (Info/Warning/Critical), authenticated users only, footer sticky to viewport bottom
-- [Done] Add domain, application and infra tests — domain (6), application (14) complete
-
-### Stage 4 — System State Message Management UI
-Goal: Give the SystemSupport user a fully functional message management surface on the Support Dashboard.
-
-#### Requirements:
-- View all messages (active and historical) in a table — message text, severity, created date, status (Active/Revoked)
-- Add new message — form with message text and severity selector (Info / Warning / Critical)
-- Revoke active message — single action button, confirmation required
-- No edit in place — updating a message means revoking the current one and creating a new one (preserves audit trail)
-- History is always visible — revoked messages shown in muted style below active message
-
-#### Design decisions:
-- UI lives on the Support Dashboard as a replacement for the current placeholder panel
-- SupportController handles POST actions (protected by SystemSupport role)
-- SupportDashboardViewModel extended to carry message list and active message
-- All mutations go through ISystemStateMessageService — no direct DB access from controller
-- Add form uses severity dropdown with Info as default
-
-#### Tasks:
-- [Done] Extend SupportDashboardViewModel with ActiveMessage and MessageHistory
-- [Done] Update SupportController.Dashboard to load messages via ISystemStateMessageService
-- [Done] Add SupportController.PostMessage action (POST) — creates new message, auto-revokes existing active
-- [Done] Add SupportController.RevokeMessage action (POST) — revokes active message
-- [Done] Update Support/Dashboard.cshtml — replace placeholder panel with working message management UI
-- [Done] Add controller tests for PostMessage and RevokeMessage authorization
-- [Done] UAT — support user can post, view history, and revoke messages end to end
-
-## RECENT WORK — AUTHORIZATION & SUPPORT (2026-04-06)
-- [DONE] ReaderController secured with role-based authorization (Author,BetaReader)
-- [DONE] BaseReaderController enforces reader access boundary
-- [DONE] SystemSupport isolated from Reader flows
-- [DONE] SupportController and SystemSupport dashboard scaffolded
+### Role Migration — Stages 1-4 (2026-04-06)
+- [DONE] Stage 1: Identity roles as canonical source, web surface migrated
+- [DONE] Stage 2: IAuthorizationFacade injected into UserService
+- [DONE] Stage 3: SystemSupport role, SystemStateMessage entity + service + footer integration
+- [DONE] Stage 4: System State Message Management UI on Support Dashboard
+- [DONE] ReaderController secured (Author,BetaReader); SystemSupport isolated
 - [DONE] HomeController role-based routing (Support → Author → Reader)
-- [DONE] CSS versioning automation script implemented and validated
-- [DONE] IAuthorizationFacade + HttpContextAuthorizationFacade (DI registered, 6 tests)
+- [DONE] CSS versioning automation (Update-CssVersion.ps1)
 - [DONE] UserService.DeactivateUserAsync revokes all ReaderAccess records (TDD)
-- [DONE] RevokeAllForReaderAsync on IReaderAccessRepository + ReaderAccessRepository (3 tests)
-- [DONE] Mobile reader flow — BaseReaderController, unified ReaderController with IsMobile() view selection, MobileChapters/MobileScenes/MobileRead views, DraftView.MobileReader.css
-- [DONE] GetLastReadEventAsync on IReadingProgressService (TDD, 4 tests)
-- [DONE] Desktop reader views renamed to Desktop prefix throughout- 
-- [DONE] Role Migration Stage 1 inventory complete — domain role checks catalogued and web-layer checks replaced with Identity claims
-- [DONE] AccountController Login/Settings/RedirectToLocal cleaned up — now uses HomeController routing and User.IsInRole()
-- [DONE] DropboxController.GetAuthorAsync() simplified — class-level [Authorize] makes domain role check redundant 
+- [DONE] Mobile reader flow — IsMobile() view selection, MobileChapters/MobileScenes/MobileRead
+- [DONE] Desktop reader views renamed to Desktop prefix
 
 ### Reader Authorization Model — FINAL DECISION
-
-- Reader surface is restricted to:
-  - Author (acts as moderator)
-  - BetaReader (true reader role)
-
-- SystemSupport:
-  - Explicitly excluded from ReaderController
-  - Must use impersonation for read-only inspection
-
-- No dual-role model (Author ≠ Reader)
-  - Author is treated as elevated reader at runtime
-  - Avoids role duplication and data ambiguity
-
-- Enforcement:
-  - BaseReaderController uses `[Authorize(Roles = "Author,BetaReader")]`
-
----
-
-### System Support Dashboard (Initial Implementation)
-
-- [DONE] SupportController with `[Authorize(Roles = "SystemSupport")]`
-- [DONE] SupportDashboardViewModel
-- [DONE] Dashboard view scaffold
-- [DONE] HomeController routing for SystemSupport users
-
-Current scope (view-only):
-- System status overview
-- User management (defined, not implemented)
-- Support message management (placeholder only)
-
----
+- Reader surface: Author + BetaReader only
+- SystemSupport excluded from ReaderController; must use impersonation
+- No dual-role model; Author treated as elevated reader at runtime
+- BaseReaderController: `[Authorize(Roles = "Author,BetaReader")]`
 
 ### Impersonation — REQUIRED (NOT IMPLEMENTED)
+- Read-only, explicit enter/exit mode
+- Design agreed; not yet built
 
-Support users must be able to:
-
-- View the system as another user
-- See exactly what that user sees
-- Never perform mutations while impersonating
-
-Constraints:
-
-- Read-only enforcement at controller level (block POST/PUT/DELETE)
-- Must not reuse normal authentication identity silently
-- Must be explicit enter / exit mode
-
-Status:
-- Not implemented
-- Design agreed
-
-
-- [DONE] Stage 4: System State Message Management UI complete — post/revoke/history on Support Dashboard
-- [DONE] SystemStateMessageSeverity — Info/Warning/Critical with colour-coded footer
-- [DONE] Footer auth guard — status message hidden from unauthenticated users
-- [DONE] Footer sticky layout fix — visible without scrolling on short pages
-- [DONE] Footer status message wrapping fix — max-width, no overflow
-- [DONE] Stage 2: IAuthorizationFacade injected into UserService, RequireAuthorAsync removed, OnlyAllowAuthorOrSystemSupport() added, SystemSupport can deactivate/reactivate users
-- [DONE] Step17-18: RtfConverter case-insensitive path fix (Linux content bug), chapter ordering fix, email-as-nav-link
-- [DONE] Step15-16: Account/Settings page — display name, email, password change; Dropbox panel for authors
-- [DONE] Step15-16: ReaderController.Read fixed — uses chapter.ProjectId
-- [DONE] Step15-16: User.UpdateDisplayName and UpdateEmail domain methods (TDD, 331 tests green)
-- [DONE] Read.cshtml: improved empty scene message
-- [DONE] Step12-14: Sync file download progress — live file count, total files, real percentage progress bar
+### Earlier Work
+- [DONE] Step17-18: RtfConverter case-insensitive path fix, chapter ordering fix, email-as-nav-link
+- [DONE] Step15-16: Account/Settings page; Dropbox panel for authors
+- [DONE] Step15-16: User.UpdateDisplayName and UpdateEmail domain methods (TDD)
+- [DONE] Step12-14: Sync file download progress — live file count, real percentage progress bar
 - [DONE] LocalCachePath moved from user secrets to appsettings.json
-- [DONE] Scene status sync confirmed working — Scrivener save timing documented
 - [DONE] Dual-list project assignment UI (ManageReaderAccess)
 - [DONE] ReaderAccess entity + repository (TDD, migration)
-- [DONE] Reader dashboard filters by ReaderAccess per reader
-- [DONE] Author Reader View shows all active projects (bypasses ReaderAccess)
-- [DONE] Multiple active projects per author
-- [DONE] Per-author Dropbox OAuth connection (DropboxConnection entity, IDropboxClientFactory, OAuth flow)
+- [DONE] Per-author Dropbox OAuth connection (DropboxConnection entity, IDropboxClientFactory)
 - [DONE] IDropboxFileDownloader — full Dropbox sync working end to end
 - [DONE] AuthorId added to ScrivenerProject (migration with backfill)
 - [DONE] UseForwardedHeaders — fixes OAuth behind Nginx on production
 - [DONE] Case-insensitive .scrivx lookup (Linux compatibility)
 - [DONE] AddProjects background task (fixes 504 timeout)
-- [DONE] 1A - Persist accepted reader display name
-- [DONE] 1B - Invitation email expiry info + recipient name (1D combined)
-- [DONE] 1C - Readers list status wording (Invited / Active / Inactive)
 - [DONE] BetaBooks importer: Comment.CreateForImport, DevTools command, 54 comments seeded
 - [DONE] Becca Dunlop and Hilary Royston-Bishop accounts created with real emails
-- [DONE] Sections view: scroll to chapter after publish/unpublish
 - [DONE] Toast notifications (fixed position, auto-dismiss, no layout shift)
-- [DONE] Mobile author views: scene rows hidden, desktop-only controls, projects table fix
-- [DONE] SyncService: ILogger added, errors logged to console
-- [DONE] Rebrand: DraftReader -> DraftView throughout
-- [DONE] CommentStatus enum
-- [DONE] Notifications panel on author dashboard
-- [DONE] Comment author display names
 - [DONE] Reply threading (roots + replies in reader and author views)
-- [DONE] Heroicons
-- [DONE] Read.cshtml migrated to CSS classes
-- [DONE] CSS split into 7 files by concern
-- [DONE] Mobile CSS for reader and author views
-- [DONE] Chapter-only publishing enforced (domain + view)
-- [DONE] PublishAsPartOfChapter domain invariant (TDD)
-- [DONE] Orphaned published scenes cleaned from DB
-- [DONE] Reader dashboard excludes Part/Book folders
-- [DONE] Sections view: Published badge suppressed on scene rows
 - [DONE] Comment edit and delete (including moderator delete)
-- [DONE] pg.ps1 helper script
-- [DONE] PowerShell.md scripting standards document
-- [DONE] PRINCIPLES.md scripting standards document
+- [DONE] PublishAsPartOfChapter domain invariant (TDD)
+- [DONE] Chapter-only publishing enforced (domain + view)
+- [DONE] CSS split into 7 files by concern
+- [DONE] Heroicons integrated as static C# class
+- [DONE] Rebrand: DraftReader → DraftView throughout
+- [DONE] pg.ps1, PowerShell.md, PRINCIPLES.md
 - [DONE] 376 tests, all green
