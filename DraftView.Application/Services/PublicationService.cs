@@ -71,9 +71,39 @@ public class PublicationService(
         Guid projectId, CancellationToken ct = default)
     {
         var all = await sectionRepo.GetByProjectIdAsync(projectId, ct);
-        return [.. all
-            .Where(s => s.NodeType == NodeType.Folder && s.IsPublished && !s.IsSoftDeleted)
-            .OrderBy(s => s.SortOrder)];
+        return [.. DepthFirstOrder(all)
+            .Where(s => s.NodeType == NodeType.Folder && s.IsPublished && !s.IsSoftDeleted)];
+    }
+
+    private static IReadOnlyList<Section> DepthFirstOrder(IReadOnlyList<Section> sections)
+    {
+        var root   = Guid.Empty;
+        var lookup = new Dictionary<Guid, List<Section>>();
+
+        foreach (var s in sections)
+        {
+            var key = s.ParentId ?? root;
+            if (!lookup.ContainsKey(key)) lookup[key] = [];
+            lookup[key].Add(s);
+        }
+
+        foreach (var key in lookup.Keys.ToList())
+            lookup[key] = [.. lookup[key].OrderBy(s => s.SortOrder)];
+
+        var result = new List<Section>();
+
+        void Walk(Guid parentId)
+        {
+            if (!lookup.TryGetValue(parentId, out var children)) return;
+            foreach (var child in children)
+            {
+                result.Add(child);
+                Walk(child.Id);
+            }
+        }
+
+        Walk(root);
+        return result;
     }
 
     public async Task<IReadOnlyList<Section>> GetPublishableChaptersAsync(

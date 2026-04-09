@@ -102,6 +102,39 @@ public class PublicationServiceTests
     }
 
     // ---------------------------------------------------------------------------
+    // GetPublishedChapters
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetPublishedChaptersAsync_ReturnsChaptersInDepthFirstTreeOrder()
+    {
+        var projectId = Guid.NewGuid();
+
+        // Structure: Part A (sort 0) -> Chapter 1 (sort 0), Chapter 2 (sort 1)
+        //            Part B (sort 1) -> Chapter 3 (sort 0)
+        var partA    = Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Part A",    null,      0);
+        var partB    = Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Part B",    null,      1);
+        var chap1    = Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Chapter 1", partA.Id,  0);
+        var chap2    = Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Chapter 2", partA.Id,  1);
+        var chap3    = Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Chapter 3", partB.Id,  0);
+
+        chap1.MarkAsPublishedContainer();
+        chap2.MarkAsPublishedContainer();
+        chap3.MarkAsPublishedContainer();
+
+        var sut = CreateSut();
+        _sectionRepo.Setup(r => r.GetByProjectIdAsync(projectId, default))
+            .ReturnsAsync(new List<Section> { partB, chap3, partA, chap2, chap1 }); // deliberately shuffled
+
+        var result = await sut.GetPublishedChaptersAsync(projectId);
+
+        Assert.Equal(3, result.Count);
+        Assert.Equal("Chapter 1", result[0].Title);
+        Assert.Equal("Chapter 2", result[1].Title);
+        Assert.Equal("Chapter 3", result[2].Title);
+    }
+
+    // ---------------------------------------------------------------------------
     // CanPublish
     // ---------------------------------------------------------------------------
 
