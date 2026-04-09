@@ -96,41 +96,10 @@ Exit criteria: Identity roles are canonical; web and app services enforce roles;
 
 ## IMMEDIATE - Current Sprint
 
-### Email & Fault Reporting Sprint
-
-#### Goal
-Wire up working email in dev and production, then build the Report Fault modal using it.
-
-#### Email Infrastructure
-- [DONE] Investigate Yahoo SMTP settings for dev (smtp.mail.yahoo.com, port 587, app password required)
-- [DONE] Configure SmtpEmailSender to use appsettings.json — provider-agnostic (same code, config-only swap)
-- [DONE] Dev config: Yahoo SMTP via appsettings.Development.json (not user secrets — not a password, it's a config)
-- [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
-- [DONE] Test email send end-to-end in dev (send to alastair_clarke@yahoo.com)
-- [DONE] Wire up Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
-- [DONE] Dev-safe email addresses for Becca and Hilary (becca.dev@draftview.local, hilary.dev@draftview.local)
-- [DEFERRED] Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com
-- [DONE] Oracle Email Delivery configured — DKIM active (draftview-prod selector), SPF updated, approved senders added, production SMTP credentials in appsettings.Production.json
-- [DONE] Cloudflare DKIM CNAME added for draftview.co.uk
-
-#### Report Fault
-- [ ] Add `ReportFault(string subject, string message)` POST action to `HomeController` — sends email to support@draftview.co.uk, returns JSON
-- [ ] Report Fault modal in `_Layout.cshtml` — triggered by footer button, pre-populated sender email, subject + message fields, Send/Cancel
-- [ ] CSS for modal overlay and dialog
-- [ ] UAT — submit fault report, verify email received at support@draftview.co.uk
-
-#### Notes
-- [DONE] Yahoo SMTP requires an app password (not account password) — generate at Yahoo Account Security
-- [DONE] Oracle Email Delivery credentials go in appsettings.Production.json (already on server)
-- [DONE] `SmtpEmailSender` already exists but has a `From` vs `FromAddress` bug (Phase 1 item) — fix as part of this sprint
-- `noreply@draftview.co.uk` is the send-from address for production
-
----
-
 ## SHORT TERM - Go-Live Requirements
 
 ### Production SMTP
-- [ ] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
+- [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
 
 ### Reader UX
 - Project switcher for readers/authors with multiple projects
@@ -205,7 +174,7 @@ Wire up working email in dev and production, then build the Report Fault modal u
 ### Production - Pre-Beta Push
 - Fix prose font in reader view (verify after sync)
 - Reactivate reader flow
-- Wire up SMTP email
+- [DONE] Wire up SMTP email
 - Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com
 - Fail2ban setup on production VM
 
@@ -235,6 +204,12 @@ Wire up working email in dev and production, then build the Report Fault modal u
 
 ### System State Messaging
 - [ ] SystemStateMessage expiry — add ExpiresAt nullable DateTime, GetActiveAsync filters expired messages
+
+### Report Fault
+- [ ] Add `ReportFault(string subject, string message)` POST action to `HomeController` — sends email to support@draftview.co.uk, returns JSON
+- [ ] Report Fault modal in `_Layout.cshtml` — triggered by footer button, pre-populated sender email, subject + message fields, Send/Cancel
+- [ ] CSS for modal overlay and dialog
+- [ ] UAT — submit fault report, verify email received at support@draftview.co.uk
 
 ---
 
@@ -330,6 +305,29 @@ Wire up working email in dev and production, then build the Report Fault modal u
 ---
 
 ## DONE (this project)
+
+## Email Sprint
+
+### Goal
+Wire up working email in dev and production, then build the Report Fault modal using it.
+
+### Email Infrastructure
+- [DONE] Investigate Yahoo SMTP settings for dev (smtp.mail.yahoo.com, port 587, app password required)
+- [DONE] Configure SmtpEmailSender to use appsettings.json — provider-agnostic (same code, config-only swap)
+- [DONE] Dev config: Yahoo SMTP via appsettings.Development.json (not user secrets — not a password, it's a config)
+- [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
+- [DONE] Test email send end-to-end in dev (send to alastair_clarke@yahoo.com)
+- [DONE] Wire up Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
+- [DONE] Dev-safe email addresses for Becca and Hilary (becca.dev@draftview.local, hilary.dev@draftview.local)
+- [DEFERRED] Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com
+- [DONE] Oracle Email Delivery configured — DKIM active (draftview-prod selector), SPF updated, approved senders added, production SMTP credentials in appsettings.Production.json
+- [DONE] Cloudflare DKIM CNAME added for draftview.co.uk
+
+### Notes
+- [DONE] Yahoo SMTP requires an app password (not account password) — generate at Yahoo Account Security
+- [DONE] Oracle Email Delivery credentials go in appsettings.Production.json (already on server)
+- [DONE] `SmtpEmailSender` already exists but has a `From` vs `FromAddress` bug (Phase 1 item) — fix as part of this sprint
+- [DONE] `noreply@draftview.co.uk` is the send-from address for production
 
 ## ROLE MIGRATION - ASP.NET Identity rollout (3-stage)
 
