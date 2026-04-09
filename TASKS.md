@@ -103,9 +103,9 @@ Cross-stage
 ## SPRINT 2 — Reader Experience
 
 - [DONE] Fix scene-level Published labels in sections view — verified working correctly
-- [ ] Fix Published Chapters sort order on dashboard (currently unsorted, should be chapter order)
-- [ ] Project switcher — dropdown or tab strip when >1 project accessible
-- [ ] Remember last selected project (cookie or session)
+- [DONE] Fix Published Chapters sort order on dashboard (currently unsorted, should be chapter order)
+- [DONE] Project switcher — already implemented as sidebar in DesktopDashboard, query string selection
+- [DONE] Remember last selected project (cookie or session)
 - [ ] Kindle-style resume on login — redirect to last read chapter/scene
 - [ ] Author comment response UI from dashboard
 - [ ] Reader font preferences — font face and size selectable from Account/Settings page, persisted per reader, applied to reader view
