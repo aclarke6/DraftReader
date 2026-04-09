@@ -243,9 +243,9 @@ These items are completed on the day of go-live, not before:
 
 ### System Admin
 - Prerequisite: tenancy model in place
-- System Admin page — tenant list, connection status, reader count, disk/data size, tier
-- SystemAdmin role attached to support@draftview.co.uk
-- Tenant-level actions: suspend, unsuspend, view audit log
+- [In Progress] System Admin page — tenant list, connection status, reader count, disk/data size, tier
+- [Done] SystemAdmin role attached to support@draftview.co.uk
+- [In Progress] Tenant-level actions: suspend, unsuspend, view audit log
 
 ### ReaderTenant (Tenancy Phase)
 - ReaderId, AuthorId, IsActive, IsDeleted, KnownAs, CreatedAt, DeactivatedAt, DeletedAt
@@ -267,6 +267,14 @@ These items are completed on the day of go-live, not before:
 ### Standalone Sync Worker (DraftView.SyncWorker)
 - Extract SyncBackgroundService into a separate worker service project
 - Prerequisite: multi-tenancy model in place
+
+### New User button & landing view — multi-tenancy phase
+- [ ] Add "New User" button to the nav/login page that routes to /register
+- [ ] Build /register landing view — two cards: Join as Author and Join as Beta Reader, plus a Sign In link
+- [ ] Build /register/author — standard ASP.NET Identity registration form; creates Account + Tenancy atomically; redirects to author dashboard
+- [ ] Build /register/reader — registration form with Display Name, Email, Password; creates Account only (no Tenancy); redirects to a "check your email" / welcome holding page
+- [ ] Add ReaderProfile entity (Bio, Genres, Availability, ProfileVisibility) — domain + EF migration; created empty on reader registration
+- [ ] Gate the existing author-only areas: if no Tenancy exists for the logged-in account, redirect to an "account not set up" page rather than crashing
 
 ### Scrivener Write-back (Phase 2)
 - RTF annotations
