@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-09
+Last updated: 2026-04-10
 
 ---
 
@@ -92,23 +92,54 @@ Cross-stage
 
 ---
 
-## SPRINT 1 — Pre-Beta Push (Current)
+## SPRINT 1 — Pre-Beta Push (Complete)
 
-- [DONE] Fix prose font in reader view (Scrivener monospace overriding Georgia)
-- [DONE ] Fix comment author display name (hardcoded "Reader")
-- [DONE ] Reactivate reader flow (UI exists, needs wiring)
+- [DONE] Fix prose font in reader view — verified rendering correctly in production
+- [DONE] Fix comment author display name — verified live lookup against AppUsers.DisplayName
+- [DONE] Reactivate reader flow — UI and controller action both present and wired correctly
 
 ---
 
-## SPRINT 2 — Reader Experience
+## SPRINT 2 — Reader Experience (Current)
 
 - [DONE] Fix scene-level Published labels in sections view — verified working correctly
-- [DONE] Fix Published Chapters sort order on dashboard (currently unsorted, should be chapter order)
-- [DONE] Project switcher — already implemented as sidebar in DesktopDashboard, query string selection
-- [DONE] Remember last selected project (cookie or session)
-- [DONE] Kindle-style resume on login — redirect to last read chapter/scene
+- [DONE] Fix Published Chapters sort order on dashboard — depth-first tree order (TDD)
+- [DONE] Project switcher — sidebar in DesktopDashboard, query string selection, progress per project
+- [DONE] Remember last selected project — query string naturally persists selection
+- [DONE] Kindle-style resume on login — exact scroll position (see sub-tasks below)
 - [ ] Author comment response UI from dashboard
 - [ ] Reader font preferences — font face and size selectable from Account/Settings page, persisted per reader, applied to reader view
+
+### Kindle-style Resume — Exact Scroll Position
+
+Current state: resume redirects to correct scene via `#scene-{id}` anchor, but does not restore exact scroll position within the scene. `ReadEvent` has no `ScrollPosition` field.
+
+**Domain (TDD required)**
+- [ ] Add `ScrollPosition` (nullable int) to `ReadEvent` entity
+- [ ] Add `UpdateScrollPosition(int pixels)` domain method to `ReadEvent`
+- [ ] Add domain tests: `UpdateScrollPosition_SetsScrollPosition`, `UpdateScrollPosition_OverwritesPreviousValue`
+
+**Infrastructure**
+- [ ] EF Core migration: add `ScrollPosition` column to `ReadEvents` table (nullable int)
+
+**Application (TDD required)**
+- [ ] Add `UpdateScrollPositionAsync(Guid sectionId, Guid userId, int scrollPosition)` to `IReadingProgressService`
+- [ ] Stub with `NotImplementedException` in `ReadingProgressService`
+- [ ] Add failing tests, then implement: finds existing `ReadEvent`, calls `UpdateScrollPosition`, saves
+- [ ] Update `GetLastReadEventAsync` tests to cover `ScrollPosition` being returned
+
+**Web — Controller**
+- [ ] Add `[HttpPost] RecordScrollPosition(Guid sectionId, int scrollPosition)` to `ReaderController` — calls `UpdateScrollPositionAsync`, returns `Ok()`
+- [ ] Update resume redirect in `DesktopDashboard` and `MobileDashboard` — use `?scrollTo={ScrollPosition}` instead of `#scene-` anchor if `ScrollPosition` is stored; fall back to `#scene-` anchor if null
+
+**Web — JavaScript (DesktopRead.cshtml)**
+- [ ] On scroll (debounced 500ms), POST `window.scrollY` to `RecordScrollPosition` for the currently visible scene
+- [ ] On page load, if `?scrollTo=` query param present, call `window.scrollTo(0, scrollTo)` after short delay (replaces current `localStorage` restore)
+
+**UAT**
+- [ ] Read scene partway through, sign out, sign in — confirm returned to exact scroll position
+- [ ] Confirm works across multiple projects (most recent across all)
+- [ ] Confirm graceful fallback if section no longer published
 
 ---
 
@@ -119,11 +150,15 @@ Cross-stage
 - [ ] SystemStateMessage expiry — add ExpiresAt nullable DateTime, GetActiveAsync filters expired
 - [ ] Add Project discovery flow (IScrivenerProjectDiscoveryService + Projects page UI)
 
+---
+
 ## GO-LIVE GATE
 
 These items are completed on the day of go-live, not before:
 - [ ] Send password reset emails to Becca (becca@the-dunlops.co.uk) and Hilary (hilaryrrb@gmail.com)
 - [ ] Confirm Becca and Hilary can log in and access The Fractured Lattice
+
+---
 
 # Post Go Live
 
@@ -143,8 +178,8 @@ These items are completed on the day of go-live, not before:
 - [DONE] Production config: Oracle Email Delivery SMTP via appsettings.Production.json
 
 ### Reader UX
-- Project switcher for readers/authors with multiple projects (→ Sprint 2)
-- Kindle-style resume on login (→ Sprint 2)
+- Project switcher (→ Sprint 2 DONE)
+- Kindle-style resume on login (→ Sprint 2 in progress)
 
 ### Dropbox Sync (DONE - production live)
 - [DONE] Per-author DropboxConnection entity (TDD)
@@ -198,14 +233,14 @@ These items are completed on the day of go-live, not before:
 - [DONE] Cloudflare email routing: support@draftview.co.uk → alastair_clarke@yahoo.com
 
 ### Reader Flow
-- Reactivate reader flow UI (→ Sprint 1)
+- [DONE] Reactivate reader flow (Sprint 1)
 - Reader notification emails (new chapter published)
 
 ### Production - Pre-Beta Push
-- Fix prose font in reader view (→ Sprint 1)
-- Reactivate reader flow (→ Sprint 1)
+- [DONE] Fix prose font in reader view (Sprint 1)
+- [DONE] Reactivate reader flow (Sprint 1)
 - [DONE] Wire up SMTP email
-- Send password reset emails to Becca and Hilary (→ Sprint 1)
+- Send password reset emails to Becca and Hilary (→ Go-Live Gate)
 - Fail2ban setup on production VM (→ Sprint 3)
 
 ---
@@ -243,9 +278,9 @@ These items are completed on the day of go-live, not before:
 
 ### System Admin
 - Prerequisite: tenancy model in place
-- [In Progress] System Admin page — tenant list, connection status, reader count, disk/data size, tier
-- [Done] SystemAdmin role attached to support@draftview.co.uk
-- [In Progress] Tenant-level actions: suspend, unsuspend, view audit log
+- System Admin page — tenant list, connection status, reader count, disk/data size, tier
+- SystemAdmin role attached to support@draftview.co.uk
+- Tenant-level actions: suspend, unsuspend, view audit log
 
 ### ReaderTenant (Tenancy Phase)
 - ReaderId, AuthorId, IsActive, IsDeleted, KnownAs, CreatedAt, DeactivatedAt, DeletedAt
@@ -267,14 +302,6 @@ These items are completed on the day of go-live, not before:
 ### Standalone Sync Worker (DraftView.SyncWorker)
 - Extract SyncBackgroundService into a separate worker service project
 - Prerequisite: multi-tenancy model in place
-
-### New User button & landing view — multi-tenancy phase
-- [ ] Add "New User" button to the nav/login page that routes to /register
-- [ ] Build /register landing view — two cards: Join as Author and Join as Beta Reader, plus a Sign In link
-- [ ] Build /register/author — standard ASP.NET Identity registration form; creates Account + Tenancy atomically; redirects to author dashboard
-- [ ] Build /register/reader — registration form with Display Name, Email, Password; creates Account only (no Tenancy); redirects to a "check your email" / welcome holding page
-- [ ] Add ReaderProfile entity (Bio, Genres, Availability, ProfileVisibility) — domain + EF migration; created empty on reader registration
-- [ ] Gate the existing author-only areas: if no Tenancy exists for the logged-in account, redirect to an "account not set up" page rather than crashing
 
 ### Scrivener Write-back (Phase 2)
 - RTF annotations
@@ -325,6 +352,10 @@ These items are completed on the day of go-live, not before:
 
 ## DONE (this project)
 
+### Sprint 2 — Partial (2026-04-10)
+- [DONE] Published chapters sort order — depth-first tree order, TDD, production verified
+- [DONE] Kindle-style resume — redirects to correct scene on login (exact scroll position deferred to sub-tasks above)
+
 ### Email Sprint (2026-04-08)
 - [DONE] Yahoo SMTP for dev (smtp.mail.yahoo.com, port 587, app password)
 - [DONE] SmtpEmailSender provider-agnostic via appsettings.json
@@ -340,7 +371,6 @@ These items are completed on the day of go-live, not before:
 - [DONE] Test-OracleSmtp.ps1 helper script for Oracle SMTP credential testing
 - [DONE] ForgotPassword SMTP failure caught and logged — no longer crashes page
 - [DONE] Dev-safe email addresses for Becca and Hilary (becca.dev@draftview.local, hilary.dev@draftview.local)
-- [DEFERRED] Send password reset emails to becca@the-dunlops.co.uk and hilaryrrb@gmail.com (→ Sprint 1)
 
 ### Role Migration — Stages 1-4 (2026-04-06)
 - [DONE] Stage 1: Identity roles as canonical source, web surface migrated
@@ -389,4 +419,4 @@ These items are completed on the day of go-live, not before:
 - [DONE] Heroicons integrated as static C# class
 - [DONE] Rebrand: DraftReader → DraftView throughout
 - [DONE] pg.ps1, PowerShell.md, PRINCIPLES.md
-- [DONE] 376 tests, all green
+- [DONE] 379 tests, all green
