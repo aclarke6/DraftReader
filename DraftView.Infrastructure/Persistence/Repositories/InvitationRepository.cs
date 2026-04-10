@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DraftView.Domain.Entities;
-using DraftView.Domain.Enumerations;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Infrastructure.Persistence;
 
@@ -19,22 +18,4 @@ public class InvitationRepository(DraftViewDbContext db) : IInvitationRepository
 
     public async Task AddAsync(Invitation invitation, CancellationToken ct = default) =>
         await db.Invitations.AddAsync(invitation, ct);
-
-    public async Task<IReadOnlyList<(Invitation Invitation, User User)>> GetRecentlyAcceptedAsync(
-        int take,
-        CancellationToken ct = default)
-    {
-        var rows = await (
-            from inv in db.Invitations
-            join u in db.AppUsers on inv.UserId equals u.Id
-            where inv.Status == InvitationStatus.Accepted
-               && inv.AcceptedAt != null
-            orderby inv.AcceptedAt descending
-            select new { inv, u }
-        )
-        .Take(take)
-        .ToListAsync(ct);
-
-        return rows.Select(r => (r.inv, r.u)).ToList();
-    }
 }

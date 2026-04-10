@@ -28,6 +28,7 @@ public class DraftViewDbContext(DbContextOptions<DraftViewDbContext> options)
     public DbSet<DropboxConnection> DropboxConnections { get; set; } = default!;
     public DbSet<ReaderAccess> ReaderAccess { get; set; } = default!;
     public DbSet<SystemStateMessage> SystemStateMessages { get; set; } = default!;
+    public DbSet<AuthorNotification> AuthorNotifications => Set<AuthorNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

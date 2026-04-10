@@ -6,19 +6,21 @@ using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
+using DraftView.Domain.Notifications;
 
 namespace DraftView.Application.Tests.Services;
 
 public class UserServiceInvitationAcceptanceTests
 {
-    private readonly Mock<IUserRepository> UserRepo = new();
-    private readonly Mock<IInvitationRepository> InviteRepo = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo = new();
-    private readonly Mock<IEmailSender> EmailSender = new();
-    private readonly Mock<IUnitOfWork> UnitOfWork = new();
-    private readonly Mock<IConfiguration> Config = new();
-    private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
-    private readonly Mock<IAuthorizationFacade> AuthFacade = new();
+    private readonly Mock<IUserRepository>                       UserRepo         = new();
+    private readonly Mock<IInvitationRepository>                 InviteRepo       = new();
+    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo       = new();
+    private readonly Mock<IEmailSender>                          EmailSender      = new();
+    private readonly Mock<IUnitOfWork>                           UnitOfWork       = new();
+    private readonly Mock<IConfiguration>                        Config           = new();
+    private readonly Mock<IReaderAccessRepository>               ReaderAccessRepo = new();
+    private readonly Mock<IAuthorizationFacade>                  AuthFacade       = new();
+    private readonly Mock<IAuthorNotificationRepository>         NotifRepo        = new();
 
     private UserService CreateSut() => new(
         UserRepo.Object,
@@ -28,7 +30,8 @@ public class UserServiceInvitationAcceptanceTests
         UnitOfWork.Object,
         Config.Object,
         ReaderAccessRepo.Object,
-        AuthFacade.Object);
+        AuthFacade.Object,
+        NotifRepo.Object);
 
     [Fact]
     public async Task AcceptInvitationAsync_ValidToken_PersistsEnteredDisplayName()
@@ -68,5 +71,30 @@ public class UserServiceInvitationAcceptanceTests
             sut.AcceptInvitationAsync(invitation.Token, "   ", CancellationToken.None));
 
         Assert.Equal("I-DISPLAYNAME", ex.InvariantCode);
+    }
+
+    [Fact]
+    public async Task AcceptInvitationAsync_WritesReaderJoinedNotification()
+    {
+        var user   = User.Create("reader@example.com", "Pending", Role.BetaReader);
+        var author = User.Create("author@example.com", "Author", Role.Author);
+        var invitation = Invitation.CreateAlwaysOpen(user.Id);
+        var sut = CreateSut();
+
+        InviteRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitation);
+        UserRepo.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        UserRepo.Setup(r => r.GetAuthorAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        await sut.AcceptInvitationAsync(invitation.Token, "Reader Four", CancellationToken.None);
+
+        NotifRepo.Verify(
+            r => r.AddAsync(It.Is<AuthorNotification>(n =>
+                n.AuthorId == author.Id &&
+                n.Title.Contains("Reader Four")),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }

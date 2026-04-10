@@ -1,5 +1,4 @@
-﻿using DraftView.Domain.Entities;
-using DraftView.Domain.Notifications;
+using DraftView.Domain.Entities;
 
 namespace DraftView.Domain.Interfaces.Services;
 
@@ -9,8 +8,12 @@ public interface IDashboardService
     Task<IReadOnlyList<User>> GetReaderSummaryAsync(CancellationToken ct = default);
     Task<IReadOnlyList<EmailDeliveryLog>> GetEmailHealthSummaryAsync(CancellationToken ct = default);
 
-    Task<IReadOnlyList<NotificationItemDto>> GetRecentNotificationsAsync(
-        Guid authorUserId,
-        int maxItems = 20,
-        CancellationToken ct = default);
+    Task<IReadOnlyList<AuthorNotification>> GetNotificationsAsync(
+        Guid authorId, CancellationToken ct = default);
+
+    Task DismissNotificationAsync(
+        Guid notificationId, CancellationToken ct = default);
+
+    Task DismissAllNotificationsAsync(
+        Guid authorId, CancellationToken ct = default);
 }

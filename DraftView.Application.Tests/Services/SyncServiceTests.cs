@@ -6,6 +6,7 @@ using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
+using DraftView.Domain.Notifications;
 
 namespace DraftView.Application.Tests.Services;
 
@@ -13,17 +14,19 @@ public class SyncServiceTests
 {
     private static readonly Guid ValidAuthorId = Guid.NewGuid();
 
-    private readonly Mock<IScrivenerProjectRepository> _projectRepo     = new();
-    private readonly Mock<ISectionRepository>          _sectionRepo     = new();
-    private readonly Mock<IUnitOfWork>                 _unitOfWork      = new();
-    private readonly Mock<IScrivenerProjectParser>     _parser          = new();
-    private readonly Mock<IRtfConverter>               _converter       = new();
-    private readonly Mock<ILocalPathResolver>          _pathResolver    = new();
-    private readonly Mock<ISyncProgressTracker>        _progressTracker = new();
-    private readonly Mock<IDropboxConnectionChecker>   _connectionChecker = new();
-    private readonly Mock<IDropboxClientFactory>       _clientFactory   = new();
-    private readonly Mock<IDropboxFileDownloader>      _fileDownloader  = new();
-    private readonly Mock<ILogger<SyncService>>        _logger          = new();
+    private readonly Mock<IScrivenerProjectRepository>   _projectRepo       = new();
+    private readonly Mock<ISectionRepository>            _sectionRepo       = new();
+    private readonly Mock<IUnitOfWork>                   _unitOfWork        = new();
+    private readonly Mock<IScrivenerProjectParser>       _parser            = new();
+    private readonly Mock<IRtfConverter>                 _converter         = new();
+    private readonly Mock<ILocalPathResolver>            _pathResolver      = new();
+    private readonly Mock<ISyncProgressTracker>          _progressTracker   = new();
+    private readonly Mock<IDropboxConnectionChecker>     _connectionChecker = new();
+    private readonly Mock<IDropboxClientFactory>         _clientFactory     = new();
+    private readonly Mock<IDropboxFileDownloader>        _fileDownloader    = new();
+    private readonly Mock<ILogger<SyncService>>          _logger            = new();
+    private readonly Mock<IAuthorNotificationRepository> _notificationRepo  = new();
+    private readonly Mock<IUserRepository>               _userRepo          = new();
 
     private SyncService CreateSut() => new(
         _projectRepo.Object,
@@ -36,7 +39,9 @@ public class SyncServiceTests
         _connectionChecker.Object,
         _clientFactory.Object,
         _fileDownloader.Object,
-        _logger.Object);
+        _logger.Object,
+        _notificationRepo.Object,
+        _userRepo.Object);
 
     public SyncServiceTests()
     {
@@ -314,6 +319,63 @@ public class SyncServiceTests
         await sut.DetectContentChangesAsync(project.Id);
 
         Assert.False(section.ContentChangedSincePublish);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------------
+    // Notifications
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ParseProjectAsync_WritesNotification_OnSuccessfulSync()
+    {
+        var project = MakeProject();
+        var author  = User.Create("author@example.com", "Author", Role.Author);
+        var sut     = CreateSut();
+
+        SetupPathResolver(project);
+        SetupParserWithTree(project, new ParsedBinderNode
+        {
+            Uuid = "ROOT-001", Title = "Manuscript",
+            NodeType = ParsedNodeType.Folder, Children = new()
+        });
+
+        _sectionRepo.Setup(r => r.GetByScrivenerUuidAsync(project.Id, "ROOT-001", default))
+            .ReturnsAsync((Section?)null);
+        _sectionRepo.Setup(r => r.AddAsync(It.IsAny<Section>(), default));
+        _sectionRepo.Setup(r => r.GetByProjectIdAsync(project.Id, default))
+            .ReturnsAsync(new List<Section>());
+        _userRepo.Setup(r => r.GetAuthorAsync(default)).ReturnsAsync(author);
+
+        await sut.ParseProjectAsync(project.Id);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.Is<AuthorNotification>(n =>
+                n.AuthorId == author.Id &&
+                n.Title.Contains(project.Name)),
+                default),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ParseProjectAsync_DoesNotWriteNotification_OnSyncFailure()
+    {
+        var project = MakeProject();
+        var sut     = CreateSut();
+
+        _projectRepo.Setup(r => r.GetByIdAsync(project.Id, default)).ReturnsAsync(project);
+        SetupPathResolver(project);
+        _parser.Setup(p => p.Parse(It.IsAny<string>()))
+            .Throws(new InvalidOperationException("File not found."));
+
+        await sut.ParseProjectAsync(project.Id);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.IsAny<AuthorNotification>(), default),
+            Times.Never);
     }
 
     // ---------------------------------------------------------------------------

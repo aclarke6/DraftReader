@@ -39,6 +39,7 @@ namespace DraftView.Web.Extensions
             services.AddScoped<IDropboxConnectionRepository, DropboxConnectionRepository>();
             services.AddScoped<IReaderAccessRepository, ReaderAccessRepository>();
             services.AddScoped<ISystemStateMessageRepository, SystemStateMessageRepository>();
+            services.AddScoped<IAuthorNotificationRepository, AuthorNotificationRepository>();
 
             return services;
         }

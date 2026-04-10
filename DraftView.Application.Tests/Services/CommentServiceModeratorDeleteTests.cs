@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using DraftView.Application.Services;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
@@ -22,7 +22,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -67,7 +67,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -114,7 +114,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -156,7 +156,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -212,7 +212,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -270,7 +270,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var moderator = MakeAuthor();
         moderator.Activate();
@@ -302,7 +302,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -342,7 +342,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -408,7 +408,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -455,7 +455,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -512,7 +512,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();
@@ -571,7 +571,7 @@ public class CommentServiceModeratorDeleteTests
             commentRepo.Object,
             sectionRepo.Object,
             userRepo.Object,
-            unitOfWork.Object);
+            unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
         var section = MakePublishedSection();
         var owner = MakeBetaReader();

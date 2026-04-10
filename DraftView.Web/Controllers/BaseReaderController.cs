@@ -65,16 +65,49 @@ public abstract class BaseReaderController(
             ? section.Id
             : section?.ParentId ?? model.SectionId;
 
-        // Determine the scene anchor — use the section itself if it's a scene,
-        // or ReturnSceneId if supplied (for chapter-level comments)
-        var sceneAnchorId = model.ReturnSceneId
-            ?? (section?.NodeType == NodeType.Document ? section.Id : (Guid?)null);
+        string anchor;
+        if (section?.NodeType == NodeType.Folder)
+        {
+            // Comment posted against the chapter folder itself → chapter comments section
+            anchor = "#chapter-comments";
+        }
+        else
+        {
+            var sceneId = model.ReturnSceneId ?? section?.Id;
+            anchor = sceneId.HasValue ? "#scene-" + sceneId.Value : string.Empty;
+        }
 
-        var url = Url.Action("Read", new { id = chapterId });
-        if (sceneAnchorId.HasValue)
-            url += "#scene-" + sceneAnchorId.Value;
+        var url = Url.Action("Read", new
+        {
+            id = chapterId
+        }) + anchor;
 
         return Redirect(url!);
+    }
+
+    // -----------------------------------------------------------------------
+    // POST: SetCommentStatus
+    // -----------------------------------------------------------------------
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetCommentStatus(Guid commentId, Guid chapterId, Guid sceneId, CommentStatus status)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null || user.Role != Role.Author)
+            return Forbid();
+
+        try
+        {
+            await CommentService.SetCommentStatusAsync(commentId, user.Id, status);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to set comment status {CommentId}", commentId);
+            TempData["Error"] = ex.Message;
+        }
+
+        var anchor = sceneId == chapterId ? "chapter-comments" : "scene-" + sceneId;
+        return Redirect(Url.Action("Read", new {id = chapterId}) + "#" + anchor);
     }
 
     // -----------------------------------------------------------------------

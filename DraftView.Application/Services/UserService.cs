@@ -4,6 +4,7 @@ using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
+using DraftView.Domain.Notifications;
 
 namespace DraftView.Application.Services;
 
@@ -15,7 +16,8 @@ public class UserService(
     IUnitOfWork unitOfWork,
     IConfiguration configuration,
     IReaderAccessRepository readerAccessRepo,
-    IAuthorizationFacade authFacade) : IUserService
+    IAuthorizationFacade authFacade,
+    IAuthorNotificationRepository notificationRepo) : IUserService
 
 {
     public async Task<Invitation> IssueInvitationAsync(
@@ -90,6 +92,21 @@ public class UserService(
         invitation.Accept();
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        var author = await userRepo.GetAuthorAsync(ct);
+        if (author is not null)
+        {
+            var notification = AuthorNotification.Create(
+                author.Id,
+                NotificationEventType.ReaderJoined,
+                $"{user.DisplayName} accepted their invitation",
+                null,
+                "/Author/Readers",
+                DateTime.UtcNow);
+            await notificationRepo.AddAsync(notification, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+
         return user;
     }
 

@@ -240,12 +240,21 @@
     <aside class="dashboard-sidebar">
         <div class="card notifications-panel">
             <div class="card__header">
-                <span class="card__title">Recent Activity</span>
+                <span class="card__title">
+                    Recent Activity
+                    @if (Model.Notifications.Any())
+                    {
+                        <span class="badge badge--neutral" style="font-size:var(--text-xs); margin-left:var(--space-2);">
+                            @Model.Notifications.Count
+                        </span>
+                    }
+                </span>
                 @if (Model.Notifications.Any())
                 {
-                    <span class="badge badge--neutral" style="font-size:var(--text-xs);">
-                        @Model.Notifications.Count
-                    </span>
+                    <form asp-action="ClearAllNotifications" method="post" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn--ghost btn--sm">Clear all</button>
+                    </form>
                 }
             </div>
 
@@ -293,6 +302,11 @@
                                     @RelativeTime(n.OccurredAt)
                                 </time>
                             </div>
+                            <form asp-action="DismissNotification" method="post" style="display:contents">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="notificationId" value="@n.Id" />
+                                <button type="submit" class="notification-item__dismiss" aria-label="Dismiss">&#x2715;</button>
+                            </form>
                         </li>
                     }
                 </ul>

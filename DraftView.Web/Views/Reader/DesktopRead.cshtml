@@ -241,6 +241,24 @@
                                             </form>
                                         }
                                     </span>
+
+                                    @if (Model.CurrentUserIsModerator)
+                                    {
+                                        <form asp-controller="Reader" asp-action="SetCommentStatus" method="post" style="display:inline; margin-left:auto;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                            <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                            <input type="hidden" name="sceneId" value="@item.Scene.Id" />
+                                            <select name="status" onchange="this.form.submit()"
+                                                    style="font-size:var(--text-xs); padding:2px 4px; border-radius:var(--radius-sm);
+                                                           border:1px solid var(--color-border); background:white; cursor:pointer;">
+                                                @foreach (var s in Enum.GetValues<CommentStatus>())
+                                                {
+                                                    <option value="@s" selected="@(c.Comment.Status == s)">@s</option>
+                                                }
+                                            </select>
+                                        </form>
+                                    }
                                 </div>
 
                                 @if (editCommentId == c.Comment.Id)
@@ -457,6 +475,24 @@
                                     </form>
                                 }
                             </span>
+
+                            @if (Model.CurrentUserIsModerator)
+                            {
+                                <form asp-controller="Reader" asp-action="SetCommentStatus" method="post" style="display:inline; margin-left:auto;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="commentId" value="@c.Comment.Id" />
+                                    <input type="hidden" name="chapterId" value="@Model.Chapter.Id" />
+                                    <input type="hidden" name="sceneId" value="@Model.Chapter.Id" />
+                                    <select name="status" onchange="this.form.submit()"
+                                            style="font-size:var(--text-xs); padding:2px 4px; border-radius:var(--radius-sm);
+                                                   border:1px solid var(--color-border); background:white; cursor:pointer;">
+                                        @foreach (var s in Enum.GetValues<CommentStatus>())
+                                        {
+                                            <option value="@s" selected="@(c.Comment.Status == s)">@s</option>
+                                        }
+                                    </select>
+                                </form>
+                            }
                         </div>
 
                         @if (editCommentId == c.Comment.Id)

@@ -3,6 +3,7 @@ using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
+using DraftView.Domain.Notifications;
 
 namespace DraftView.Application.Services;
 
@@ -10,7 +11,8 @@ public class CommentService(
     ICommentRepository commentRepo,
     ISectionRepository sectionRepo,
     IUserRepository userRepo,
-    IUnitOfWork unitOfWork) : ICommentService
+    IUnitOfWork unitOfWork,
+    IAuthorNotificationRepository notificationRepo) : ICommentService
 {
     public async Task<Comment> CreateRootCommentAsync(
         Guid sectionId, Guid userId, string body, Visibility visibility,
@@ -27,6 +29,24 @@ public class CommentService(
             isReaderComment: user.Role == Role.BetaReader);
         await commentRepo.AddAsync(comment, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        if (user.Role == Role.BetaReader)
+        {
+            var author = await userRepo.GetAuthorAsync(ct);
+            if (author is not null)
+            {
+                var notification = AuthorNotification.Create(
+                    author.Id,
+                    NotificationEventType.NewComment,
+                    $"{user.DisplayName} commented on \"{section.Title}\"",
+                    Truncate(body),
+                    $"/Author/Section/{sectionId}",
+                    DateTime.UtcNow);
+                await notificationRepo.AddAsync(notification, ct);
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+        }
+
         return comment;
     }
 
@@ -53,6 +73,21 @@ public class CommentService(
             parent.MarkDoneByReply();
         await commentRepo.AddAsync(reply, ct);
         await unitOfWork.SaveChangesAsync(ct);
+
+        var siteAuthor = await userRepo.GetAuthorAsync(ct);
+        if (siteAuthor is not null && parent.AuthorId == siteAuthor.Id && user.Role == Role.BetaReader)
+        {
+            var notification = AuthorNotification.Create(
+                siteAuthor.Id,
+                NotificationEventType.ReplyToAuthor,
+                $"{user.DisplayName} replied to your comment on \"{section.Title}\"",
+                Truncate(body),
+                $"/Author/Section/{parent.SectionId}",
+                DateTime.UtcNow);
+            await notificationRepo.AddAsync(notification, ct);
+            await unitOfWork.SaveChangesAsync(ct);
+        }
+
         return reply;
     }
 
@@ -162,6 +197,13 @@ public class CommentService(
             ?? throw new EntityNotFoundException(nameof(User), requestingUserId);
         var all = await commentRepo.GetAllBySectionIdAsync(sectionId, ct);
         return all.Where(c => c.IsVisibleTo(requestingUserId, user.Role)).ToList();
+    }
+
+    private static string Truncate(string body, int max = 80)
+    {
+        if (string.IsNullOrWhiteSpace(body)) return string.Empty;
+        var t = body.Trim();
+        return t.Length <= max ? t : t[..max].TrimEnd() + "\u2026";
     }
 
     /// <summary>

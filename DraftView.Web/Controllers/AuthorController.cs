@@ -41,7 +41,7 @@ public class AuthorController(
             ? await publicationService.GetPublishedChaptersAsync(active.Id) : [];
         var failures      = await dashboardService.GetEmailHealthSummaryAsync();
         var readers       = await userRepo.GetAllBetaReadersAsync();
-        var notifications = await dashboardService.GetRecentNotificationsAsync(author.Id, maxItems: 20);
+        var notifications = await dashboardService.GetNotificationsAsync(author.Id);
 
         return View(new DashboardViewModel
         {
@@ -52,6 +52,27 @@ public class AuthorController(
             ActiveReaderCount = readers.Count(r => r.IsActive && !r.IsSoftDeleted),
             Notifications     = notifications
         });
+    }
+
+    // ---------------------------------------------------------------------------
+    // Notification dismiss
+    // ---------------------------------------------------------------------------
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DismissNotification(Guid notificationId)
+    {
+        await dashboardService.DismissNotificationAsync(notificationId);
+        return RedirectToAction("Dashboard");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearAllNotifications()
+    {
+        var author = await GetAuthorAsync();
+        if (author is null) return Forbid();
+        await dashboardService.DismissAllNotificationsAsync(author.Id);
+        return RedirectToAction("Dashboard");
     }
 
     // ---------------------------------------------------------------------------

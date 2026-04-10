@@ -17,8 +17,9 @@ public class UserServiceInvitationIssuanceTests
     private readonly Mock<IEmailSender> EmailSender = new();
     private readonly Mock<IUnitOfWork> UnitOfWork = new();
     private readonly Mock<IConfiguration> Config = new();
-    private readonly Mock<IReaderAccessRepository> ReaderAccessRepo = new();
-    private readonly Mock<IAuthorizationFacade> AuthFacade = new();
+    private readonly Mock<IReaderAccessRepository>       ReaderAccessRepo = new();
+    private readonly Mock<IAuthorizationFacade>          AuthFacade       = new();
+    private readonly Mock<IAuthorNotificationRepository> NotifRepo        = new();
 
     private readonly User Author;
 
@@ -43,7 +44,8 @@ public class UserServiceInvitationIssuanceTests
         UnitOfWork.Object,
         Config.Object,
         ReaderAccessRepo.Object,
-        AuthFacade.Object);
+        AuthFacade.Object,
+        NotifRepo.Object);
 
     // -------------------------------------------------------------------------
     // 1B - Expiry information in email body

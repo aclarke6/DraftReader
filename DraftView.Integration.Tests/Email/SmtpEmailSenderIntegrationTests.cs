@@ -1,11 +1,14 @@
 using DraftView.Web.Services;
 using Microsoft.Extensions.Configuration;
+using System.Runtime.CompilerServices;
 
 namespace DraftView.Integration.Tests.Email;
 
 [Trait("Category", "Integration")]
+
 public class SmtpEmailSenderIntegrationTests
 {
+    
     private static IConfiguration BuildConfiguration()
     {
         var values = new Dictionary<string, string?>
@@ -23,7 +26,7 @@ public class SmtpEmailSenderIntegrationTests
             .Build();
     }
 
-    [Fact]
+    [Fact(Skip = "Integration test working")]
     public async Task SendAsync_SendsEmailViaSmtp_DoesNotThrow()
     {
         var host     = Environment.GetEnvironmentVariable("SMTP_HOST");

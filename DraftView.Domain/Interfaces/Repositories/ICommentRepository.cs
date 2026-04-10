@@ -1,5 +1,4 @@
 ﻿using DraftView.Domain.Entities;
-using DraftView.Domain.Notifications;
 
 namespace DraftView.Domain.Interfaces.Repositories;
 
@@ -13,6 +12,4 @@ public interface ICommentRepository
     Task<int> CountBySectionIdAsync(Guid sectionId, CancellationToken ct = default);
     Task<IReadOnlyList<Comment>> GetUnreadCommentsForAuthorAsync(Guid authorUserId, DateTime? since, CancellationToken ct = default);
     Task AddAsync(Comment comment, CancellationToken ct = default);
-    Task<IReadOnlyList<CommentNotificationRow>> GetRecentCommentsForDashboardAsync(
-        Guid authorUserId, int take, CancellationToken ct = default);
 }

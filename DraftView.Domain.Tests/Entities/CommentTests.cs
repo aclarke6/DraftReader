@@ -285,14 +285,24 @@ public class CommentTests
     }
 
     [Fact]
-    public void SetStatus_OnAuthorReply_ThrowsInvariantViolation()
+    public void SetStatus_OnAuthorReplyComment_Succeeds()
     {
         var reply = Comment.CreateReply(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             Visibility.Public, "Reply body", Visibility.Public);
 
-        var ex = Assert.Throws<InvariantViolationException>(() => reply.SetStatus(CommentStatus.Done));
-        Assert.Equal("I-COMMENT-STATUS", ex.InvariantCode);
+        reply.SetStatus(CommentStatus.Consider);
+
+        Assert.Equal(CommentStatus.Consider, reply.Status);
+    }
+
+    [Fact]
+    public void SetStatus_CannotSetStatusToAuthorReply()
+    {
+        var comment = Comment.CreateRoot(Guid.NewGuid(), Guid.NewGuid(), "Body", Visibility.Public, isReaderComment: true);
+
+        var ex = Assert.Throws<InvariantViolationException>(() => comment.SetStatus(CommentStatus.AuthorReply));
+        Assert.Equal("I-COMMENT-STATUS-AUTHOR", ex.InvariantCode);
     }
 
     // ---------------------------------------------------------------------------

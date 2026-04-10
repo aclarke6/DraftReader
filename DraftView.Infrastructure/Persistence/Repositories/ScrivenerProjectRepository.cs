@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DraftView.Domain.Entities;
-using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Infrastructure.Persistence;
@@ -41,22 +40,5 @@ public class ScrivenerProjectRepository(DraftViewDbContext db) : IScrivenerProje
                 throw new DuplicateProjectException(project.ScrivenerRootUuid);
         }
         await db.Projects.AddAsync(project, ct);
-    }
-
-    public async Task<IReadOnlyList<(ScrivenerProject Project, DateTime SyncedAt)>> GetRecentlySyncedAsync(
-        int take,
-        CancellationToken ct = default)
-    {
-        var projects = await db.Projects
-            .Where(p => !p.IsSoftDeleted
-                     && p.LastSyncedAt != null
-                     && p.SyncStatus == SyncStatus.Healthy)
-            .OrderByDescending(p => p.LastSyncedAt)
-            .Take(take)
-            .ToListAsync(ct);
-
-        return projects
-            .Select(p => (p, p.LastSyncedAt!.Value))
-            .ToList();
     }
 }

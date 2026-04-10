@@ -11,6 +11,10 @@
 .notifications-panel {
     position: sticky;
     top: var(--space-6, 1.5rem);
+    max-height: calc(100vh - var(--space-6, 1.5rem) - 2rem);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .notifications-empty {
@@ -26,7 +30,9 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: 560px;
+    flex: 1;
+    min-height: 0;
+    max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
 }
@@ -86,9 +92,7 @@ a.notification-item__title:hover {
     margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
     color: var(--color-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow-wrap: break-word;
     line-height: 1.5;
 }
 
@@ -134,7 +138,34 @@ a.notification-item__title:hover {
 }
 
 /* --------------------------------------------------------------------------
-   4. Browser Fallbacks
+   4. Dismiss Button
+   -------------------------------------------------------------------------- */
+.notification-item__dismiss {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: var(--text-xs);
+    color: var(--color-ink-subtle);
+    line-height: 1;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.1s ease, color 0.1s ease;
+}
+
+.notification-item:hover .notification-item__dismiss {
+    opacity: 1;
+}
+
+.notification-item__dismiss:hover {
+    color: var(--color-danger);
+}
+
+/* --------------------------------------------------------------------------
+   5. Browser Fallbacks
    -------------------------------------------------------------------------- */
 @supports not (color: color-mix(in srgb, red 10%, transparent)) {
     .notification-item__icon--comment {

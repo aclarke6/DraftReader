@@ -9,16 +9,18 @@ namespace DraftView.Application.Tests.Services;
 
 public class CommentServiceTests
 {
-    private readonly Mock<ICommentRepository>  _commentRepo = new();
-    private readonly Mock<ISectionRepository>  _sectionRepo = new();
-    private readonly Mock<IUserRepository>     _userRepo    = new();
-    private readonly Mock<IUnitOfWork>         _unitOfWork  = new();
+    private readonly Mock<ICommentRepository>            _commentRepo      = new();
+    private readonly Mock<ISectionRepository>            _sectionRepo      = new();
+    private readonly Mock<IUserRepository>               _userRepo         = new();
+    private readonly Mock<IUnitOfWork>                   _unitOfWork       = new();
+    private readonly Mock<IAuthorNotificationRepository> _notificationRepo = new();
 
     private CommentService CreateSut() => new(
         _commentRepo.Object,
         _sectionRepo.Object,
         _userRepo.Object,
-        _unitOfWork.Object);
+        _unitOfWork.Object,
+        _notificationRepo.Object);
 
     private static Section MakePublishedSection()
     {
@@ -202,6 +204,107 @@ public class CommentServiceTests
         Assert.Single(result);
         Assert.Equal("Public.", result[0].Body);
     }
+
+    // ---------------------------------------------------------------------------
+    // Notifications — CreateRootComment
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task CreateRootCommentAsync_WritesNewCommentNotification_WhenReaderComments()
+    {
+        var section = MakePublishedSection();
+        var reader  = MakeBetaReader();
+        reader.Activate();
+        var author  = MakeAuthor();
+        var sut     = CreateSut();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default)).ReturnsAsync(section);
+        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        _userRepo.Setup(r => r.GetAuthorAsync(default)).ReturnsAsync(author);
+        _commentRepo.Setup(r => r.AddAsync(It.IsAny<Comment>(), default)).Returns(Task.CompletedTask);
+
+        await sut.CreateRootCommentAsync(section.Id, reader.Id, "Nice chapter!", Visibility.Public);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.Is<AuthorNotification>(n =>
+                n.AuthorId == author.Id &&
+                n.Title.Contains(reader.DisplayName) &&
+                n.Title.Contains(section.Title)),
+                default),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateRootCommentAsync_DoesNotWriteNotification_WhenAuthorComments()
+    {
+        var section = MakePublishedSection();
+        var author  = MakeAuthor();
+        var sut     = CreateSut();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default)).ReturnsAsync(section);
+        _userRepo.Setup(r => r.GetByIdAsync(author.Id, default)).ReturnsAsync(author);
+        _commentRepo.Setup(r => r.AddAsync(It.IsAny<Comment>(), default)).Returns(Task.CompletedTask);
+
+        await sut.CreateRootCommentAsync(section.Id, author.Id, "My note.", Visibility.Private);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.IsAny<AuthorNotification>(), default),
+            Times.Never);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Notifications — CreateReply
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task CreateReplyAsync_WritesReplyToAuthorNotification_WhenReaderRepliesToAuthorComment()
+    {
+        var section = MakePublishedSection();
+        var author  = MakeAuthor();
+        var reader  = MakeBetaReader();
+        reader.Activate();
+        var authorComment = Comment.CreateRoot(section.Id, author.Id, "My thoughts.", Visibility.Public,
+            isReaderComment: false);
+        var sut = CreateSut();
+
+        _commentRepo.Setup(r => r.GetByIdAsync(authorComment.Id, default)).ReturnsAsync(authorComment);
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default)).ReturnsAsync(section);
+        _userRepo.Setup(r => r.GetByIdAsync(reader.Id, default)).ReturnsAsync(reader);
+        _userRepo.Setup(r => r.GetAuthorAsync(default)).ReturnsAsync(author);
+        _commentRepo.Setup(r => r.AddAsync(It.IsAny<Comment>(), default)).Returns(Task.CompletedTask);
+
+        await sut.CreateReplyAsync(authorComment.Id, reader.Id, "Agreed!", Visibility.Public);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.Is<AuthorNotification>(n =>
+                n.AuthorId == author.Id &&
+                n.Title.Contains(reader.DisplayName)),
+                default),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateReplyAsync_DoesNotWriteNotification_WhenReplyIsNotToAuthorComment()
+    {
+        var section       = MakePublishedSection();
+        var reader1       = MakeBetaReader();
+        var reader2       = MakeBetaReader();
+        var author        = MakeAuthor();
+        reader1.Activate();
+        reader2.Activate();
+        var readerComment = Comment.CreateRoot(section.Id, reader1.Id, "Good stuff.", Visibility.Public);
+        var sut = CreateSut();
+
+        _commentRepo.Setup(r => r.GetByIdAsync(readerComment.Id, default)).ReturnsAsync(readerComment);
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default)).ReturnsAsync(section);
+        _userRepo.Setup(r => r.GetByIdAsync(reader2.Id, default)).ReturnsAsync(reader2);
+        _userRepo.Setup(r => r.GetAuthorAsync(default)).ReturnsAsync(author);
+        _commentRepo.Setup(r => r.AddAsync(It.IsAny<Comment>(), default)).Returns(Task.CompletedTask);
+
+        await sut.CreateReplyAsync(readerComment.Id, reader2.Id, "Me too!", Visibility.Public);
+
+        _notificationRepo.Verify(
+            r => r.AddAsync(It.IsAny<AuthorNotification>(), default),
+            Times.Never);
+    }
 }
-
-

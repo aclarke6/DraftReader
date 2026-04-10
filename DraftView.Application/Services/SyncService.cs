@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using DraftView.Domain.Exceptions;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
+using DraftView.Domain.Notifications;
 
 namespace DraftView.Application.Services;
 
@@ -19,7 +20,9 @@ public class SyncService(
     IDropboxConnectionChecker connectionChecker,
     IDropboxClientFactory clientFactory,
     IDropboxFileDownloader fileDownloader,
-    ILogger<SyncService> logger) : ISyncService
+    ILogger<SyncService> logger,
+    IAuthorNotificationRepository notificationRepo,
+    IUserRepository userRepo) : ISyncService
 {
     public async Task ParseProjectAsync(Guid projectId, CancellationToken ct = default)
     {
@@ -80,6 +83,19 @@ public class SyncService(
                         descendant.SoftDelete();
                     section.SoftDelete();
                 }
+            }
+
+            var author = await userRepo.GetAuthorAsync(ct);
+            if (author is not null)
+            {
+                var notification = AuthorNotification.Create(
+                    author.Id,
+                    NotificationEventType.SyncCompleted,
+                    $"Sync completed for {project.Name}",
+                    null,
+                    null,
+                    DateTime.UtcNow);
+                await notificationRepo.AddAsync(notification, ct);
             }
 
             project.UpdateSyncStatus(SyncStatus.Healthy, DateTime.UtcNow, null);

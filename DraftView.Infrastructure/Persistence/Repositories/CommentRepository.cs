@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using DraftView.Domain.Entities;
-using DraftView.Domain.Notifications;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Infrastructure.Persistence;
 
@@ -49,23 +48,4 @@ public class CommentRepository(DraftViewDbContext db) : ICommentRepository
 
     public async Task AddAsync(Comment comment, CancellationToken ct = default) =>
         await db.Comments.AddAsync(comment, ct);
-
-    public async Task<IReadOnlyList<CommentNotificationRow>> GetRecentCommentsForDashboardAsync(
-        Guid authorUserId, int take, CancellationToken ct = default)
-    {
-        return await (
-            from c in db.Comments
-            join s in db.Sections on c.SectionId equals s.Id
-            join u in db.AppUsers on c.AuthorId equals u.Id
-            join parent in db.Comments on c.ParentCommentId equals parent.Id into parentJoin
-            from parent in parentJoin.DefaultIfEmpty()
-            where c.AuthorId != authorUserId && !c.IsSoftDeleted && !s.IsSoftDeleted
-            orderby c.CreatedAt descending
-            select new CommentNotificationRow(
-                c.Id, c.SectionId, s.Title, c.AuthorId, u.DisplayName,
-                c.ParentCommentId,
-                parent != null ? (Guid?)parent.AuthorId : null,
-                c.Body, c.CreatedAt, c.Status)
-        ).Take(take).ToListAsync(ct);
-    }
 }

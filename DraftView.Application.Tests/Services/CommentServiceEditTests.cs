@@ -1,4 +1,4 @@
-﻿using Moq;
+using Moq;
 using DraftView.Application.Services;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
@@ -18,7 +18,7 @@ public class CommentServiceEditTests
         _commentRepo.Object,
         _sectionRepo.Object,
         _userRepo.Object,
-        _unitOfWork.Object);
+        _unitOfWork.Object, new Moq.Mock<DraftView.Domain.Interfaces.Repositories.IAuthorNotificationRepository>().Object);
 
     [Fact]
     public async Task EditCommentAsync_OwnerEditingOwnRootComment_UpdatesBody()

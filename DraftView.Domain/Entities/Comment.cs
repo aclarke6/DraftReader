@@ -99,9 +99,6 @@ public sealed class Comment
 
     public void SetStatus(CommentStatus status)
     {
-        if (Status == CommentStatus.AuthorReply)
-            throw new InvariantViolationException("I-COMMENT-STATUS",
-                "Status may not be changed on author replies.");
         if (status == CommentStatus.AuthorReply)
             throw new InvariantViolationException("I-COMMENT-STATUS-AUTHOR",
                 "AuthorReply may only be set by the factory.");
