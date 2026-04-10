@@ -47,8 +47,20 @@ public class AccountController(
                 logger.LogInformation("User logged in: {Email}", model.Email);
                 if (Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
-                var domainUser = await userRepo.GetByEmailAsync(model.Email);
-                return RedirectToAction("Dashboard", "Reader");
+                try
+                {
+                    var domainUser = await userRepo.GetByEmailAsync(model.Email);
+                    if (domainUser?.Role == Domain.Enumerations.Role.Author)
+                        return RedirectToAction("Dashboard", "Author");
+                    if (domainUser?.Role == Domain.Enumerations.Role.SystemSupport)
+                        return RedirectToAction("Dashboard", "Support");
+                    return RedirectToAction("Dashboard", "Reader");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Failed to resolve role redirect for {Email}", model.Email);
+                    return RedirectToAction("Index", "Home");
+                }
 
             case { IsLockedOut: true }:
                 ModelState.AddModelError(string.Empty, "Account locked out. Please try again later.");

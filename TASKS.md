@@ -86,7 +86,7 @@ For complex files, prefer full rewrites delivered as `.ps1` files over inline re
 - [DONE] AddComment POST on chapter-level comment box redirects to top of page instead of #chapter-comments — fixed in BaseReaderController.AddComment: when SectionId is a Folder node, anchor is set to #chapter-comments rather than a scene anchor
 - [DONE] SetCommentStatus POST on chapter-level comment redirects to a scene anchor instead of #chapter-comments — fixed in BaseReaderController.SetCommentStatus: when sceneId == chapterId, anchor is set to #chapter-comments
 - [DONE] Reader/Read comment status dropdown missing — author sees comments but cannot update CommentStatus (only available in Author/Section view)
-- [ ] Author/Dashboard Recent Activity — reader joined notification text truncated in UI (CSS overflow, text correct in code)
+- [DONE] Author/Dashboard Recent Activity — replaced on-the-fly assembly with persisted AuthorNotification entity; truncation fixed, dismiss and clear all implemented, viewport clipping fixed
 
 ---
 
@@ -114,7 +114,8 @@ Cross-stage
 - [DONE] Project switcher — sidebar in DesktopDashboard, query string selection, progress per project
 - [DONE] Remember last selected project — query string naturally persists selection
 - [DONE] Kindle-style resume on login — exact scroll position (see sub-tasks below)
-- [ ] Author comment response UI from dashboard
+- [DONE] Persisted AuthorNotification entity — notifications written at event time (comment, reply, reader joined, sync), dismiss single, clear all, 90-day auto-prune, viewport panel fix (404 tests green)
+- [DONE] Login redirect fix — author now lands on Author/Dashboard, SystemSupport on Support/Dashboard; post-success block wrapped in try/catch
 - [ ] Implement Author Comment status as per CommentStatus Enum {New, AuthorReply, Ignore, Consider, Todo, Done, Keep}
 - [ ] Author comment response UI — any surface where author sees a comment must show CommentStatus dropdown and reply form: Reader/Read (author logged in), Author/Dashboard notifications, Author/Section (already done)
 - [ ] Reader font preferences — font face and size selectable from Account/Settings page, persisted per reader, applied to reader view
