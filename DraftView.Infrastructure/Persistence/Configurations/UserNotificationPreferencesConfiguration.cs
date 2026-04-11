@@ -4,14 +4,18 @@ using DraftView.Domain.Entities;
 
 namespace DraftView.Infrastructure.Persistence.Configurations;
 
-public class UserNotificationPreferencesConfiguration : IEntityTypeConfiguration<UserNotificationPreferences>
+public class UserNotificationPreferencesConfiguration : IEntityTypeConfiguration<UserPreferences>
 {
-    public void Configure(EntityTypeBuilder<UserNotificationPreferences> builder)
+    public void Configure(EntityTypeBuilder<UserPreferences> builder)
     {
         builder.HasKey(p => p.Id);
 
         builder.HasIndex(p => p.UserId)
             .IsUnique();
+
+        builder.Property(p => p.DisplayTheme)
+            .IsRequired()
+            .HasConversion<string>();
 
         builder.Property(p => p.NotifyOnReply)
             .IsRequired()

@@ -135,7 +135,7 @@ public static class DatabaseSeeder
             author.Activate();
             db.AppUsers.Add(author);
 
-            var prefs = UserNotificationPreferences.CreateForAuthor(
+            var prefs = UserPreferences.CreateForAuthor(
                 author.Id, AuthorDigestMode.Immediate, null, "Europe/London");
             db.NotificationPreferences.Add(prefs);
 

@@ -13,7 +13,7 @@ public class UserServiceInvitationIssuanceTests
 {
     private readonly Mock<IUserRepository> UserRepo = new();
     private readonly Mock<IInvitationRepository> InviteRepo = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo = new();
+    private readonly Mock<IUserPreferencesRepository> PrefsRepo = new();
     private readonly Mock<IEmailSender> EmailSender = new();
     private readonly Mock<IUnitOfWork> UnitOfWork = new();
     private readonly Mock<IConfiguration> Config = new();

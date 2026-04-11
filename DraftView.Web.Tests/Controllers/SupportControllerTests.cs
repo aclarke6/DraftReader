@@ -8,7 +8,7 @@ using DraftView.Domain.Enumerations;
 using DraftView.Domain.Interfaces.Services;
 using DraftView.Web.Controllers;
 
-namespace DraftView.Web.Tests;
+namespace DraftView.Web.Tests.Controllers;
 
 public class SupportControllerTests
 {

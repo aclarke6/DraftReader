@@ -16,6 +16,7 @@ public class AccountController(
     IUserService userService,
     IInvitationRepository invitationRepo,
     IUserRepository userRepo,
+    IUserPreferencesRepository prefsRepo,
     IEmailSender emailSender,
     ILogger<AccountController> logger) : Controller
 {
@@ -380,25 +381,65 @@ public class AccountController(
     public async Task<IActionResult> Settings()
     {
         var email = User.Identity?.Name;
-        if (email is null) return RedirectToAction("Login");
+        if (email is null)
+            return RedirectToAction("Login");
         var user = await userRepo.GetByEmailAsync(email);
-        if (user is null) return RedirectToAction("Login");
+        if (user is null)
+            return RedirectToAction("Login");
 
-        var vm = new SettingsViewModel
-        {
+        var prefs = await prefsRepo.GetByUserIdAsync(user.Id);
+
+        var vm = new SettingsViewModel {
             DisplayName = user.DisplayName,
-            Email       = user.Email,
-            IsAuthor    = User.IsInRole("Author")
+            Email = user.Email,
+            IsAuthor = User.IsInRole("Author"),
+            DisplayTheme = prefs?.DisplayTheme.ToString() ?? "Light"
         };
 
         if (vm.IsAuthor)
         {
             var connection = await GetDropboxConnectionAsync(user.Id);
-            vm.DropboxStatus      = connection?.Status.ToString();
+            vm.DropboxStatus = connection?.Status.ToString();
             vm.DropboxAuthorisedAt = connection?.AuthorisedAt;
         }
 
         return View(vm);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeDisplayTheme(ChangeDisplayThemeViewModel model)
+    {
+        var email = User.Identity?.Name;
+        if (email is null)
+            return RedirectToAction("Login");
+        var user = await userRepo.GetByEmailAsync(email);
+        if (user is null)
+            return RedirectToAction("Login");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Please select a valid theme.";
+            return RedirectToAction("Settings");
+        }
+
+        if (!Enum.TryParse<DraftView.Domain.Enumerations.DisplayTheme>(model.DisplayTheme, true, out var displayTheme))
+        {
+            TempData["Error"] = "Please select a valid theme.";
+            return RedirectToAction("Settings");
+        }
+
+        try
+        {
+            await userService.UpdateDisplayThemeAsync(user.Id, displayTheme);
+            TempData["Success"] = "Theme updated.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction("Settings");
     }
 
     [HttpPost]

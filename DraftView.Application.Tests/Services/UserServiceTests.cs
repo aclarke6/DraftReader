@@ -13,7 +13,7 @@ public class UserServiceTests
 {
     private readonly Mock<IUserRepository>                       UserRepo    = new();
     private readonly Mock<IInvitationRepository>                 InviteRepo  = new();
-    private readonly Mock<IUserNotificationPreferencesRepository> PrefsRepo   = new();
+    private readonly Mock<IUserPreferencesRepository> PrefsRepo   = new();
     private readonly Mock<IEmailSender>                          EmailSender = new();
     private readonly Mock<IUnitOfWork>                           UnitOfWork  = new();
     private readonly Mock<IConfiguration>                        Config      = new();
@@ -59,7 +59,7 @@ public class UserServiceTests
             .Callback<User, CancellationToken>((u, _) => addedUser = u);
         InviteRepo.Setup(r => r.AddAsync(It.IsAny<Invitation>(), default))
             .Callback<Invitation, CancellationToken>((i, _) => addedInvite = i);
-        PrefsRepo.Setup(r => r.AddAsync(It.IsAny<UserNotificationPreferences>(), default));
+        PrefsRepo.Setup(r => r.AddAsync(It.IsAny<UserPreferences>(), default));
         AuthFacade.Setup(f => f.IsAuthor()).Returns(true);
 
         await sut.IssueInvitationAsync("reader@example.com", ExpiryPolicy.AlwaysOpen, null, author.Id);
@@ -235,6 +235,36 @@ public class UserServiceTests
             r => r.RevokeAllForReaderAsync(reader.Id, author.Id, default),
             Times.Once);
     }
+
+    [Fact]
+    public async Task UpdateDisplayThemeAsync_ValidUser_UpdatesThemeAndSaves()
+    {
+        var user = User.Create("reader@example.com", "Reader", Role.BetaReader);
+        var prefs = UserPreferences.CreateForBetaReader(user.Id);
+        var sut = CreateSut();
+
+        PrefsRepo.Setup(r => r.GetByUserIdAsync(user.Id, default))
+            .ReturnsAsync(prefs);
+
+        await sut.UpdateDisplayThemeAsync(user.Id, DisplayTheme.Dark);
+
+        Assert.Equal(DisplayTheme.Dark, prefs.DisplayTheme);
+        UnitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateDisplayThemeAsync_MissingPreferences_ThrowsEntityNotFoundException()
+    {
+        var userId = Guid.NewGuid();
+        var sut = CreateSut();
+
+        PrefsRepo.Setup(r => r.GetByUserIdAsync(userId, default))
+            .ReturnsAsync((UserPreferences?) null);
+
+        await Assert.ThrowsAsync<EntityNotFoundException>(
+            () => sut.UpdateDisplayThemeAsync(userId, DisplayTheme.Dark));
+    }
 }
+
 
 

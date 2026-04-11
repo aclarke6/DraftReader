@@ -78,15 +78,15 @@ Font faces offered: Georgia (default), Merriweather, Palatino, Arial, Verdana
 Font sizes offered: Small (16px), Medium (18px, default), Large (20px), X-Large (22px)
 
 **Domain (TDD required)**
-- [ ] Add `ReaderFontFace` (string, max 50, default `"Georgia"`) and `ReaderFontSize` (int, default `18`) to `UserNotificationPreferences` entity
+- [ ] Add `ReaderFontFace` (string, max 50, default `"Georgia"`) and `ReaderFontSize` (int, default `18`) to `UserPreferences` entity
 - [ ] Add `UpdateReaderFontPreferences(string fontFace, int fontSize)` domain method — invariants: fontFace not null/whitespace; fontSize between 14 and 28 inclusive
 - [ ] Domain tests: `UpdateReaderFontPreferences_SetsValues`, `UpdateReaderFontPreferences_Throws_WhenFontFaceEmpty`, `UpdateReaderFontPreferences_Throws_WhenFontSizeOutOfRange`
 
 **Infrastructure**
-- [ ] EF Core migration: add `ReaderFontFace` (varchar 50, default `'Georgia'`) and `ReaderFontSize` (int, default `18`) to `UserNotificationPreferences` table
+- [ ] EF Core migration: add `ReaderFontFace` (varchar 50, default `'Georgia'`) and `ReaderFontSize` (int, default `18`) to `UserPreferences` table
 
 **Application (TDD required)**
-- [ ] Add `GetReaderFontPreferencesAsync(Guid userId)` to `IUserNotificationPreferencesRepository` — returns `(string FontFace, int FontSize)` or defaults if no record
+- [ ] Add `GetReaderFontPreferencesAsync(Guid userId)` to `IUserPreferencesRepository` — returns `(string FontFace, int FontSize)` or defaults if no record
 - [ ] Add `UpdateReaderFontPreferencesAsync(Guid userId, string fontFace, int fontSize)` to `IUserService` interface
 - [ ] Stub with `NotImplementedException` in `UserService`
 - [ ] Failing tests then implement: load prefs by userId, call `UpdateReaderFontPreferences`, save
@@ -243,7 +243,7 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 
 ### Phase 5 — Prepare tenancy move
 - Document single-tenancy seams: User.Role, GetAuthorAsync, GetAllBetaReadersAsync,
-  GetReaderActiveProjectAsync, notification preferences scoping, comment visibility model
+  GetReaderActiveProjectAsync, user preferences scoping, comment visibility model
 
 ---
 

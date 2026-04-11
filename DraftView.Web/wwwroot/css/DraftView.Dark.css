@@ -1,0 +1,46 @@
+﻿/* ==========================================================================
+   DraftView Dark Theme
+
+   Dark theme colour tokens only.
+   This file is intended to override the light palette from DraftView.Core.css
+   while preserving the warm amber, parchment, brass, and midnight tones
+   used in the current DraftView artwork.
+
+   Update --theme-version whenever this file changes.
+   ========================================================================== */
+
+:root {
+    /* Core surfaces */
+    --color-bg: #14110F;
+    --color-surface: #211A16;
+    --color-surface-alt: #2B221D;
+    --color-border: #4A3A31;
+    --color-border-strong: #6E5648;
+    /* Text */
+    --color-text: #F3E6D2;
+    --color-text-muted: #C7B39A;
+    --color-text-subtle: #9F8976;
+    /* Brand and interactive accents */
+    --color-accent: #C98A43;
+    --color-accent-hover: #E1A45B;
+    --color-accent-light: #3A2A20;
+    --color-accent-text: #FFF7EC;
+    /* Status colours tuned for dark backgrounds */
+    --color-success: #7BC47F;
+    --color-success-bg: #1C3523;
+    --color-danger: #E07B6E;
+    --color-danger-bg: #3C1E1B;
+    --color-warning: #E0A34A;
+    --color-warning-bg: #3E2B16;
+    --color-private: #D08A3C;
+    --color-private-bg: #3D2A16;
+    --color-status-info: #7DB7E0;
+    --color-status-warning: #E0A34A;
+    --color-status-critical: #E07B6E;
+    /* Debug colours */
+    --color-debug-text: #FFF7EC;
+    --color-debug-bg: rgba(0,0,0,0.72);
+    /* Background tile */
+    --background-tile: url('/images/DraftView.Tile.Dark.web.jpg');
+}
+

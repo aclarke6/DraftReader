@@ -11,7 +11,7 @@ namespace DraftView.Application.Services;
 public class UserService(
     IUserRepository userRepo,
     IInvitationRepository invitationRepo,
-    IUserNotificationPreferencesRepository prefsRepo,
+    IUserPreferencesRepository prefsRepo,
     IEmailSender emailSender,
     IUnitOfWork unitOfWork,
     IConfiguration configuration,
@@ -45,7 +45,7 @@ public class UserService(
                     "I-INVITE-EXPIRY-REQUIRED",
                     "An expiry date is required when the invitation is set to expire."));
 
-        var prefs = UserNotificationPreferences.CreateForBetaReader(user.Id);
+        var prefs = UserPreferences.CreateForBetaReader(user.Id);
 
         await userRepo.AddAsync(user, ct);
         await invitationRepo.AddAsync(invitation, ct);
@@ -166,6 +166,15 @@ public class UserService(
         var user = await userRepo.GetByIdAsync(userId, ct)
             ?? throw new EntityNotFoundException(nameof(User), userId);
         user.UpdateDisplayName(displayName);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task UpdateDisplayThemeAsync(Guid userId, DisplayTheme displayTheme, CancellationToken ct = default)
+    {
+        var prefs = await prefsRepo.GetByUserIdAsync(userId, ct)
+            ?? throw new EntityNotFoundException(nameof(UserPreferences), userId);
+
+        prefs.UpdateDisplayTheme(displayTheme);
         await unitOfWork.SaveChangesAsync(ct);
     }
 

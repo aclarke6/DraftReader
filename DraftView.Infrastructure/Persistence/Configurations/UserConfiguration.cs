@@ -1,6 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DraftView.Domain.Entities;
+using DraftView.Domain.Interfaces.Repositories;
+using Dropbox.Api.Users;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using DraftView.Domain.Entities;
+using static Dropbox.Api.SeenState.PlatformType;
 
 namespace DraftView.Infrastructure.Persistence.Configurations;
 
@@ -34,9 +37,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.CreatedAt)
             .IsRequired();
 
-        builder.HasOne<UserNotificationPreferences>()
+        builder.HasOne<UserPreferences>()
             .WithOne()
-            .HasForeignKey<UserNotificationPreferences>(p => p.UserId)
+            .HasForeignKey<UserPreferences>(p => p.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+

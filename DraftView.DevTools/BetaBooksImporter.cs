@@ -87,7 +87,7 @@ public static class BetaBooksImporter
             });
 
             db.NotificationPreferences.Add(
-                UserNotificationPreferences.CreateForBetaReader(user.Id));
+                UserPreferences.CreateForBetaReader(user.Id));
 
             readerMap[name] = user.Id;
             Console.WriteLine("Reader created: " + name + " -> " + email + " (" + user.Id + ")");

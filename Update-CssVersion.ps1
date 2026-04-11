@@ -22,11 +22,14 @@ if (-not (Test-Path -LiteralPath $layoutPath)) {
     exit 1
 }
 
+
 $coreOriginal = Get-Content -LiteralPath $coreCssPath -Raw
 $layoutOriginal = Get-Content -LiteralPath $layoutPath -Raw
 
+<# Unused variables
 $coreLe = if ($coreOriginal -match "`r`n") { "`r`n" } else { "`n" }
 $layoutLe = if ($layoutOriginal -match "`r`n") { "`r`n" } else { "`n" }
+#>
 
 $coreVersionMatch = [regex]::Match($coreOriginal, '--css-version:\s*"(?<version>v\d{4}-\d{2}-\d{2}-\d+)";')
 if (-not $coreVersionMatch.Success) {
@@ -67,6 +70,14 @@ $layoutUpdated = [regex]::Replace(
     ('$1{0}$2' -f $newVersion)
 )
 
+# Pass 2 – themeCss Razor variable
+$layoutUpdated = [regex]::Replace(
+    $layoutUpdated,
+    '(?<prefix>@themeCss\?v=)v\d{4}-\d{2}-\d{2}-\d+(?<suffix>")',
+    ('$1{0}$2' -f $newVersion)
+)
+
+
 if ($layoutUpdated -eq $layoutOriginal) {
     Write-Host 'ERROR: _Layout.cshtml was not changed' -ForegroundColor Red
     exit 1
@@ -83,8 +94,10 @@ if ($coreVerify -notmatch [regex]::Escape('--css-version: "' + $newVersion + '";
     exit 1
 }
 
-$layoutMatches = [regex]::Matches($layoutVerify, '/css/[^"]+\.css\?v=' + [regex]::Escape($newVersion))
-if ($layoutMatches.Count -lt 1) {
+$staticCssMatches = [regex]::Matches($layoutVerify, '/css/[^"]+\.css\?v=' + [regex]::Escape($newVersion))
+$themeCssMatch = [regex]::IsMatch($layoutVerify, '@themeCss\?v=' + [regex]::Escape($newVersion))
+
+if ($staticCssMatches.Count -lt 1 -or -not $themeCssMatch) {
     Write-Host 'ERROR: _Layout.cshtml validation failed' -ForegroundColor Red
     exit 1
 }

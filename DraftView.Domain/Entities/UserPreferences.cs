@@ -3,38 +3,43 @@ using DraftView.Domain.Exceptions;
 
 namespace DraftView.Domain.Entities;
 
-public sealed class UserNotificationPreferences
+public sealed class UserPreferences
 {
     // ---------------------------------------------------------------------------
     // Properties
     // ---------------------------------------------------------------------------
 
-    public Guid Id { get; private set; }
-    public Guid UserId { get; private set; }
+    public Guid Id {get; private set;}
+    public Guid UserId{get; private set;}
+
+    // Global UI preferences
+    public DisplayTheme DisplayTheme{get; private set;}
 
     // Beta reader preferences
-    public bool NotifyOnNewSection { get; private set; }
-    public bool NotifyOnSectionChanged { get; private set; }
-    public NotifyOnReply NotifyOnReply { get; private set; }
+    public bool NotifyOnNewSection{get; private set;}
+    public bool NotifyOnSectionChanged{get; private set;}
+    public NotifyOnReply NotifyOnReply{get; private set;}
 
-    // Author-only preferences
-    public AuthorDigestMode? AuthorDigestMode { get; private set; }
-    public int? AuthorDigestIntervalHours { get; private set; }
-    public string? AuthorTimezone { get; private set; }
+    // Author preferences
+    public AuthorDigestMode? AuthorDigestMode{get; private set;}
+    public int? AuthorDigestIntervalHours{get; private set;}
+    public string? AuthorTimezone{get; private set;}
+
+
 
     // ---------------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------------
 
-    private UserNotificationPreferences() { }
+    private UserPreferences() { }
 
     // ---------------------------------------------------------------------------
     // Factories
     // ---------------------------------------------------------------------------
 
-    public static UserNotificationPreferences CreateForBetaReader(Guid userId)
+    public static UserPreferences CreateForBetaReader(Guid userId)
     {
-        return new UserNotificationPreferences
+        return new UserPreferences
         {
             Id                      = Guid.NewGuid(),
             UserId                  = userId,
@@ -43,11 +48,12 @@ public sealed class UserNotificationPreferences
             NotifyOnReply           = NotifyOnReply.AuthorOnly,
             AuthorDigestMode        = null,
             AuthorDigestIntervalHours = null,
-            AuthorTimezone          = null
+            AuthorTimezone          = null,
+            DisplayTheme            = DisplayTheme.Light
         };
     }
 
-    public static UserNotificationPreferences CreateForAuthor(
+    public static UserPreferences CreateForAuthor(
         Guid userId,
         AuthorDigestMode digestMode,
         int? digestIntervalHours,
@@ -55,7 +61,7 @@ public sealed class UserNotificationPreferences
     {
         ValidateDigestSettings(digestMode, digestIntervalHours);
 
-        return new UserNotificationPreferences
+        return new UserPreferences
         {
             Id                        = Guid.NewGuid(),
             UserId                    = userId,
@@ -64,7 +70,8 @@ public sealed class UserNotificationPreferences
             NotifyOnReply             = NotifyOnReply.Never,
             AuthorDigestMode          = digestMode,
             AuthorDigestIntervalHours = digestMode == Enumerations.AuthorDigestMode.Digest ? digestIntervalHours : null,
-            AuthorTimezone            = timezone
+            AuthorTimezone            = timezone,
+            DisplayTheme              = DisplayTheme.Light
         };
     }
 
@@ -92,6 +99,11 @@ public sealed class UserNotificationPreferences
         AuthorDigestMode          = digestMode;
         AuthorDigestIntervalHours = digestMode == Enumerations.AuthorDigestMode.Digest ? digestIntervalHours : null;
         AuthorTimezone            = timezone;
+    }
+
+    public void UpdateDisplayTheme(DisplayTheme displayTheme)
+    {
+        DisplayTheme = displayTheme;
     }
 
     // ---------------------------------------------------------------------------

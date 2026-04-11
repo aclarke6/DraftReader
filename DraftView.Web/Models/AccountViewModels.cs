@@ -54,13 +54,22 @@ public class SettingsViewModel
     public bool IsAuthor { get; set; }
     public string? DropboxStatus { get; set; }
     public DateTime? DropboxAuthorisedAt { get; set; }
+    public string DisplayTheme { get; set; } = "Light";
 }
+
+public class ChangeDisplayThemeViewModel
+{
+    [Required(ErrorMessage = "Please select a theme.")]
+    public string DisplayTheme { get; set; } = "Light";
+}
+
 public class ChangeDisplayNameViewModel
 {
     [Required(ErrorMessage = "Please enter a display name.")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be at least 2 characters.")]
     public string DisplayName { get; set; } = string.Empty;
 }
+
 public class ChangeEmailViewModel
 {
     [Required(ErrorMessage = "Please enter an email address.")]
@@ -70,6 +79,7 @@ public class ChangeEmailViewModel
     [DataType(DataType.Password)]
     public string CurrentPassword { get; set; } = string.Empty;
 }
+
 public class ChangePasswordViewModel
 {
     [Required(ErrorMessage = "Please enter your current password.")]

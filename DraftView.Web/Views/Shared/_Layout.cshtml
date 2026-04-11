@@ -5,8 +5,9 @@ and footer. The main content of each page is rendered in the RenderBody() sectio
 All pages should use this layout unless they specify otherwise.
 All css files are included here to ensure consistent styling across the site.
 -->
-
 @inject DraftView.Domain.Interfaces.Services.ISystemStateMessageService SystemStateMessageService
+@inject DraftView.Domain.Interfaces.Repositories.IUserRepository UserRepository
+@inject DraftView.Domain.Interfaces.Repositories.IUserPreferencesRepository UserPreferencesRepository
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,17 +18,42 @@ All css files are included here to ensure consistent styling across the site.
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/DraftView.Core.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.Navigation.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.Components.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.DesktopReader.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.MobileReader.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.Dashboard.css?v=v2026-04-10-2" />
-    <link rel="stylesheet" href="/css/DraftView.Notifications.css?v=v2026-04-10-3" />    
-    <link rel="stylesheet" href="/css/DraftView.Mobile.css?v=v2026-04-10-2" />
+
+    <!-- Determine theme CSS based on user preference (default to Light) -->
+    @{
+        var theme = "Light";
+
+        if (User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(User.Identity.Name))
+        {
+            var currentUser = await UserRepository.GetByEmailAsync(User.Identity.Name);
+            if (currentUser is not null)
+            {
+                var prefs = await UserPreferencesRepository.GetByUserIdAsync(currentUser.Id);
+                if (prefs is not null)
+                {
+                    theme = prefs.DisplayTheme.ToString();
+                }
+            }
+        }
+
+        var themeCss = theme == "Dark"
+            ? "/css/DraftView.Dark.css"
+            : "/css/DraftView.Light.css";
+    }
+
+    <link rel="stylesheet" href="@themeCss?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Core.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Navigation.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Components.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.DesktopReader.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.MobileReader.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Dashboard.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Notifications.css?v=v2026-04-11-1" />
+    <link rel="stylesheet" href="/css/DraftView.Mobile.css?v=v2026-04-11-1" />
     
     <link rel="icon" type="image/png" href="~/images/DraftView.Logo.web.png" />
 </head>
+
 <body>
 
     <!-- Navigation -->
