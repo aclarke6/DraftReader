@@ -77,6 +77,21 @@ public abstract class BaseReaderController(
             anchor = sceneId.HasValue ? "#scene-" + sceneId.Value : string.Empty;
         }
 
+        if (IsMobile())
+        {
+            var targetSceneId = model.ReturnSceneId ?? section?.Id;
+            if (targetSceneId.HasValue)
+                return RedirectToAction("Read", new
+                {
+                    id = targetSceneId.Value
+                });
+
+            return RedirectToAction("Scenes", new
+            {
+                chapterId
+            });
+        }
+
         var url = Url.Action("Read", new
         {
             id = chapterId

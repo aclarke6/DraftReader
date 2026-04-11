@@ -67,7 +67,7 @@ For complex files, prefer full rewrites over inline regex patching.
 
 ## BUGS
 
-No open bugs.
+none currently logged — add here as discovered
 
 ---
 
@@ -257,6 +257,8 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 ---
 
 ## DONE (this project)
+
+[DONE] Bug: https://draftview.co.uk/Reader/Read mobile view now goes 404
 
 ### Rename UserNotificationPreferences to UserPreferences — domain, repository, service, controller, viewmodels, views, tests (2026-04-10-1)
 

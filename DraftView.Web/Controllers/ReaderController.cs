@@ -290,17 +290,22 @@ public class ReaderController(
             var resumeSection = await SectionRepo.GetByIdAsync(resume.SectionId);
             if (resumeSection is not null && resumeSection.IsPublished)
             {
-                // Scene (Document) — redirect to parent chapter
-                if (resumeSection.NodeType == NodeType.Document && resumeSection.ParentId.HasValue)
+                // Scene (Document) â€” mobile reads the scene directly
+                if (resumeSection.NodeType == NodeType.Document)
                 {
-                    var parentChapter = await SectionRepo.GetByIdAsync(resumeSection.ParentId.Value);
-                    if (parentChapter is not null && parentChapter.IsPublished)
-                        return Redirect(Url.Action("Read", new { id = parentChapter.Id }) + "#scene-" + resumeSection.Id);
+                    return RedirectToAction("Read", new
+                    {
+                        id = resumeSection.Id
+                    });
                 }
-                // Chapter (Folder) — redirect directly
-                else if (resumeSection.NodeType == NodeType.Folder)
+
+                // Chapter (Folder) â€” mobile should go to the scene list, not Read(chapterId)
+                if (resumeSection.NodeType == NodeType.Folder)
                 {
-                    return RedirectToAction("Read", new { id = resumeSection.Id });
+                    return RedirectToAction("Scenes", new
+                    {
+                        chapterId = resumeSection.Id
+                    });
                 }
             }
         }
