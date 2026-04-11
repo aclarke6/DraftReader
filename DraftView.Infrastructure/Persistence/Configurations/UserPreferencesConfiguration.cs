@@ -4,11 +4,13 @@ using DraftView.Domain.Entities;
 
 namespace DraftView.Infrastructure.Persistence.Configurations;
 
-public class UserNotificationPreferencesConfiguration : IEntityTypeConfiguration<UserPreferences>
+public class UserPreferencesConfiguration : IEntityTypeConfiguration<UserPreferences>
 {
     public void Configure(EntityTypeBuilder<UserPreferences> builder)
     {
         builder.HasKey(p => p.Id);
+
+        builder.ToTable("UserPreferences");
 
         builder.HasIndex(p => p.UserId)
             .IsUnique();

@@ -22,7 +22,7 @@ public class DraftViewDbContext(DbContextOptions<DraftViewDbContext> options)
     public DbSet<Section> Sections { get; set; } = default!;
     public DbSet<Comment> Comments { get; set; } = default!;
     public DbSet<ReadEvent> ReadEvents { get; set; } = default!;
-    public DbSet<UserPreferences> NotificationPreferences { get; set; } = default!;
+    public DbSet<UserPreferences> UserPreferences { get; set; } = default!;
     public DbSet<PasswordResetToken> PasswordResetTokens { get; set; } = default!;
     public DbSet<EmailDeliveryLog> EmailDeliveryLogs { get; set; } = default!;
     public DbSet<DropboxConnection> DropboxConnections { get; set; } = default!;

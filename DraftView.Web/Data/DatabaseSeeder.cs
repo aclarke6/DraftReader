@@ -137,7 +137,7 @@ public static class DatabaseSeeder
 
             var prefs = UserPreferences.CreateForAuthor(
                 author.Id, AuthorDigestMode.Immediate, null, "Europe/London");
-            db.NotificationPreferences.Add(prefs);
+            db.UserPreferences.Add(prefs);
 
             await db.SaveChangesAsync();
             logger.LogInformation("Author domain user created: {Email}", authorEmail);

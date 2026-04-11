@@ -86,7 +86,7 @@ public static class BetaBooksImporter
                 LockoutEnabled     = true
             });
 
-            db.NotificationPreferences.Add(
+            db.UserPreferences.Add(
                 UserPreferences.CreateForBetaReader(user.Id));
 
             readerMap[name] = user.Id;
