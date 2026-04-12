@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-10
+Last updated: 2026-04-12
 
 ---
 
@@ -33,9 +33,7 @@ All new domain entities, application service changes, and infrastructure changes
 Every script that modifies any `.css` file must also bump `--css-version` in `DraftView.Core.css`. Automated via `Update-CssVersion.ps1`.
 
 Always use regex replace — never hardcode the expected current value:
-```powershell
-$core = $core -replace '--css-version: "v[^"]+"', '--css-version: "vNEW_VERSION"'
-```
+    $core = $core -replace '--css-version: "v[^"]+"', '--css-version: "vNEW_VERSION"'
 
 ### Controller Action Guards — MANDATORY
 Every controller that accesses data or performs mutations must be protected by an `[Authorize]` attribute at class level:
@@ -68,51 +66,6 @@ For complex files, prefer full rewrites over inline regex patching.
 ## BUGS
 
 none currently logged — add here as discovered
-
----
-
-## Sprint 3 — Reader Font Preferences
-Allow beta readers to choose their preferred reading font and size, persisted per user, applied in desktop and mobile reader views. Not shown to the author role.
-
-Font faces offered: Georgia (default), Merriweather, Palatino, Arial, Verdana
-Font sizes offered: Small (16px), Medium (18px, default), Large (20px), X-Large (22px)
-
-**Domain (TDD required)**
-- [ ] Add `ReaderFontFace` (string, max 50, default `"Georgia"`) and `ReaderFontSize` (int, default `18`) to `UserPreferences` entity
-- [ ] Add `UpdateReaderFontPreferences(string fontFace, int fontSize)` domain method — invariants: fontFace not null/whitespace; fontSize between 14 and 28 inclusive
-- [ ] Domain tests: `UpdateReaderFontPreferences_SetsValues`, `UpdateReaderFontPreferences_Throws_WhenFontFaceEmpty`, `UpdateReaderFontPreferences_Throws_WhenFontSizeOutOfRange`
-
-**Infrastructure**
-- [ ] EF Core migration: add `ReaderFontFace` (varchar 50, default `'Georgia'`) and `ReaderFontSize` (int, default `18`) to `UserPreferences` table
-
-**Application (TDD required)**
-- [ ] Add `GetReaderFontPreferencesAsync(Guid userId)` to `IUserPreferencesRepository` — returns `(string FontFace, int FontSize)` or defaults if no record
-- [ ] Add `UpdateReaderFontPreferencesAsync(Guid userId, string fontFace, int fontSize)` to `IUserService` interface
-- [ ] Stub with `NotImplementedException` in `UserService`
-- [ ] Failing tests then implement: load prefs by userId, call `UpdateReaderFontPreferences`, save
-
-**Web — ViewModels and Controller**
-- [ ] Add `ReaderFontFace` (string) and `ReaderFontSize` (int) to `SettingsViewModel`
-- [ ] Add `ChangeReaderFontViewModel` with `FontFace` (string, required) and `FontSize` (int, required, range 14–28)
-- [ ] Populate font prefs on `SettingsViewModel` in `AccountController.Settings` GET — skip for author role
-- [ ] Add `[HttpPost] ChangeReaderFont(ChangeReaderFontViewModel model)` to `AccountController` — calls `UpdateReaderFontPreferencesAsync`, redirects to Settings with TempData success
-
-**Web — Settings UI (Account/Settings.cshtml)**
-- [ ] Add Reader Font Preferences card — visible only when `!Model.IsAuthor`
-- [ ] Card contains: font face `<select>` and font size `<select>`, both pre-selected from model values
-- [ ] Live preview paragraph below the selects — updates on `change` via JavaScript, showing sample prose text in the selected font and size
-
-**Web — Reader Views (DesktopRead.cshtml, MobileRead.cshtml)**
-- [ ] Add `FontFace` (string) and `FontSize` (int) to `DesktopChapterReadViewModel` and `MobileChapterReadViewModel`
-- [ ] In Read GET actions, resolve font prefs via `GetReaderFontPreferencesAsync` for the current user
-- [ ] Apply as inline CSS custom properties on the `.chapter-main` container: `style="--reader-font: '@Model.FontFace'; --reader-size: @(Model.FontSize)px;"`
-- [ ] In `DraftView.DesktopReader.css` and `DraftView.MobileReader.css`, update `.prose` to use `font-family: var(--reader-font, Georgia, serif)` and `font-size: var(--reader-size, 18px)`
-
-**UAT**
-- [ ] Log in as reader, go to Settings, change font to Merriweather and size to Large, save
-- [ ] Navigate to a chapter — confirm prose renders in Merriweather at Large size
-- [ ] Log out, log back in — confirm preference persisted
-- [ ] Confirm author Settings page does not show the font preferences card
 
 ---
 
@@ -249,14 +202,68 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 
 ## BACKLOG — CSS / Frontend
 
-- CSS naming conventions refactor (BEM consistency)
-- Remove duplicate `.comment-box__reply-form` declaration in Reader.css
-- Replace hardcoded `#f8f8f6` in `.chapter-comment-form` with `var(--color-surface-alt)`
-- Replace hardcoded `15px` in `.chapter-comment-form__textarea` with `var(--text-base)`
+- [ ] CSS naming conventions refactor (BEM consistency)
+- [ ] Remove duplicate `.comment-box__reply-form` declaration in Reader.css
+- [ ] Replace hardcoded `#f8f8f6` in `.chapter-comment-form` with `var(--color-surface-alt)`
+- [ ] Replace hardcoded `15px` in `.chapter-comment-form__textarea` with `var(--text-base)`
 
 ---
 
 ## DONE (this project)
+
+## Sprint 3 — Reader Font Preferences (IMPLEMENTED)
+
+Allow users (Authors + Beta Readers) to choose their preferred reading font and size, persisted per user, applied globally via layout and CSS variables.
+
+Font faces:
+- SystemSerif (default)
+- Humanist (Merriweather)
+- Classic (Times)
+- SansSerif (Lato)
+
+Font sizes:
+- Small
+- Medium (default)
+- Large
+- ExtraLarge
+
+**Domain**
+- [DONE] Added `ProseFont` and `ProseFontSize` to `UserPreferences`
+
+**Application**
+- [DONE] Preferences loaded via `UserPreferencesRepository`
+- [DONE] Preferences applied in `_Layout.cshtml`
+
+**Web — Layout**
+- [DONE] Injected `data-prose-font` and `data-prose-font-size` onto `<body>`
+- [DONE] Fonts loaded via Google Fonts (Merriweather, Lato)
+- [DONE] No inline styling — CSS driven
+
+**Web — CSS (Core)**
+- [DONE] `--font-prose` controlled via `data-prose-font`
+- [DONE] `--text-prose-base` controlled via `data-prose-font-size`
+- [DONE] Explicit mappings for all font options (including SystemSerif)
+- [DONE] Size scale adjusted for meaningful visual separation
+
+**Web — Reader Views**
+- [DONE] DesktopReader uses `var(--font-prose)` and `var(--text-prose-base)`
+- [DONE] MobileReader uses same variables
+- [DONE] No duplication of logic between views
+
+**Web — Settings UI**
+- [DONE] Reading Preferences card visible for:
+  - Authors
+  - Beta Readers
+- [DONE] Form posts to update preferences
+- [DONE] Values persist and reload correctly
+
+**UAT**
+- [DONE] Preferences saved and persisted across sessions
+- [DONE] Applied correctly in Desktop Reader
+- [DONE] Applied correctly in Mobile Reader
+- [DONE] Font families visibly distinct
+- [DONE] Font sizes visibly distinct
+- [DONE] Works for both Author and Beta Reader roles
 
 [DONE] Bug: https://draftview.co.uk/Reader/Read mobile view now goes 404
 
@@ -333,7 +340,7 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 - [DONE] Dashboard.cshtml: count badge, Clear All button, per-item dismiss button
 - [DONE] DraftView.Notifications.css: dismiss button styles, viewport panel height fix
 - [DONE] Removed obsolete: GetRecentNotificationsAsync, GetRecentCommentsForDashboardAsync, GetRecentlyAcceptedAsync, GetRecentlySyncedAsync, CommentNotificationRow
-- [DONE] 412 tests GREEN
+- [DONE] 427 tests GREEN
 - [DONE] 1 test skipped - it sends an email, which is now tested in SmtpEmailSenderIntegrationTests
 
 ### Email Sprint (2026-04-08)

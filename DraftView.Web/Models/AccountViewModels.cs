@@ -52,15 +52,29 @@ public class SettingsViewModel
     public string DisplayName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public bool IsAuthor { get; set; }
+    public bool IsReader { get; set; }
     public string? DropboxStatus { get; set; }
     public DateTime? DropboxAuthorisedAt { get; set; }
     public string DisplayTheme { get; set; } = "Light";
+    public string ProseFont { get; set; } = "SystemSerif";
+    public string ProseFontSize { get; set; } = "Medium";
 }
 
 public class ChangeDisplayThemeViewModel
 {
     [Required(ErrorMessage = "Please select a theme.")]
     public string DisplayTheme { get; set; } = "Light";
+}
+
+
+
+public class ChangeProseFontPreferencesViewModel
+{
+    [Required(ErrorMessage = "Please select a font.")]
+    public string ProseFont { get; set; } = "SystemSerif";
+
+    [Required(ErrorMessage = "Please select a font size.")]
+    public string ProseFontSize { get; set; } = "Medium";
 }
 
 public class ChangeDisplayNameViewModel

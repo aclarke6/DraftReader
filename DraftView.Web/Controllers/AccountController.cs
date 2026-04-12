@@ -393,7 +393,10 @@ public class AccountController(
             DisplayName = user.DisplayName,
             Email = user.Email,
             IsAuthor = User.IsInRole("Author"),
-            DisplayTheme = prefs?.DisplayTheme.ToString() ?? "Light"
+            IsReader = User.IsInRole("Reader"),
+            DisplayTheme = prefs?.DisplayTheme.ToString() ?? "Light",
+            ProseFont = prefs?.ProseFont.ToString() ?? "SystemSerif",
+            ProseFontSize = prefs?.ProseFontSize.ToString() ?? "Medium"
         };
 
         if (vm.IsAuthor)
@@ -433,6 +436,44 @@ public class AccountController(
         {
             await userService.UpdateDisplayThemeAsync(user.Id, displayTheme);
             TempData["Success"] = "Theme updated.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return RedirectToAction("Settings");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeProseFontPreferences(ChangeProseFontPreferencesViewModel model)
+    {
+        var email = User.Identity?.Name;
+        if (email is null)
+            return RedirectToAction("Login");
+
+        var user = await userRepo.GetByEmailAsync(email);
+        if (user is null)
+            return RedirectToAction("Login");
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Please select valid prose preferences.";
+            return RedirectToAction("Settings");
+        }
+
+        if (!Enum.TryParse<DraftView.Domain.Enumerations.ProseFont>(model.ProseFont, true, out var proseFont) ||
+            !Enum.TryParse<DraftView.Domain.Enumerations.ProseFontSize>(model.ProseFontSize, true, out var proseFontSize))
+        {
+            TempData["Error"] = "Invalid prose font selection.";
+            return RedirectToAction("Settings");
+        }
+
+        try
+        {
+            await userService.UpdateProseFontPreferencesAsync(user.Id, proseFont, proseFontSize);
+            TempData["Success"] = "Reading preferences updated.";
         }
         catch (Exception ex)
         {

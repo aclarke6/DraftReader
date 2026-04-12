@@ -9,6 +9,31 @@ All css files are included here to ensure consistent styling across the site.
 @inject DraftView.Domain.Interfaces.Repositories.IUserRepository UserRepository
 @inject DraftView.Domain.Interfaces.Repositories.IUserPreferencesRepository UserPreferencesRepository
 
+@{
+    var theme = "Light";
+    var proseFont = "SystemSerif";
+    var proseFontSize = "Medium";
+
+    if (User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(User.Identity.Name))
+    {
+        var currentUser = await UserRepository.GetByEmailAsync(User.Identity.Name);
+        if (currentUser is not null)
+        {
+            var prefs = await UserPreferencesRepository.GetByUserIdAsync(currentUser.Id);
+            if (prefs is not null)
+            {
+                theme = prefs.DisplayTheme.ToString();
+                proseFont = prefs.ProseFont.ToString();
+                proseFontSize = prefs.ProseFontSize.ToString();
+            }
+        }
+    }
+
+    var themeCss = theme == "Dark"
+        ? "/css/DraftView.Dark.css"
+        : "/css/DraftView.Light.css";
+}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,53 +42,31 @@ All css files are included here to ensure consistent styling across the site.
     <title>@(ViewData["Title"] != null ? ViewData["Title"] + " - DraftView" : "DraftView")</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Merriweather:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Determine theme CSS based on user preference (default to Light) -->
-    @{
-        var theme = "Light";
-
-        if (User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(User.Identity.Name))
-        {
-            var currentUser = await UserRepository.GetByEmailAsync(User.Identity.Name);
-            if (currentUser is not null)
-            {
-                var prefs = await UserPreferencesRepository.GetByUserIdAsync(currentUser.Id);
-                if (prefs is not null)
-                {
-                    theme = prefs.DisplayTheme.ToString();
-                }
-            }
-        }
-
-        var themeCss = theme == "Dark"
-            ? "/css/DraftView.Dark.css"
-            : "/css/DraftView.Light.css";
-    }
-
-    <link rel="stylesheet" href="@themeCss?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Core.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Navigation.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Components.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.DesktopReader.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.MobileReader.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Dashboard.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Notifications.css?v=v2026-04-11-2" />
-    <link rel="stylesheet" href="/css/DraftView.Mobile.css?v=v2026-04-11-2" />
+    <link rel="stylesheet" href="@themeCss?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Core.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Settings.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Navigation.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Components.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.DesktopReader.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.MobileReader.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Dashboard.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Notifications.css?v=v2026-04-12-2" />
+    <link rel="stylesheet" href="/css/DraftView.Mobile.css?v=v2026-04-12-2" />
     
     <link rel="icon" type="image/png" href="~/images/DraftView.Logo.web.png" />
 
     @{
-        // Include debug CSS if in development environment or if debug query parameter is set as ?debug=css
         if (Context.Request.Query["debug"] == "css" ||
             Context.RequestServices.GetRequiredService<IWebHostEnvironment>().IsDevelopment())
         {
-            <link rel="stylesheet" href="/css/DraftView.Debug.css?v=v2026-04-11-2" />
+            <link rel="stylesheet" href="/css/DraftView.Debug.css?v=v2026-04-12-2" />
         }
     }
 </head>
 
-<body>
+<body data-prose-font="@proseFont" data-prose-font-size="@proseFontSize">
 
     <!-- Navigation -->
     <nav class="site-nav">
@@ -119,14 +122,14 @@ All css files are included here to ensure consistent styling across the site.
 
     <!-- Toast notifications -->
     <div class="toast-container" id="toastContainer">
-    @if (TempData["Success"] != null)
-    {
-        <div class="toast toast--success">@TempData["Success"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="toast toast--error">@TempData["Error"]</div>
-    }
+        @if (TempData["Success"] != null)
+        {
+            <div class="toast toast--success">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="toast toast--error">@TempData["Error"]</div>
+        }
     </div>
 
     <!-- Page content -->
@@ -136,33 +139,36 @@ All css files are included here to ensure consistent styling across the site.
 
     <!-- Footer (Desktop only) -->
     @if (Context.Request.Path.Value != null &&
-             !Context.Request.Path.Value.Contains("/Mobile", StringComparison.OrdinalIgnoreCase))
+                 !Context.Request.Path.Value.Contains("/Mobile", StringComparison.OrdinalIgnoreCase))
     {
         <footer class="site-footer">
             <div class="site-footer__inner">
                 <div class="site-footer__left">
-                    
                 </div>
 
                 <div class="site-footer__centre">
                     <img src="~/images/DraftView.Logo.web.png"
                          alt="DraftView"
                          class="site-footer__logo" />
-                         &emsp;
+                    &emsp;
                     <span>&copy; @DateTime.Now.Year DraftView</span>
                 </div>
 
                 <div class="site-footer__right">
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                        DraftView.Domain.Entities.SystemStateMessage? sysMsg = null; try { sysMsg = await SystemStateMessageService.GetActiveMessageAsync(); } catch { }
+                        DraftView.Domain.Entities.SystemStateMessage? sysMsg = null;
+                        try
+                        {
+                            sysMsg = await SystemStateMessageService.GetActiveMessageAsync();
+                        }
+                        catch { }
                         @if (sysMsg is not null)
                         {
-                            var severityClass = sysMsg.Severity switch
-                            {
-                                DraftView.Domain.Enumerations.SystemStateMessageSeverity.Warning  => "site-footer__status--warning",
+                            var severityClass = sysMsg.Severity switch {
+                                DraftView.Domain.Enumerations.SystemStateMessageSeverity.Warning => "site-footer__status--warning",
                                 DraftView.Domain.Enumerations.SystemStateMessageSeverity.Critical => "site-footer__status--critical",
-                                _                                                                  => "site-footer__status--info"
+                                _ => "site-footer__status--info"
                             };
                             <span class="site-footer__status @severityClass">@sysMsg.Message</span>
                         }
@@ -170,13 +176,7 @@ All css files are included here to ensure consistent styling across the site.
                         {
                             <span class="site-footer__status">System operational</span>
                         }
-                        @*
-                        *** hidded for now as we don't have a system for readers to report faults, and we don't want to encourage them to email support directly ***
-                        <button type="button" class="site-footer__report-btn">
-                            Report Fault
-                        </button> *@
                     }
-
                 </div>
             </div>
         </footer>
@@ -184,13 +184,13 @@ All css files are included here to ensure consistent styling across the site.
 
     <script>
             document.addEventListener("DOMContentLoaded", function () {
-                // Auto-dismiss toasts
                 document.querySelectorAll('.toast').forEach(function(t) {
                     setTimeout(function() {
                         t.style.opacity = '0';
                         setTimeout(function() { t.remove(); }, 400);
                     }, 3000);
                 });
+
                 const navToggle = document.getElementById("navToggle");
                 const navMenu = document.getElementById("navMenu");
 

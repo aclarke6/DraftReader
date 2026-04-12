@@ -15,7 +15,7 @@
 - Short scripts (<50 lines) may be pasted directly into the terminal
 - Always add `cls` at the top of pasted terminal scripts
 - End scripts with the next required command (e.g. `dotnet build`) rather than a `Write-Host` prompt
-- Never use markdown fences (` ``` `) around terminal commands — use plain text or `Write-Host`
+- Never use markdown fences (`  `) around terminal commands — use plain text or `Write-Host`
 
 ---
 
@@ -23,21 +23,21 @@
 
 - Never hardcode `` `r`n `` or `` `n `` in patch strings
 - Always detect line endings first using `Get-LineEndings.ps1`:
-```
+
 $le = if ((.\Get-LineEndings.ps1 -FilePath $file) -eq "CRLF") { "`r`n" } else { "`n" }
-```
+
 
 - Build all multiline `$old`/`$new` strings using `$le`:
-```
+
 $old = "first line" + $le + "second line"
-```
+
 
 ---
 
 ## Patch Script Structure
 
 Every patch script must follow this structure:
-```
+
 $ErrorActionPreference = "Stop"
 $file = "C:\path\to\file"
 $le = if ((.\Get-LineEndings.ps1 -FilePath $file) -eq "CRLF") { "`r`n" } else { "`n" }
@@ -52,7 +52,7 @@ Set-Content $file $content -Encoding UTF8
 
 if (-not ((Get-Content $file -Raw).Contains("unique string from new"))) { Write-Error "PATCH FAILED: verification failed."; exit 1 }
 Write-Host "Patch applied OK."
-```
+
 
 ---
 

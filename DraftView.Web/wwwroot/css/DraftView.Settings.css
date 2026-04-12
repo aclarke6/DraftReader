@@ -1,0 +1,113 @@
+﻿/* --------------------------------------------------------------------------
+   4A. Account Settings Layout
+   -------------------------------------------------------------------------- */
+.settings-page {
+    width: 100%;
+}
+
+.settings-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    gap: var(--space-6);
+    align-items: start;
+}
+
+.settings-layout__main,
+.settings-layout__side {
+    display: grid;
+    gap: var(--space-6);
+    align-content: start;
+}
+
+.settings-card {
+    width: 100%;
+}
+
+.settings-form-row {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-end;
+}
+
+.settings-form-row--two-fields {
+    flex-wrap: wrap;
+}
+
+.settings-form-field {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.settings-form-group {
+    margin-bottom: var(--space-4);
+}
+
+.settings-form-stack {
+    display: flex;
+    flex-direction: column;
+}
+
+    .settings-form-stack .settings-form-group:last-of-type {
+        margin-bottom: 0;
+    }
+
+.settings-form-button {
+    flex-shrink: 0;
+}
+
+.settings-form-button-inline {
+    align-self: flex-start;
+    margin-top: var(--space-4);
+}
+
+.settings-status {
+    margin-bottom: var(--space-4);
+}
+
+.settings-status-meta {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    margin-left: var(--space-2);
+}
+
+.settings-status--muted {
+    color: var(--color-text-muted);
+}
+
+.settings-inline-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.settings-inline-form {
+    display: inline;
+}
+
+@media (max-width: 900px) {
+    .settings-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-form-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .settings-form-button,
+    .settings-form-button-inline {
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .settings-inline-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+        .settings-inline-actions .btn,
+        .settings-inline-form,
+        .settings-inline-form .btn {
+            width: 100%;
+        }
+}

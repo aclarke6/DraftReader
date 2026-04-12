@@ -10,7 +10,7 @@
    -------------------------------------------------------------------------- */
 .prose {
     font-family: var(--font-prose);
-    font-size: 1.0625rem;
+    font-size: var(--text-prose-base);
     line-height: var(--leading-relaxed);
     color: var(--color-text);
     background: var(--color-surface);
@@ -21,7 +21,7 @@
 
     .prose * {
         font-family: var(--font-prose) !important;
-        font-size: 1.0625rem !important;
+        font-size: var(--text-prose-base) !important;
     }
 
     .prose p {

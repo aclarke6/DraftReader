@@ -8,9 +8,9 @@
 
 ## Script Verification — MANDATORY
 - Every string replacement must detect line endings first:
-  ```powershell
+  powershell
   $le = if ($content -match "`r`n") { "`r`n" } else { "`n" }
-  ```
+  
 - Use `$le` in all match strings — never assume CRLF or LF
 - Compare old and new content — if `$newContent -eq $content` → `Write-Host "ERROR"` and `exit 1`
 - Never build after a replacement without first verifying it applied
@@ -19,10 +19,10 @@
 ## CSS Changes — MANDATORY
 - Every script touching any `.css` file must bump `--css-version` in `DraftView.Core.css`
 - Always use regex replace — never hardcode the expected current version:
-  ```powershell
+  powershell
   $core = $core -replace '--css-version: "v[^"]+";', '--css-version: "v2026-04-02-1";'
   if ($core -notmatch 'v2026-04-02-1') { Write-Host "ERROR: bump failed" -ForegroundColor Red; exit 1 }
-  ```
+  
 - Every script touching CSS `?v=` query strings must update ALL of the stylesheet css link calls
   in `_Layout.cshtml` to match the new `--css-version` value — never leave any on a stale version
 - Verify the bump applied before saving
@@ -62,12 +62,12 @@
 - Day abbreviation matches the session day
 - N increments from the last step in the repo
 - Every script starts with a header comment block listing all files changed:
-  ```powershell
+  powershell
   # Step12-Thur-SyncFileProgress.ps1
   # Changes:
   #   - File1.cs: description
   #   - File2.cs: description
-  ```
+  
 
 ## General Conduct
 - Never suggest the user hasn't run something, restarted the app, or rebuilt

@@ -1,116 +1,163 @@
 ﻿@model DraftView.Web.Models.SettingsViewModel
-@{ ViewData["Title"] = "Account Settings"; }
+@{
+    ViewData["Title"] = "Account Settings";
+}
 
 <div class="page-header">
     <h1 class="page-title">Account Settings</h1>
 </div>
 
-<div class="card" style="max-width:560px; margin-bottom:var(--space-6);">
-    <div class="card__header"><span class="card__title">Display Name</span></div>
-    <div class="card__body">
-        <form asp-action="ChangeDisplayName" method="post">
-            @Html.AntiForgeryToken()
-            <div style="display:flex; gap:var(--space-3); align-items:flex-end;">
-                <div style="flex:1;">
-                    <label class="form-label">Display name</label>
-                    <input type="text" name="DisplayName" value="@Model.DisplayName" class="form-input" required />
-                </div>
-                <button type="submit" class="btn btn--primary">Save</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card" style="max-width:560px; margin-bottom:var(--space-6);">
-    <div class="card__header"><span class="card__title">Theme</span></div>
-    <div class="card__body">
-        <form asp-action="ChangeDisplayTheme" method="post">
-            @Html.AntiForgeryToken()
-            <div style="display:flex; gap:var(--space-3); align-items:flex-end;">
-                <div style="flex:1;">
-                    <label class="form-label">Display theme</label>
-                    <select name="DisplayTheme" class="form-input" required>
-                        <option value="Light" selected="@(Model.DisplayTheme == "Light")">Light</option>
-                        <option value="Dark" selected="@(Model.DisplayTheme == "Dark")">Dark</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn btn--primary">Save</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div class="card" style="max-width:560px; margin-bottom:var(--space-6);">
-    <div class="card__header"><span class="card__title">Email Address</span></div>
-    <div class="card__body">
-        <form asp-action="ChangeEmail" method="post">
-            @Html.AntiForgeryToken()
-            <div style="margin-bottom:var(--space-4);">
-                <label class="form-label">New email address</label>
-                <input type="email" name="Email" value="@Model.Email" class="form-input" required />
-            </div>
-            <div style="margin-bottom:var(--space-4);">
-                <label class="form-label">Current password (to confirm)</label>
-                <input type="password" name="CurrentPassword" class="form-input" required />
-            </div>
-            <button type="submit" class="btn btn--primary">Update Email</button>
-        </form>
-    </div>
-</div>
-
-<div class="card" style="max-width:560px; margin-bottom:var(--space-6);">
-    <div class="card__header"><span class="card__title">Change Password</span></div>
-    <div class="card__body">
-        <form asp-action="ChangePassword" method="post">
-            @Html.AntiForgeryToken()
-            <div style="margin-bottom:var(--space-4);">
-                <label class="form-label">Current password</label>
-                <input type="password" name="CurrentPassword" class="form-input" required />
-            </div>
-            <div style="margin-bottom:var(--space-4);">
-                <label class="form-label">New password</label>
-                <input type="password" name="NewPassword" class="form-input" required />
-            </div>
-            <div style="margin-bottom:var(--space-4);">
-                <label class="form-label">Confirm new password</label>
-                <input type="password" name="ConfirmPassword" class="form-input" required />
-            </div>
-            <button type="submit" class="btn btn--primary">Change Password</button>
-        </form>
-    </div>
-</div>
-
-@if (Model.IsAuthor)
-{
-    <div class="card" style="max-width:560px;">
-        <div class="card__header"><span class="card__title">Dropbox</span></div>
-        <div class="card__body">
-            @if (Model.DropboxStatus == "Connected")
-            {
-                <p style="margin-bottom:var(--space-4);">
-                    <span class="badge badge--success">Connected</span>
-                    @if (Model.DropboxAuthorisedAt.HasValue)
-                    {
-                        <span style="color:var(--color-ink-muted); font-size:var(--text-sm); margin-left:var(--space-2);">
-                            since @Model.DropboxAuthorisedAt.Value.ToString("dd MMM yyyy")
-                        </span>
-                    }
-                </p>
-                <div style="display:flex; gap:var(--space-3);">
-                    <a asp-controller="Dropbox" asp-action="Connect" class="btn btn--secondary">Reconnect</a>
-                    <form asp-controller="Dropbox" asp-action="Disconnect" method="post" style="display:inline">
+<div class="settings-page">
+    <div class="settings-layout">
+        <div class="settings-layout__main">
+            <div class="card settings-card">
+                <div class="card__header"><span class="card__title">Profile</span></div>
+                <div class="card__body">
+                    <form asp-action="ChangeDisplayName" method="post">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn--danger">Disconnect</button>
+                        <div class="settings-form-row">
+                            <div class="settings-form-field">
+                                <label class="form-label">Display name</label>
+                                <input type="text" name="DisplayName" value="@Model.DisplayName" class="form-input" required />
+                            </div>
+                            <button type="submit" class="btn btn--primary settings-form-button">Save</button>
+                        </div>
                     </form>
                 </div>
-            }
-            else
+            </div>
+
+            <div class="card settings-card">
+                <div class="card__header"><span class="card__title">Appearance</span></div>
+                <div class="card__body">
+                    <form asp-action="ChangeDisplayTheme" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="settings-form-row">
+                            <div class="settings-form-field">
+                                <label class="form-label">Display theme</label>
+                                <select name="DisplayTheme" class="form-input" required>
+                                    <option value="Light" selected="@(Model.DisplayTheme == "Light")">Light</option>
+                                    <option value="Dark" selected="@(Model.DisplayTheme == "Dark")">Dark</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn--primary settings-form-button">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.IsAuthor || Model.IsReader)
             {
-                <p style="margin-bottom:var(--space-4); color:var(--color-ink-muted);">
-                    <span class="badge badge--neutral">Not connected</span>
-                </p>
-                <a asp-controller="Dropbox" asp-action="Connect" class="btn btn--primary">Connect Dropbox</a>
+                <div class="card settings-card">
+                    <div class="card__header"><span class="card__title">Reading Preferences</span></div>
+                    <div class="card__body">
+                        <form asp-action="ChangeProseFontPreferences" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="settings-form-row settings-form-row--two-fields">
+                                <div class="settings-form-field">
+                                    <label class="form-label">Font face</label>
+                                    <select name="ProseFont" class="form-input" required>
+                                        <option value="SystemSerif" selected="@(Model.ProseFont == "SystemSerif")">System Serif</option>
+                                        <option value="Humanist" selected="@(Model.ProseFont == "Humanist")">Humanist</option>
+                                        <option value="Classic" selected="@(Model.ProseFont == "Classic")">Classic</option>
+                                        <option value="SansSerif" selected="@(Model.ProseFont == "SansSerif")">Sans-serif</option>
+                                    </select>
+                                </div>
+                                <div class="settings-form-field">
+                                    <label class="form-label">Font size</label>
+                                    <select name="ProseFontSize" class="form-input" required>
+                                        <option value="Small" selected="@(Model.ProseFontSize == "Small")">Small</option>
+                                        <option value="Medium" selected="@(Model.ProseFontSize == "Medium")">Medium</option>
+                                        <option value="Large" selected="@(Model.ProseFontSize == "Large")">Large</option>
+                                        <option value="ExtraLarge" selected="@(Model.ProseFontSize == "ExtraLarge")">Extra Large</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn--primary settings-form-button">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="settings-layout__side">
+            <div class="card settings-card">
+                <div class="card__header"><span class="card__title">Email Address</span></div>
+                <div class="card__body">
+                    <form asp-action="ChangeEmail" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="settings-form-stack">
+                            <div class="settings-form-group">
+                                <label class="form-label">New email address</label>
+                                <input type="email" name="Email" value="@Model.Email" class="form-input" required />
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="form-label">Current password (to confirm)</label>
+                                <input type="password" name="CurrentPassword" class="form-input" required />
+                            </div>
+                            <button type="submit" class="btn btn--primary settings-form-button-inline">Update Email</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card settings-card">
+                <div class="card__header"><span class="card__title">Change Password</span></div>
+                <div class="card__body">
+                    <form asp-action="ChangePassword" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="settings-form-stack">
+                            <div class="settings-form-group">
+                                <label class="form-label">Current password</label>
+                                <input type="password" name="CurrentPassword" class="form-input" required />
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="form-label">New password</label>
+                                <input type="password" name="NewPassword" class="form-input" required />
+                            </div>
+                            <div class="settings-form-group">
+                                <label class="form-label">Confirm new password</label>
+                                <input type="password" name="ConfirmPassword" class="form-input" required />
+                            </div>
+                            <button type="submit" class="btn btn--primary settings-form-button-inline">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (Model.IsAuthor)
+            {
+                <div class="card settings-card">
+                    <div class="card__header"><span class="card__title">Dropbox</span></div>
+                    <div class="card__body">
+                        @if (Model.DropboxStatus == "Connected")
+                        {
+                            <p class="settings-status">
+                                <span class="badge badge--success">Connected</span>
+                                @if (Model.DropboxAuthorisedAt.HasValue)
+                                {
+                                    <span class="settings-status-meta">
+                                        since @Model.DropboxAuthorisedAt.Value.ToString("dd MMM yyyy")
+                                    </span>
+                                }
+                            </p>
+                            <div class="settings-inline-actions">
+                                <a asp-controller="Dropbox" asp-action="Connect" class="btn btn--secondary">Reconnect</a>
+                                <form asp-controller="Dropbox" asp-action="Disconnect" method="post" class="settings-inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn--danger">Disconnect</button>
+                                </form>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="settings-status settings-status--muted">
+                                <span class="badge badge--neutral">Not connected</span>
+                            </p>
+                            <a asp-controller="Dropbox" asp-action="Connect" class="btn btn--primary">Connect Dropbox</a>
+                        }
+                    </div>
+                </div>
             }
         </div>
     </div>
-}
+</div>
