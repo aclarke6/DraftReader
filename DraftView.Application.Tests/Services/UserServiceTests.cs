@@ -264,6 +264,48 @@ public class UserServiceTests
         await Assert.ThrowsAsync<EntityNotFoundException>(
             () => sut.UpdateDisplayThemeAsync(userId, DisplayTheme.Dark));
     }
+
+    // ---------------------------------------------------------------------------
+    // UpdateProseFontPreferencesAsync
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task UpdateProseFontPreferencesAsync_ValidUser_UpdatesPreferencesAndSaves()
+    {
+        var user = User.Create("reader@example.com", "Reader", Role.BetaReader);
+        var prefs = UserPreferences.CreateForBetaReader(user.Id);
+        var sut = CreateSut();
+
+        PrefsRepo.Setup(r => r.GetByUserIdAsync(user.Id, default))
+            .ReturnsAsync(prefs);
+
+        await sut.UpdateProseFontPreferencesAsync(
+            user.Id,
+            ProseFont.Classic,
+            ProseFontSize.Large,
+            CancellationToken.None);
+
+        Assert.Equal(ProseFont.Classic, prefs.ProseFont);
+        Assert.Equal(ProseFontSize.Large, prefs.ProseFontSize);
+        UnitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProseFontPreferencesAsync_MissingPreferences_ThrowsEntityNotFoundException()
+    {
+        var userId = Guid.NewGuid();
+        var sut = CreateSut();
+
+        PrefsRepo.Setup(r => r.GetByUserIdAsync(userId, default))
+            .ReturnsAsync((UserPreferences?) null);
+
+        await Assert.ThrowsAsync<EntityNotFoundException>(() =>
+            sut.UpdateProseFontPreferencesAsync(
+                userId,
+                ProseFont.SystemSerif,
+                ProseFontSize.Medium,
+                CancellationToken.None));
+    }
 }
 
 

@@ -178,6 +178,16 @@ public class UserService(
         await unitOfWork.SaveChangesAsync(ct);
     }
 
+    public async Task UpdateProseFontPreferencesAsync(Guid userId, ProseFont proseFont, ProseFontSize proseFontSize, CancellationToken ct = default)
+    {
+        var prefs = await prefsRepo.GetByUserIdAsync(userId, ct)
+            ?? throw new EntityNotFoundException(nameof(UserPreferences), userId);
+
+        prefs.UpdateProseFontPreferences(proseFont, proseFontSize);
+
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
     public async Task UpdateEmailAsync(Guid userId, string email, CancellationToken ct = default)
     {
         var user = await userRepo.GetByIdAsync(userId, ct)

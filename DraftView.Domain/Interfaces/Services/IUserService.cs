@@ -13,7 +13,9 @@ public interface IUserService
     Task SoftDeleteUserAsync(Guid targetUserId, Guid authorId, CancellationToken ct = default);
     Task UpdateDisplayNameAsync(Guid userId, string displayName, CancellationToken ct = default);
     Task UpdateDisplayThemeAsync(Guid userId, DisplayTheme displayTheme, CancellationToken ct = default);
+    Task UpdateProseFontPreferencesAsync(Guid userId, ProseFont proseFont, ProseFontSize proseFontSize, CancellationToken ct = default);
     Task UpdateEmailAsync(Guid userId, string email, CancellationToken ct = default);
 }
+
 
 
