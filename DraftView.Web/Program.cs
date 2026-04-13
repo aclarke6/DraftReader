@@ -55,7 +55,10 @@ builder.Services.AddApplicationServices();
 // ---------------------------------------------------------------------------
 var app = builder.Build();
 
-// Run migration, seed and reset tasks via small extension helpers to keep Program.cs concise
+// Keep startup side effects out of WebApplicationFactory-based tests.
+// Tests should boot the real app in the "Testing" environment and take
+// ownership of database setup so login, rendering, and auth scenarios can be
+// arranged deterministically.
 if (!app.Environment.IsEnvironment("Testing"))
 {
     await app.MigrateDatabaseAsync();
@@ -86,6 +89,7 @@ app.MapControllerRoute(
 
 app.Run();
 
+// Expose Program so WebApplicationFactory<Program> can host the real app in tests.
 public partial class Program;
 
 

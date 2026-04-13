@@ -21,7 +21,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace DraftView.Web.Tests;
+namespace DraftView.Web.Tests.EmailExposure;
 
 public class GoverningRenderedEmailExposureTests :
     IClassFixture<GoverningRenderedEmailExposureTests.RenderedPrivacyFactory>

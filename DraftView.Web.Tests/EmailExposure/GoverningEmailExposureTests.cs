@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
 
-namespace DraftView.Web.Tests;
+namespace DraftView.Web.Tests.EmailExposure;
 
 public class GoverningEmailExposureTests
 {
@@ -60,10 +60,6 @@ public class GoverningEmailExposureTests
             "Email exposure detected in non-whitelisted views:\n" +
             string.Join(Environment.NewLine, violations));
     }
-
-    // ---------------------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------------------
 
     private static bool IsWhitelisted(string filePath, string[] whitelist)
     {
