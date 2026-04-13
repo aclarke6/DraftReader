@@ -6,17 +6,22 @@ Purpose
   containing the file name, repo-relative path, and full path.
 
   Each argument may be:
-    - A bare filename:        Reader.css
-    - A bare filename stem:   Reader
-    - A filename wildcard:    *Reader*.cs
-    - A repo-relative path:   DraftView.Web\wwwroot\css\Reader.css
+    - A bare filename:            Reader.css
+    - A bare filename stem:       Reader
+    - A filename wildcard:        *Reader*.cs
+    - A repo-relative path:       DraftView.Web\wwwroot\css\Reader.css
+    - A repo-relative path with
+      filename wildcard:          DraftView.Web\Views\Author\*.cshtml
 
   Bare filenames are located by recursive search under RootPath.
   Bare filename stems are resolved by searching a designated list of standard
   C# solution file extensions.
-  Wildcards are allowed at filename level only and are matched against file names
-  during recursive search under RootPath.
-  Relative paths are resolved directly against RootPath - no search needed.
+  Wildcards may be used for the file name segment only.
+  Bare filename wildcards are matched against file names during recursive search
+  under RootPath.
+  Repo-relative path wildcards are resolved against the specified directory only
+  and do not recurse into subdirectories.
+  Relative paths without wildcards are resolved directly against RootPath.
 
 Usage
   .\Copy-SourceFiles.ps1 <file1> <file2> ... [options]
@@ -59,8 +64,9 @@ Copies the contents of source files into the clipboard, preceded by a header
 containing the file name, repo-relative path, and full path.
 
 Each argument may be a bare filename (Reader.css), a bare filename stem (Reader),
-a filename wildcard (*Reader*.cs), or a repo-relative path
-(DraftView.Web\wwwroot\css\Reader.css).
+a filename wildcard (*Reader*.cs), a repo-relative path
+(DraftView.Web\wwwroot\css\Reader.css), or a repo-relative path with filename
+wildcard (DraftView.Web\Views\Author\*.cshtml).
 
 USAGE
   .\Copy-SourceFiles.ps1 <file1> <file2> ... [options]
@@ -167,6 +173,31 @@ function Find-FilesByWildcard {
         Sort-Object FullName
 }
 
+function Find-FilesByPathWildcard {
+    param(
+        [Parameter(Mandatory = $true)][string]$RelativeDirectory,
+        [Parameter(Mandatory = $true)][string]$FilePattern
+    )
+
+    $normalisedDirectory = $RelativeDirectory.Replace('/', '\').Trim('\')
+    $targetDirectory = if ([string]::IsNullOrWhiteSpace($normalisedDirectory)) {
+        $root
+    }
+    else {
+        Join-Path $root $normalisedDirectory
+    }
+
+    if (-not (Test-Path -LiteralPath $targetDirectory -PathType Container)) {
+        return @()
+    }
+
+    Get-ChildItem -LiteralPath $targetDirectory -File -Force -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.Name -like $FilePattern
+        } |
+        Sort-Object FullName
+}
+
 function Find-FilesByStem {
     param([Parameter(Mandatory = $true)][string]$Stem)
 
@@ -249,8 +280,28 @@ function Resolve-Argument {
 
     $looksLikePath = $Arg.Contains('\') -or $Arg.Contains('/')
 
-    if ($looksLikePath) {
+        if ($looksLikePath) {
         $normalised = $Arg.Replace('/', '\')
+        $hasWildcard = $normalised.Contains('*') -or $normalised.Contains('?')
+
+        if ($hasWildcard) {
+            $relativeDirectory = Split-Path -Path $normalised -Parent
+            $filePattern = Split-Path -Path $normalised -Leaf
+            $pathWildcardMatches = @(Find-FilesByPathWildcard -RelativeDirectory $relativeDirectory -FilePattern $filePattern)
+
+            if ($pathWildcardMatches.Count -eq 0) {
+                return [pscustomobject]@{
+                    Status  = "Missing"
+                    Matches = @()
+                }
+            }
+
+            return [pscustomobject]@{
+                Status  = "Found"
+                Matches = @($pathWildcardMatches)
+            }
+        }
+
         $candidate  = Join-Path $root $normalised
         if (Test-Path -LiteralPath $candidate -PathType Leaf) {
             return [pscustomobject]@{
