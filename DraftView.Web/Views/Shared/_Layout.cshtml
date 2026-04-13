@@ -13,11 +13,12 @@ All css files are included here to ensure consistent styling across the site.
     var theme = "Light";
     var proseFont = "SystemSerif";
     var proseFontSize = "Medium";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-    if (User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(User.Identity.Name))
+    if (User.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(currentUserId))
     {
         var currentUser = await UserRepository.GetByIdAsync(
-            Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value));
+            Guid.Parse(currentUserId));
         if (currentUser is not null)
         {
             var prefs = await UserPreferencesRepository.GetByUserIdAsync(currentUser.Id);
@@ -110,7 +111,7 @@ All css files are included here to ensure consistent styling across the site.
                     </div>
 
                     <div class="site-nav__user">
-                        <a asp-controller="Account" asp-action="Settings" class="site-nav__user-email">@User.Identity.Name</a>
+                        <a asp-controller="Account" asp-action="Settings" class="site-nav__user-email">Account settings</a>
                         <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="site-nav__logout">Sign out</button>

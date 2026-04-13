@@ -148,11 +148,11 @@ Email handling model:
 - [DONE] Step 1: Remove stored email display from `Views/Account/AcceptInvitation.cshtml`
 - [DONE] Step 2: Remove stored email display from `Views/Author/ManageReaderAccess.cshtml`
 - [DONE] Step 3: Remove stored email display from `Views/Author/Readers.cshtml`
-- [ ] Step 4: Remove layout-driven email display from `Views/Shared/_Layout.cshtml`
-- [ ] Step 5: Ensure non-whitelisted views do not render stored email through direct bindings or shared layout composition
+- [DONE] Step 4: Remove layout-driven email display from `Views/Shared/_Layout.cshtml`
+- [DONE] Step 5: Ensure non-whitelisted views do not render stored email through direct bindings or shared layout composition
 
 **Web — Controllers**
-- [ ] Step 6: Stop `AccountController.AcceptInvitation` GET from passing stored email to a non-whitelisted rendered view
+- [DONE] Step 6: Stop `AccountController.AcceptInvitation` GET from passing stored email to a non-whitelisted rendered view
 - [ ] Step 7: Review any other non-whitelisted controller/view paths and remove stored email from view models where still required only for display
 
 **Web — ViewModels**
@@ -160,19 +160,16 @@ Email handling model:
 - [ ] Step 9: Keep email-bearing view models only where the flow still genuinely requires email as input or explicitly whitelisted self-display
 
 **Web — Tests**
-- [ ] Step 10: Make the source-level governing email-exposure test pass for the known Phase 2 view leaks
-- [ ] Step 11: Make the rendered-output governing email-exposure test pass for:
+- [DONE] Step 10: Make the source-level governing email-exposure test pass for the known Phase 2 view leaks
+- [DONE] Step 11: Make the rendered-output governing email-exposure test pass for:
   - `/Account/AcceptInvitation`
   - `/Author/Dashboard`
   - `/Author/Readers`
-- [ ] Step 12: Keep the `/Account/Login` behavioural regression green while Phase 2 cleanup is in progress
-  - Current verified state after Steps 1 and 2:
-    - `AcceptInvitation` leak removed from source-level and rendered-output governing failures
-    - `ManageReaderAccess.cshtml` no longer appears in the source-level governing failure set
-  - Current verified state after Step 3:
-    - `Readers.cshtml` no longer appears in the source-level governing failure set
-    - Remaining source-level failure is now `Views/Shared/_Layout.cshtml`
-    - Remaining rendered-output leaks are on `/Author/Dashboard` and `/Author/Readers` via `_Layout`
+- [DONE] Step 12: Keep the `/Account/Login` behavioural regression green while Phase 2 cleanup is in progress
+  - Verified current state:
+    - source-level governing email-exposure test is GREEN
+    - rendered-output governing email-exposure test is GREEN
+    - `/Account/Login` behavioural regression remains GREEN
 
 ---
 
