@@ -147,7 +147,7 @@ Email handling model:
 **Web — Views**
 - [DONE] Step 1: Remove stored email display from `Views/Account/AcceptInvitation.cshtml`
 - [DONE] Step 2: Remove stored email display from `Views/Author/ManageReaderAccess.cshtml`
-- [ ] Step 3: Remove stored email display from `Views/Author/Readers.cshtml`
+- [DONE] Step 3: Remove stored email display from `Views/Author/Readers.cshtml`
 - [ ] Step 4: Remove layout-driven email display from `Views/Shared/_Layout.cshtml`
 - [ ] Step 5: Ensure non-whitelisted views do not render stored email through direct bindings or shared layout composition
 
@@ -169,10 +169,10 @@ Email handling model:
   - Current verified state after Steps 1 and 2:
     - `AcceptInvitation` leak removed from source-level and rendered-output governing failures
     - `ManageReaderAccess.cshtml` no longer appears in the source-level governing failure set
-    - Remaining failures are:
-      - `Views/Author/Readers.cshtml`
-      - `Views/Shared/_Layout.cshtml`
-      - rendered-output leaks on `/Author/Dashboard` and `/Author/Readers` via `_Layout`
+  - Current verified state after Step 3:
+    - `Readers.cshtml` no longer appears in the source-level governing failure set
+    - Remaining source-level failure is now `Views/Shared/_Layout.cshtml`
+    - Remaining rendered-output leaks are on `/Author/Dashboard` and `/Author/Readers` via `_Layout`
 
 ---
 

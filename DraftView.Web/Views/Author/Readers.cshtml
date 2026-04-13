@@ -25,7 +25,6 @@ else
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Email</th>
                     <th>Status</th>
                     <th>Joined</th>
                     <th>Actions</th>
@@ -39,7 +38,6 @@ else
                             <a asp-action="ManageReaderAccess" asp-route-readerId="@r.Id"
                                style="font-weight: var(--font-medium);">@r.DisplayName</a>
                         </td>
-                        <td style="color:var(--color-text-muted);">@r.Email</td>
                         <td>
                             @switch (r.Status)
                             {
