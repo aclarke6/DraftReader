@@ -133,9 +133,10 @@ Email handling model:
     - real `/Account/Login` GET plus antiforgery-protected POST
     - successful redirect to `/Author/Dashboard`
     - authenticated follow-up request succeeds
-- [ ] Create regression test: no plaintext email is persisted for new or updated users
-- [ ] Create regression test: email access is denied by default unless authorised
-- [ ] Confirm all governing tests are RED at sprint start
+- [DONE] Confirm email-exposure governing tests are RED at sprint start
+  - Source-level governing scan is RED
+  - Rendered-output governing test is RED
+  - Behavioural guard tests such as `/Account/Login` are expected to pass
 
 ---
 
@@ -193,6 +194,7 @@ Email handling model:
   - decryption restores original value
   - HMAC lookup is deterministic
   - different inputs produce different lookup values
+- [ ] Create regression test: no plaintext email is persisted for new or updated users
 - [ ] Implement to green
 - [ ] Refactor with tests green
 
@@ -224,6 +226,7 @@ Email handling model:
   - unauthorised access denied
   - authorised access allowed
   - decrypt not called when access denied
+- [ ] Create regression test: email access is denied by default unless authorised
 - [ ] Write failing lower-level integration/authentication regression test:
   - authentication lookup resolves the correct user from login email input via protected lookup
   - do not bind this test to `IUserRepository.GetByEmailAsync`
