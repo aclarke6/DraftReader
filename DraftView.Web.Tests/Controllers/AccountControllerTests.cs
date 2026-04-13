@@ -1,4 +1,5 @@
 ﻿using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 using DraftView.Domain.Interfaces.Repositories;
 using DraftView.Domain.Interfaces.Services;
 using DraftView.Infrastructure.Persistence;
@@ -188,6 +189,63 @@ public class AccountControllerTests
 
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Login", redirect.ActionName);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_Post_UsesInvitationUserEmail_ForIdentityCreationAndSignIn()
+    {
+        var sut = CreateSut();
+        var invitedUser = User.Create("reader@example.test", "Pending", Role.BetaReader);
+        var invitation = Invitation.CreateAlwaysOpen(invitedUser.Id);
+
+        invitationRepo.Setup(r => r.GetByTokenAsync(invitation.Token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitation);
+        userRepo.Setup(r => r.GetByIdAsync(invitedUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitedUser);
+        userManager.Setup(m => m.FindByEmailAsync(invitedUser.Email))
+            .ReturnsAsync((IdentityUser?)null);
+        userManager.Setup(m => m.CreateAsync(
+                It.Is<IdentityUser>(u => u.Email == invitedUser.Email && u.UserName == invitedUser.Email),
+                "Password1!"))
+            .ReturnsAsync(IdentityResult.Success);
+        userService.Setup(s => s.AcceptInvitationAsync(invitation.Token, "Reader Name", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(invitedUser);
+        signInManager.Setup(m => m.PasswordSignInAsync(invitedUser.Email, "Password1!", false, false))
+            .ReturnsAsync(Microsoft.AspNetCore.Identity.SignInResult.Success);
+
+        var result = await sut.AcceptInvitation(new AcceptInvitationViewModel
+        {
+            Token = invitation.Token,
+            DisplayName = "Reader Name",
+            Password = "Password1!",
+            ConfirmPassword = "Password1!"
+        });
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Dashboard", redirect.ActionName);
+        Assert.Equal("Reader", redirect.ControllerName);
+        userManager.Verify(m => m.FindByEmailAsync(invitedUser.Email), Times.Once);
+        signInManager.Verify(m => m.PasswordSignInAsync(invitedUser.Email, "Password1!", false, false), Times.Once);
+    }
+
+    [Fact]
+    public async Task AcceptInvitation_Post_InvalidToken_RedirectsToInvitationInvalid()
+    {
+        var sut = CreateSut();
+
+        invitationRepo.Setup(r => r.GetByTokenAsync("bad-token", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Invitation?)null);
+
+        var result = await sut.AcceptInvitation(new AcceptInvitationViewModel
+        {
+            Token = "bad-token",
+            DisplayName = "Reader Name",
+            Password = "Password1!",
+            ConfirmPassword = "Password1!"
+        });
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("InvitationInvalid", redirect.ActionName);
     }
 
 

@@ -18,7 +18,6 @@ public class LoginViewModel
 public class AcceptInvitationViewModel
 {
     public string Token { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Please enter your name.")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be at least 2 characters.")]

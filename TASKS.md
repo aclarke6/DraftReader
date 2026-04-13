@@ -142,32 +142,37 @@ Email handling model:
 
 ## Phase 2 — Web Surface Cleanup (Fast Feedback)
 
-**Goal:** Remove visible leaks early and reduce noise in test failures
+**Goal:** Remove the currently proven email leaks from non-whitelisted web surfaces so the governing email-exposure tests move toward green for the right reasons.
 
 **Web — Views**
-- [ ] Remove email display from all non-whitelisted views
-- [ ] Ensure authors cannot see beta reader email after invitation
-- [ ] Remove email from:
-  - reader views
-  - dashboards
-  - comments
-  - lists and metadata
+- [DONE] Step 1: Remove stored email display from `Views/Account/AcceptInvitation.cshtml`
+- [DONE] Step 2: Remove stored email display from `Views/Author/ManageReaderAccess.cshtml`
+- [ ] Step 3: Remove stored email display from `Views/Author/Readers.cshtml`
+- [ ] Step 4: Remove layout-driven email display from `Views/Shared/_Layout.cshtml`
+- [ ] Step 5: Ensure non-whitelisted views do not render stored email through direct bindings or shared layout composition
 
 **Web — Controllers**
-- [ ] Ensure no controller passes email to non-whitelisted views
+- [ ] Step 6: Stop `AccountController.AcceptInvitation` GET from passing stored email to a non-whitelisted rendered view
+- [ ] Step 7: Review any other non-whitelisted controller/view paths and remove stored email from view models where still required only for display
 
 **Web — ViewModels**
-- [ ] Remove email fields from shared or public view models
-- [ ] Restrict email presence to:
-  - self-account view model
-  - explicitly authorised admin/support view model (if required)
+- [ ] Step 8: Remove dead `Email` fields from author-facing reader view models once the corresponding views no longer depend on them
+- [ ] Step 9: Keep email-bearing view models only where the flow still genuinely requires email as input or explicitly whitelisted self-display
 
 **Web — Tests**
-- [ ] Ensure view regression test begins to pass or reduce failures significantly
-- [ ] Add discovery-based scan of `.cshtml` files for email bindings:
-  - `Email`
-  - `asp-for="Email"`
-  - `mailto:`
+- [ ] Step 10: Make the source-level governing email-exposure test pass for the known Phase 2 view leaks
+- [ ] Step 11: Make the rendered-output governing email-exposure test pass for:
+  - `/Account/AcceptInvitation`
+  - `/Author/Dashboard`
+  - `/Author/Readers`
+- [ ] Step 12: Keep the `/Account/Login` behavioural regression green while Phase 2 cleanup is in progress
+  - Current verified state after Steps 1 and 2:
+    - `AcceptInvitation` leak removed from source-level and rendered-output governing failures
+    - `ManageReaderAccess.cshtml` no longer appears in the source-level governing failure set
+    - Remaining failures are:
+      - `Views/Author/Readers.cshtml`
+      - `Views/Shared/_Layout.cshtml`
+      - rendered-output leaks on `/Author/Dashboard` and `/Author/Readers` via `_Layout`
 
 ---
 

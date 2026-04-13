@@ -114,8 +114,7 @@ public class AccountController(
 
         var vm = new AcceptInvitationViewModel
         {
-            Token = token,
-            Email = user.Email
+            Token = token
         };
 
         return View(vm);
@@ -133,14 +132,32 @@ public class AccountController(
 
         try
         {
+            var invitation = await invitationRepo.GetByTokenAsync(model.Token);
+            if (invitation is null)
+                return RedirectToAction("InvitationInvalid",
+                    new { reason = "This invitation link is not recognised." });
+
+            if (!invitation.IsValid())
+                return RedirectToAction("InvitationInvalid",
+                    new { reason = invitation.Status == Domain.Enumerations.InvitationStatus.Expired
+                        ? "This invitation has expired. Please ask the author to send a new one."
+                        : "This invitation has been cancelled. Please ask the author to send a new one." });
+
+            var user = await userRepo.GetByIdAsync(invitation.UserId);
+            if (user is null)
+                return RedirectToAction("InvitationInvalid",
+                    new { reason = "Invitation account not found." });
+
+            var inviteeEmail = user.Email;
+
             // Ensure Identity user exists FIRST
-            var existingIdentity = await userManager.FindByEmailAsync(model.Email);
+            var existingIdentity = await userManager.FindByEmailAsync(inviteeEmail);
             if (existingIdentity is null)
             {
                 var identityUser = new IdentityUser
                 {
-                    UserName       = model.Email,
-                    Email          = model.Email,
+                    UserName       = inviteeEmail,
+                    Email          = inviteeEmail,
                     EmailConfirmed = true
                 };
 
@@ -159,9 +176,9 @@ public class AccountController(
 
             // Sign them in immediately
             await signInManager.PasswordSignInAsync(
-                model.Email, model.Password, isPersistent: false, lockoutOnFailure: false);
+                inviteeEmail, model.Password, isPersistent: false, lockoutOnFailure: false);
 
-            logger.LogInformation("Invitation accepted and user signed in: {Email}", model.Email);
+            logger.LogInformation("Invitation accepted and user signed in: {Email}", inviteeEmail);
 
             return RedirectToAction("Dashboard", "Reader");
         }
