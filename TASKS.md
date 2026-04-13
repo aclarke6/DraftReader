@@ -61,6 +61,13 @@ Every PowerShell string replacement MUST verify the change applied before procee
 ### Full File Rewrites Over Regex Patching
 For complex files, prefer full rewrites over inline regex patching.
 
+### View Style Leakage Audit — MANDATORY
+Any modification of a view must include an audit of that view for style leakage.
+
+- Any style leakage must be reported
+- If appropriate, leaked inline or view-local styling must be replaced with CSS
+- A `[DONE]` update reporting the style fix must be added under `## DONE (this project)` in `### Additional Completed Tasks`
+
 ---
 
 ## BUGS
@@ -153,7 +160,11 @@ Email handling model:
 
 **Web — Controllers**
 - [DONE] Step 6: Stop `AccountController.AcceptInvitation` GET from passing stored email to a non-whitelisted rendered view
-- [ ] Step 7: Review any other non-whitelisted controller/view paths and remove stored email from view models where still required only for display
+- [DONE] Step 7: Review any other non-whitelisted controller/view paths and remove stored email from view models where still required only for display
+  - Verified current state:
+    - `AuthorController.Readers` supplies `ReaderRowViewModel.Email = string.Empty`
+    - `AuthorController.ManageReaderAccess` supplies `ReaderAccessViewModel.Email = string.Empty`
+    - `AccountController.AcceptInvitation` no longer passes stored email into the rendered view model
 
 **Web — ViewModels**
 - [ ] Step 8: Remove dead `Email` fields from author-facing reader view models once the corresponding views no longer depend on them
@@ -483,6 +494,11 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 ---
 
 ## DONE (this project)
+
+### Additional Completed Tasks
+
+- [DONE] Layout top bar now shows the current user display name instead of email; falls back to `Account settings` when display name is missing, with hover text `Account settings`
+- [DONE] Fixed style leakage by scoping prose font preferences to reader surfaces only so system UI remains on standard typography
 
 ## Sprint 3 — Reader Font Preferences (IMPLEMENTED)
 
