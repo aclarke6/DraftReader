@@ -121,102 +121,62 @@ Email handling model:
 
 **Goal:** Establish secure persistence model
 
-- [DONE] Step 1: Define the infrastructure persistence contract for protected email storage
-  - `AppUsers.Email` plaintext persistence is to be replaced by `EmailCiphertext` and `EmailLookupHmac`
-  - stored email value must be encrypted at rest; plaintext email must not be written to `AppUsers`
-  - lookup must use deterministic HMAC of normalised email for equality checks and uniqueness
-  - infrastructure must support repository lookup and existence checks without querying plaintext email
-  - encryption and decryption must be performed through application/infrastructure services, not by the domain model
-  - encryption and HMAC key material must be kept outside the database
-- [DONE] Step 2: Write failing infrastructure tests for:
+**Contract and Tests**
+- [DONE] Defined the protected email persistence contract for infrastructure
+  - `AppUsers.Email` plaintext persistence was replaced by `EmailCiphertext` and `EmailLookupHmac`
+  - plaintext email is not written to `AppUsers`
+  - lookup uses deterministic HMAC of normalised email for equality checks and uniqueness
+  - encryption and decryption remain outside the domain model
+- [DONE] Added the governing infrastructure tests for protected email persistence
   - encryption does not store plaintext
-  - decryption restores original value
+  - decryption restores the original value
   - HMAC lookup is deterministic
   - different inputs produce different lookup values
   - no plaintext email is persisted for new or updated users
-- [DONE] Step 3: Add schema fields:
+
+**Schema and Migration**
+- [DONE] Added the protected email schema fields
   - `EmailCiphertext`
   - `EmailLookupHmac`
-- [DONE] Step 4: Add a unique index for `EmailLookupHmac`
-- [DONE] Step 5: Apply the migration
-- [DONE] Step 5.5 Bug Fix: Make the protected-email migration safe for populated databases
-  - current migration fails on existing data because `EmailLookupHmac` is added as `NOT NULL DEFAULT ''`
-  - the unique index then fails because multiple existing rows receive the same empty value
-  - revised the migration so existing rows are backfilled with distinct placeholder protected values before uniqueness is enforced
-  - demonstrate the fix by applying the migration successfully to a non-empty local database
-- [DONE] Step 6: Introduce the email-encryption seam with correct layer ownership
-  - application owns the contract for email encryption/decryption
-  - infrastructure owns the concrete implementation
-  - domain owns none of the encryption or decryption mechanics
-- [DONE] Step 6.1: Define the application-layer contract for protected email encryption/decryption
-- [DONE] Step 6.2: Write failing tests for encryption/decryption behaviour before implementation
-  - encrypting email must not return plaintext
-  - decrypting ciphertext must restore the original normalised email
-  - invalid ciphertext must fail safely
-  - no domain type performs encryption or decryption directly
-- [DONE] Step 6.3: Add temporary `NotImplementedException` stubs if required to compile the new seam before implementation
-- [DONE] Step 6.4: Implement the infrastructure encryption service using ASP.NET Core Data Protection or equivalent
-- [DONE] Step 6.5: Register the service and get the Step 6 tests GREEN without yet changing lookup logic
-  - local/dev registration only at this step
-  - do not fold Linux/live key provisioning into this implementation step
-- [DONE] Step 6 review: Step 6 encryption seam is proven GREEN; remaining infrastructure failures belong to plaintext persistence and lookup replacement work
-- [DONE] Step 7: Introduce the email-HMAC lookup seam with correct layer ownership
-  - application owns the contract for deterministic email lookup HMAC generation
-  - infrastructure owns the concrete implementation
-  - domain owns none of the HMAC mechanics
-- [DONE] Step 7.1: Define the application-layer contract for deterministic email lookup HMAC generation
-- [DONE] Step 7.2: Write failing tests for HMAC lookup behaviour before implementation
-  - same normalised email must produce the same lookup value
-  - different normalised emails must produce different lookup values
-  - lookup output must not equal plaintext email
-  - no domain type performs HMAC generation directly
-- [DONE] Step 7.2.5 Bug Fix: Tighten the domain-boundary HMAC test so it detects HMAC mechanics, not the presence of the `EmailLookupHmac` property name
-  - current test is overbroad and fails on naming alone
-  - the test must check for crypto implementation concerns in the domain model, not protected-field naming
-- [DONE] Step 7.2.5 review: the current red state now shows only the expected missing-HMAC-service failures plus the separate plaintext-persistence failures
-- [DONE] Step 7.3: Add temporary `NotImplementedException` stubs if required to compile the new seam before implementation
-- [DONE] Step 7.4: Implement the infrastructure HMAC lookup service using secure key material kept outside the database
-- [DONE] Step 7.5: Register the service and get the Step 7 tests GREEN without yet changing repository queries or persistence mapping
-- [DONE] Step 7 review: Step 7 HMAC seam is proven GREEN; remaining infrastructure failures belonged to plaintext persistence replacement work
-- [DONE] Step 8: Wire persistence so plaintext email is no longer stored
-  - Step 8.1: Stop EF from mapping plaintext `User.Email`
-  - Step 8.2: Generate `EmailCiphertext` and `EmailLookupHmac` during save
-  - Step 8.3: Rehydrate runtime `User.Email` from ciphertext on repository reads
-  - Step 8.4: Replace plaintext repository lookups with HMAC lookups
-  - Step 8.5: Patch direct `DbContext` email queries used during startup/seeding
-- [DONE] Step 9: Get the infrastructure tests green
-- [DONE] Step 9.5 Bug Fix: Restore full-suite compatibility after the `DraftViewDbContext` constructor change
-  - current regression breaks `DraftView.Web.Tests.Controllers.AccountControllerTests`
-  - Moq can no longer proxy `DraftViewDbContext` with the constructor shape those tests expect
-  - fix the regression without undoing the protected-email persistence behaviour
-  - `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
-- [DONE] Step 10: Refactor and review Phase 3 with tests still green
-  - review schema, migration, encryption, HMAC, and persistence changes as one coherent Phase 3 unit
-  - remove any low-value transitional plumbing introduced during Phase 3
-  - confirm no plaintext email persistence or plaintext infrastructure lookup path remains
-  - keep `DraftView.Infrastructure.Tests` GREEN throughout
-  - do not widen scope into Phase 4 application access-control work during this cleanup
-- [DONE] Step 10.1: Freeze the behavioural baseline
-  - run `dotnet test DraftView.Infrastructure.Tests --nologo`
-  - run `dotnet test --nologo`
-  - treat this as the green baseline before any Phase 3 refactor
-- [DONE] Step 10.2: Review and rename Phase 3 seams for clarity where the result is materially better
-- [DONE] Step 10.3: Extract helpers from `DraftViewDbContext` where this improves cohesion and reduces long blocks
-- [DONE] Step 10.4: Remove duplication in the normalize -> HMAC -> encrypt -> protect flow
-- [DONE] Step 10.5: Review repository hydration code and extract shared helpers where it improves readability
-- [DONE] Step 10.6: Review `DatabaseSeeder` for Phase 3 duplication and extract small local helpers where useful
-- [DONE] Step 10.7: Review `DraftViewDbContext` constructor and fallback behaviour for cleaner architecture
-- [DONE] Step 10.8: Remove low-value transitional plumbing introduced only to get Phase 3 green
-- [DONE] Step 10.9: Re-audit Phase 3 architecture boundaries
+- [DONE] Added and validated the unique index on `EmailLookupHmac`
+- [DONE] Applied the protected email migration
+- [DONE] Fixed the populated-database migration bug so uniqueness is enforced safely on existing data
+
+**Encryption and HMAC Seams**
+- [DONE] Introduced the application/infrastructure seam for email encryption and decryption
+  - application owns the contract
+  - infrastructure owns the implementation
+  - domain owns no encryption mechanics
+- [DONE] Introduced the application/infrastructure seam for deterministic email lookup HMAC generation
+  - application owns the contract
+  - infrastructure owns the implementation
+  - domain owns no HMAC mechanics
+- [DONE] Tightened the domain-boundary tests so they detect crypto implementation concerns rather than protected-field naming alone
+
+**Persistence and Lookup Wiring**
+- [DONE] Removed EF mapping of plaintext `User.Email`
+- [DONE] Added save-time protection to generate `EmailCiphertext` and `EmailLookupHmac`
+- [DONE] Rehydrated runtime `User.Email` from ciphertext on repository reads
+- [DONE] Replaced repository lookups and existence checks to use protected lookup rather than plaintext email queries
+- [DONE] Patched direct `DbContext` email queries in startup and seeding paths to use protected lookup and runtime rehydration
+
+**Compatibility and Refactor**
+- [DONE] Restored full-suite compatibility after the `DraftViewDbContext` constructor change
+  - `DraftView.Web.Tests.Controllers.AccountControllerTests` compatibility was restored without undoing protected-email persistence behaviour
+- [DONE] Refactored Phase 3 as one coherent unit without widening into Phase 4
+  - extracted helpers from `DraftViewDbContext`
+  - removed duplication in the normalize -> HMAC -> encrypt -> protect flow
+  - simplified repository hydration helpers
+  - extracted small local helpers from `DatabaseSeeder`
+  - removed low-value transitional constructor fallback plumbing
+- [DONE] Re-audited the Phase 3 architecture boundaries
   - infrastructure owns persistence, encryption, HMAC, save-time protection, and protected lookup
   - domain owns no crypto or persistence mechanics
   - application contracts remain small and explicit
-- [DONE] Step 10.10: Final Phase 3 verification
-  - run `dotnet test DraftView.Infrastructure.Tests --nologo`
-  - run `dotnet test --nologo`
-  - `dotnet test DraftView.Infrastructure.Tests --nologo` returned GREEN: 96 passed, 0 failed
-  - `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
-  - update task state only after refactor and verification are complete
+
+**Verification**
+- [DONE] `dotnet test DraftView.Infrastructure.Tests --nologo` returned GREEN: 96 passed, 0 failed
+- [DONE] `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
 
 ---
 
