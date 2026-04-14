@@ -78,14 +78,15 @@ none currently logged — add here as discovered
 
 ## Test state
 
-- 449 Tests total
+- 466 Tests total
 - One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
-- Latest full passing count: 449 total, 448 passed, 1 skipped, 0 failed
+- Latest full passing count: 466 total, 465 passed, 1 skipped, 0 failed
 - Latest targeted application count: 128 total, 128 passed, 0 skipped, 0 failed
+- Latest targeted web count: 31 total, 31 passed, 0 skipped, 0 failed
 
 ---
 
-## Sprint 4 — Email Privacy and Controlled Access (PHASED EXECUTION)
+# Sprint 4 — Email Privacy and Controlled Access (PHASED EXECUTION)
 
 Ensure user email addresses are protected, not exposed to other users, and only accessible through controlled, auditable mechanisms. Align system behaviour with UK GDPR principles of data minimisation, access control, and protection by design.
 
@@ -97,301 +98,35 @@ Email handling model:
 - Controlled access for administrative purposes only
 - New views fail closed by default unless explicitly whitelisted
 
----
-
-## Phase 1 [DONE] — Rules and Governing Red Tests
-
-- [DONE] Defined the whitelist for stored-email rendering, restricted to `Views/Account/Settings.cshtml`
-- [DONE] Added governing source-level and rendered-output email-exposure regressions for non-whitelisted pages
-- [DONE] Seeded initial red-state evidence for `AcceptInvitation`, `ManageReaderAccess`, `Readers`, and shared layout leakage
-- [DONE] Added a behavioural `/Account/Login` web regression to preserve login flow during later email-model changes
-- [DONE] Confirmed sprint start state: email-exposure governing tests were RED and behavioural guard tests were expected GREEN
-
----
-
-## Phase 2 [DONE] — Web Surface Cleanup (Fast Feedback)
-
-- [DONE] Removed non-whitelisted stored-email display from `AcceptInvitation`, `ManageReaderAccess`, `Readers`, and shared layout navigation
-- [DONE] Stopped `AccountController.AcceptInvitation` GET from passing stored email into a non-whitelisted rendered view
-- [DONE] Confirmed other reviewed non-whitelisted controller/view paths no longer pass stored email for display
-- [DONE] Made the source-level and rendered-output email-exposure governing tests GREEN
-- [DONE] Kept the `/Account/Login` behavioural regression GREEN throughout cleanup
-
----
-
-## Phase 3 — Infrastructure (Data Shape First)
-
-**Goal:** Establish secure persistence model
-
-**Contract and Tests**
-- [DONE] Defined the protected email persistence contract for infrastructure
-  - `AppUsers.Email` plaintext persistence was replaced by `EmailCiphertext` and `EmailLookupHmac`
-  - plaintext email is not written to `AppUsers`
-  - lookup uses deterministic HMAC of normalised email for equality checks and uniqueness
-  - encryption and decryption remain outside the domain model
-- [DONE] Added the governing infrastructure tests for protected email persistence
-  - encryption does not store plaintext
-  - decryption restores the original value
-  - HMAC lookup is deterministic
-  - different inputs produce different lookup values
-  - no plaintext email is persisted for new or updated users
-
-**Schema and Migration**
-- [DONE] Added the protected email schema fields
-  - `EmailCiphertext`
-  - `EmailLookupHmac`
-- [DONE] Added and validated the unique index on `EmailLookupHmac`
-- [DONE] Applied the protected email migration
-- [DONE] Fixed the populated-database migration bug so uniqueness is enforced safely on existing data
-
-**Encryption and HMAC Seams**
-- [DONE] Introduced the application/infrastructure seam for email encryption and decryption
-  - application owns the contract
-  - infrastructure owns the implementation
-  - domain owns no encryption mechanics
-- [DONE] Introduced the application/infrastructure seam for deterministic email lookup HMAC generation
-  - application owns the contract
-  - infrastructure owns the implementation
-  - domain owns no HMAC mechanics
-- [DONE] Tightened the domain-boundary tests so they detect crypto implementation concerns rather than protected-field naming alone
-
-**Persistence and Lookup Wiring**
-- [DONE] Removed EF mapping of plaintext `User.Email`
-- [DONE] Added save-time protection to generate `EmailCiphertext` and `EmailLookupHmac`
-- [DONE] Rehydrated runtime `User.Email` from ciphertext on repository reads
-- [DONE] Replaced repository lookups and existence checks to use protected lookup rather than plaintext email queries
-- [DONE] Patched direct `DbContext` email queries in startup and seeding paths to use protected lookup and runtime rehydration
-
-**Compatibility and Refactor**
-- [DONE] Restored full-suite compatibility after the `DraftViewDbContext` constructor change
-  - `DraftView.Web.Tests.Controllers.AccountControllerTests` compatibility was restored without undoing protected-email persistence behaviour
-- [DONE] Refactored Phase 3 as one coherent unit without widening into Phase 4
-  - extracted helpers from `DraftViewDbContext`
-  - removed duplication in the normalize -> HMAC -> encrypt -> protect flow
-  - simplified repository hydration helpers
-  - extracted small local helpers from `DatabaseSeeder`
-  - removed low-value transitional constructor fallback plumbing
-- [DONE] Re-audited the Phase 3 architecture boundaries
-  - infrastructure owns persistence, encryption, HMAC, save-time protection, and protected lookup
-  - domain owns no crypto or persistence mechanics
-  - application contracts remain small and explicit
-
-**Verification**
-- [DONE] `dotnet test DraftView.Infrastructure.Tests --nologo` returned GREEN: 96 passed, 0 failed
-- [DONE] `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
-
----
-
-## Phase 4 — Application Layer (Behaviour and Access Control)
-
-**Goal:** Control access and orchestrate protection
-
-**Services**
-- [DONE] Introduce `IUserEmailProtectionService`
-- [DONE] Introduce `IUserEmailAccessService`
-- [DONE] Introduce explicit authentication lookup seam for resolving a user from login email input via protected lookup
-
-**Access Rules**
-- [ ] Self access permitted
-- [ ] `SystemSupport` access permitted for explicit administrative/support purposes
-- [ ] Author access to reader stored email denied once an invitation has been sent
-- [ ] All other access denied (deny-by-default)
-
-**Orchestration**
-- [ ] Authorisation check occurs before decryption
-- [ ] Decrypt only after approval
-- [ ] Centralise all email access through service
-- [ ] Route login identity resolution through the protected authentication lookup seam rather than plaintext email lookup
-- [ ] Migrate `AccountController.Settings` self-access email display to the Phase 4 application seam
-- [ ] Migrate broader current-user resolution paths away from controller-level `User.Identity?.Name` plus generic repository email lookup
-- [ ] Add a `SystemSupport`-only privileged email access path only if an explicit support consumer is required
-
-**Application TDD**
-- [ ] Write failing tests:
-  - self access allowed
-  - unauthorised access denied
-  - authorised access allowed
-  - decrypt not called when access denied
-- [ ] Create regression test: email access is denied by default unless authorised
-- [DONE] Write failing lower-level integration/authentication regression test:
-  - authentication lookup resolves the correct user from login email input via protected lookup
-  - do not bind this test to `IUserRepository.GetByEmailAsync`
-- [ ] Implement to green
-- [ ] Refactor
-
-**High-level stages**
-- [DONE] Stage 1: Define the application seams for protected login lookup and controlled email access
-- [ ] Stage 2: Add governing application tests for deny-by-default access and no-decrypt-before-authorisation
-- [ ] Stage 3: Route self-service and current-user email access through the application layer
-    - [ ] Stage 3 should include:
-        - `AccountController.Settings` self-access email display
-  - broader current-user application access patterns that currently depend on controller-level identity email lookup
-- [ ] Stage 4: Route privileged admin/support email access through the application layer with explicit authorisation
-    - [ ] Stage 4 should include:
-        - any explicit support/admin email access consumer that is required (avoid building this if no consumer is needed)
-- [ ] Stage 5: Route authentication identity resolution through the protected lookup seam instead of direct email lookup assumptions
-    - [ ] Stage 5 should include:
-        - new authentication lookup seam for resolving a user from login email input
-        - migration of the login flow to use the new seam rather than direct repository lookup by email
-- [ ] Stage 6: Refactor Phase 4 as one unit and verify the full suite remains green
-
-**Stage 1 breakdown**
-- [DONE] Stage 1.1: Define the application contract for controlled email access
-  - introduce `IUserEmailAccessService`
-  - service decides whether a caller may access a target user's email
-  - deny-by-default is the contract baseline
-  - `SystemSupport` is the only privileged cross-user access role in this phase
-  - `Author` does not gain stored-email access to readers once an invitation has been sent
-- [DONE] Stage 1.2: Define the application contract for protected email material resolution
-  - introduce `IUserEmailProtectionService`
-  - service orchestrates decrypting protected email only after approval
-  - service depends on the existing infrastructure encryption seam rather than duplicating crypto logic
-  - Stage 1.2.1: define the responsibility of `IUserEmailProtectionService`
-    - service resolves a user's stored email only after access has been approved
-    - service is orchestration, not policy and not crypto implementation
-  - Stage 1.2.2: define the minimum input required
-    - target user id
-    - approved-access context or explicit pre-authorised request shape
-    - avoid raw email as the lookup key for this service
-  - Stage 1.2.3: define the output shape
-    - resolved plaintext email only when access is already authorised
-    - failure path should be safe and explicit
-    - no silent fallback to plaintext persistence paths
-  - Stage 1.2.4: define service composition with `IUserEmailAccessService`
-    - `IUserEmailAccessService` decides whether access is allowed
-    - `IUserEmailProtectionService` decrypts only after approval
-    - keep policy and material resolution separate
-  - Stage 1.2.5: define dependency boundaries
-    - application service may depend on `IUserRepository`
-    - application service may depend on existing `IUserEmailEncryptionService`
-    - application service must not implement encryption itself
-    - application service must not depend on plaintext database queries
-  - Stage 1.2.6: define failure behaviour
-    - missing target user fails safely
-    - missing ciphertext or invalid ciphertext fails safely
-    - denied access must return without attempting decryption
-  - Stage 1.2.7: identify first consumers for later migration
-    - account settings self-email display
-    - any future support-only email reveal path
-    - keep login lookup out of this service because that belongs to the authentication lookup seam
-  - Stage 1.2.8: add interface and compile-only placeholder wiring if needed
-    - no controller migration yet
-    - no behaviour change yet
-    - no Phase 5 domain changes yet
-- [DONE] Stage 1.3: Define the application contract for authentication lookup via protected email input
-  - introduce an explicit authentication lookup seam for resolving a domain user from login email input
-  - contract should be phrased around authentication/login lookup, not generic repository email lookup
-  - seam should be named around login/authentication intent rather than generic email lookup
-  - input is login email input and output is the matching domain user or null
-  - normalization and protected lookup remain internal to the seam
-  - do not bind Phase 4 tests to `IUserRepository.GetByEmailAsync`
-- [DONE] Stage 1.4: Define the request and response shapes for controlled access
-  - identify required inputs:
-    - requesting user id or authenticated context
-    - target user id
-    - access purpose where relevant
-  - identify required outputs:
-    - allowed/denied result
-    - resolved email only when authorised
-  - use an explicit request/result pair for `IUserEmailAccessService`
-  - keep plaintext email out of the access-decision result
-  - use target user id rather than raw email as the controlled-access identifier
-  - use an enum for access purpose rather than free text
-  - keep the authentication lookup seam separate from the controlled-access request/response model
-- [DONE] Stage 1.5: Define the authorisation ownership boundary
-  - application layer owns access decisions and orchestration
-  - infrastructure layer continues to own encryption, decryption, HMAC generation, and protected persistence
-  - domain layer continues to own no crypto mechanics
-  - application layer owns the authentication-oriented lookup contracts and controlled-access request/result models
-  - controllers must not own email-disclosure policy or decryption logic
-  - infrastructure must not own `SystemSupport` versus self-access policy decisions
-- [DONE] Stage 1.6: Identify and list the first consumers to migrate in later stages
-  - self-service settings/current-user flows
-  - admin/support privileged access flows
-  - login identity resolution flow
-  - avoid widening Stage 1 into implementation of those consumers
-  - migrate in this order:
-    - account settings self-access email display
-    - current-user application access pattern
-    - support-only privileged access path
-    - login/authentication lookup seam adoption
-- [DONE] Stage 1.7: Add compile-only wiring or stubs only if needed to unblock Stage 2 tests
-  - no behaviour change yet
-  - no controller migration yet
-  - no Phase 5 domain changes yet
-  - if needed, add interfaces and minimal request/result types only
-  - if needed, add `NotImplementedException` or equivalent compile-only placeholder implementations
-  - do not change existing controller/service consumers in this stage
-  - keep Stage 1 limited to design and compilation readiness for Stage 2 tests
-  - compile verification GREEN: `dotnet build --nologo`
-  - full-suite verification GREEN: 449 total, 448 passed, 1 skipped, 0 failed
-
-**Stage 2 breakdown**
-- [DONE] Stage 2.1: Add failing tests for `IUserEmailAccessService`
-  - self access allowed
-  - `SystemSupport` access allowed for explicit support/admin purpose
-  - author access to reader stored email denied
-  - all other cross-user access denied by default
-- [DONE] Stage 2.1 implementation to green
-  - `dotnet test DraftView.Application.Tests --nologo` returned GREEN: 121 passed, 0 failed
-- [DONE] Stage 2.2: Add failing tests for `IUserEmailProtectionService`
-  - authorised access can resolve stored email
-  - denied access does not attempt decryption
-  - missing target user fails safely
-  - invalid or missing ciphertext fails safely
-- [DONE] Stage 2.2 implementation to green
-  - `dotnet test DraftView.Application.Tests --nologo` returned GREEN: 124 passed, 0 failed
-- [DONE] Stage 2.3: Add failing tests for the composition boundary between access and decryption
-  - access decision occurs before decryption
-  - decryption service is not called when access is denied
-  - plaintext email is not surfaced through fallback behaviour
-- [DONE] Stage 2.3 implementation to green
-  - `dotnet test DraftView.Application.Tests --nologo` returned GREEN: 126 passed, 0 failed
-- [DONE] Stage 2.4: Add failing tests for the authentication lookup seam
-  - login email input resolves the correct domain user
-  - login lookup uses the protected path conceptually
-  - tests are not written against `IUserRepository.GetByEmailAsync` as the contract under test
-- [DONE] Stage 2.4 implementation to green
-  - `dotnet test DraftView.Application.Tests --nologo` returned GREEN: 121 passed, 0 failed
-- [DONE] Stage 2.5: Add a deny-by-default regression test
-  - if a case is not explicitly allowed, access is denied
-  - protects against later accidental widening of privileged access
-- [DONE] Stage 2.5 verification
-  - `dotnet test DraftView.Application.Tests --nologo` returned GREEN: 128 passed, 0 failed
-- [DONE] Stage 2.6: Add compile/test scaffolding only where needed
-  - mocks and fixtures for requester, target user, repository, and encryption service
-  - no controller migration yet
-  - no implementation beyond what tests require
-- [DONE] Stage 2.6 review
-  - required scaffolding was added incrementally across the Stage `2.1` to `2.5` application tests
-- [ ] Stage 2.7: Run targeted application tests and keep `TASKS.md` current
-  - red first
-  - then implement in later Stage 2/3 work until green
-
----
-
 ## Phase 5 — Domain Refinement
 
 **Goal:** Enforce correct domain model without leaking concerns
 
-**Domain Changes**
-- [ ] Remove public `Email` property
-- [ ] Introduce:
-  - `EmailCiphertext`
-  - `EmailLookupHmac`
-- [ ] Add method to set protected email state:
-  - validate format
-  - normalise email
-  - accept only protected values
-
-**Domain TDD**
-- [ ] Write failing tests:
-  - valid email accepted
-  - invalid email rejected
-  - normalisation applied consistently
-  - no plaintext persistence
-- [ ] Implement to green
-- [ ] Refactor
+**High-level steps**
+- [DONE] Step 1: Clarify the target domain boundary for email state
+  - decide whether `User.Email` remains a runtime-only convenience or is removed from the aggregate surface
+  - keep encryption, HMAC generation, and persistence concerns out of the domain
+- [DONE] Step 2: Define the protected email invariants the `User` aggregate should own
+  - protected email state must not accept null/whitespace ciphertext or lookup HMAC
+  - runtime email loading, if retained, must remain an explicit non-persistent path
+  - domain should not normalise, hash, or encrypt email itself
+- [DONE] Step 3: Add focused tests for the chosen boundary
+  - protected email state accepts valid protected values
+  - invalid protected values are rejected
+  - runtime-only email loading is either constrained explicitly or removed
+  - no test should require the domain to implement crypto or persistence mechanics
+  - targeted verification GREEN: `dotnet test DraftView.Domain.Tests --nologo --filter "FullyQualifiedName~DraftView.Domain.Tests.Entities.UserTests"` returned 42 passed, 0 failed
+- [DONE] Step 4: Review whether any domain change is still required and avoid widening the phase unnecessarily
+  - current `User` email boundary is acceptable for this phase
+  - no additional domain change was required to satisfy the focused Phase 5 tests
+  - `User.UpdateEmail(...)` remains in place as the existing runtime/application mutation path
+  - avoid widening into infrastructure remapping or cross-layer redesign during this phase
+- [DONE] Step 5: Re-audit boundaries and confirm no further domain refactor is required at this stage
+  - domain responsibilities remain narrow and explicit
+  - `User` owns only runtime email loading plus protected-state null/whitespace guards
+  - application continues to own controlled access and protected-email orchestration
+  - infrastructure continues to own email normalisation, HMAC generation, encryption, save-time protection, and repository rehydration
+  - no additional domain change was required to preserve the intended boundary
 
 ---
 
@@ -399,23 +134,21 @@ Email handling model:
 
 **Goal:** Ensure system flows work with new model
 
-**Flows**
-- [ ] Registration:
-  - normalise email
-  - compute HMAC
-  - encrypt before save
-- [ ] Invitation:
-  - same protection applied
-- [ ] Login:
-  - normalise input
-  - compute HMAC
-  - lookup via `EmailLookupHmac`
-
-**Integration Tests**
-- [ ] Login works via HMAC lookup
-- [ ] Registration persists protected values only
-- [ ] No plaintext email stored
-- [ ] Governing tests move towards GREEN
+**High-level steps**
+- [ ] Step 1: Confirm which end-to-end outcomes are already covered by Phases 3–5
+  - avoid duplicating infrastructure contract coverage at integration level
+  - limit Phase 6 to real remaining flow gaps
+- [ ] Step 2: Add one DB-backed login integration proof
+  - real web host boots in `Testing`
+  - login still succeeds under the protected lookup wiring
+- [ ] Step 3: Add one invitation/provisioning integration proof
+  - invitation-related user provisioning persists protected email fields through the real stack
+  - do not invent a standalone registration flow if the product does not actually expose one
+- [ ] Step 4: Add one flow-level no-plaintext-persistence assertion
+  - verify the relevant persisted user row stores protected values rather than plaintext email
+  - keep this compact and complementary to infrastructure contract tests
+- [ ] Step 5: Re-run governing and full-suite verification
+  - confirm no end-to-end regressions in login, invitation, and protected persistence flows
 
 ---
 
@@ -651,6 +384,128 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 
 - [DONE] Layout top bar now shows the current user display name instead of email; falls back to `Account settings` when display name is missing, with hover text `Account settings`
 - [DONE] Fixed style leakage by scoping prose font preferences to reader surfaces only so system UI remains on standard typography
+
+## Sprint 4 — Email Privacy and Controlled Access (PHASED EXECUTION)
+
+Ensure user email addresses are protected, not exposed to other users, and only accessible through controlled, auditable mechanisms. Align system behaviour with UK GDPR principles of data minimisation, access control, and protection by design.
+
+Email handling model:
+- Email stored in encrypted form
+- Email lookup via deterministic HMAC of normalised email
+- Encryption and decryption are performed through application/infrastructure services, not in the domain model
+- Email never exposed in UI beyond explicitly permitted views
+- Controlled access for administrative purposes only
+- New views fail closed by default unless explicitly whitelisted
+
+## Phase 1 [DONE] — Rules and Governing Red Tests
+
+- [DONE] Defined the whitelist for stored-email rendering, restricted to `Views/Account/Settings.cshtml`
+- [DONE] Added governing source-level and rendered-output email-exposure regressions for non-whitelisted pages
+- [DONE] Seeded initial red-state evidence for `AcceptInvitation`, `ManageReaderAccess`, `Readers`, and shared layout leakage
+- [DONE] Added a behavioural `/Account/Login` web regression to preserve login flow during later email-model changes
+- [DONE] Confirmed sprint start state: email-exposure governing tests were RED and behavioural guard tests were expected GREEN
+
+## Phase 2 [DONE] — Web Surface Cleanup (Fast Feedback)
+
+- [DONE] Removed non-whitelisted stored-email display from `AcceptInvitation`, `ManageReaderAccess`, `Readers`, and shared layout navigation
+- [DONE] Stopped `AccountController.AcceptInvitation` GET from passing stored email into a non-whitelisted rendered view
+- [DONE] Confirmed other reviewed non-whitelisted controller/view paths no longer pass stored email for display
+- [DONE] Made the source-level and rendered-output email-exposure governing tests GREEN
+- [DONE] Kept the `/Account/Login` behavioural regression GREEN throughout cleanup
+
+## Phase 3 [DONE] — Infrastructure (Data Shape First)
+
+**Goal:** Establish secure persistence model
+
+**Contract and Tests**
+- [DONE] Defined the protected email persistence contract for infrastructure
+  - `AppUsers.Email` plaintext persistence was replaced by `EmailCiphertext` and `EmailLookupHmac`
+  - plaintext email is not written to `AppUsers`
+  - lookup uses deterministic HMAC of normalised email for equality checks and uniqueness
+  - encryption and decryption remain outside the domain model
+- [DONE] Added the governing infrastructure tests for protected email persistence
+  - encryption does not store plaintext
+  - decryption restores the original value
+  - HMAC lookup is deterministic
+  - different inputs produce different lookup values
+  - no plaintext email is persisted for new or updated users
+
+**Schema and Migration**
+- [DONE] Added the protected email schema fields
+  - `EmailCiphertext`
+  - `EmailLookupHmac`
+- [DONE] Added and validated the unique index on `EmailLookupHmac`
+- [DONE] Applied the protected email migration
+- [DONE] Fixed the populated-database migration bug so uniqueness is enforced safely on existing data
+
+**Encryption and HMAC Seams**
+- [DONE] Introduced the application/infrastructure seam for email encryption and decryption
+  - application owns the contract
+  - infrastructure owns the implementation
+  - domain owns no encryption mechanics
+- [DONE] Introduced the application/infrastructure seam for deterministic email lookup HMAC generation
+  - application owns the contract
+  - infrastructure owns the implementation
+  - domain owns no HMAC mechanics
+- [DONE] Tightened the domain-boundary tests so they detect crypto implementation concerns rather than protected-field naming alone
+
+**Persistence and Lookup Wiring**
+- [DONE] Removed EF mapping of plaintext `User.Email`
+- [DONE] Added save-time protection to generate `EmailCiphertext` and `EmailLookupHmac`
+- [DONE] Rehydrated runtime `User.Email` from ciphertext on repository reads
+- [DONE] Replaced repository lookups and existence checks to use protected lookup rather than plaintext email queries
+- [DONE] Patched direct `DbContext` email queries in startup and seeding paths to use protected lookup and runtime rehydration
+
+**Compatibility and Refactor**
+- [DONE] Restored full-suite compatibility after the `DraftViewDbContext` constructor change
+  - `DraftView.Web.Tests.Controllers.AccountControllerTests` compatibility was restored without undoing protected-email persistence behaviour
+- [DONE] Refactored Phase 3 as one coherent unit without widening into Phase 4
+  - extracted helpers from `DraftViewDbContext`
+  - removed duplication in the normalize -> HMAC -> encrypt -> protect flow
+  - simplified repository hydration helpers
+  - extracted small local helpers from `DatabaseSeeder`
+  - removed low-value transitional constructor fallback plumbing
+- [DONE] Re-audited the Phase 3 architecture boundaries
+  - infrastructure owns persistence, encryption, HMAC, save-time protection, and protected lookup
+  - domain owns no crypto or persistence mechanics
+  - application contracts remain small and explicit
+
+**Verification**
+- [DONE] `dotnet test DraftView.Infrastructure.Tests --nologo` returned GREEN: 96 passed, 0 failed
+- [DONE] `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
+
+---
+
+## Phase 4 [DONE] — Application Layer (Behaviour and Access Control)
+
+- [DONE] Added the application seams for controlled email access and protected login lookup
+  - `IUserEmailAccessService`
+  - `IUserEmailProtectionService`
+  - `IControlledUserEmailService`
+  - `IAuthenticationUserLookupService`
+- [DONE] Implemented deny-by-default application access rules
+  - self access allowed
+  - explicit `SystemSupport` administrative access allowed
+  - author access to reader stored email denied once an invitation has been sent
+  - all other access denied by default
+- [DONE] Enforced application-layer orchestration
+  - access check occurs before decryption
+  - protected email is resolved only after approval
+  - migrated self-service `AccountController` email flows onto the application seam
+  - consolidated `AccountController` current-user lookup logic behind one helper
+- [DONE] Migrated authentication role redirect lookup onto the protected login seam
+  - `AccountController.Login` now uses `IAuthenticationUserLookupService`
+  - sign-in mechanics were left unchanged
+- [DONE] Reviewed privileged support/admin email reveal needs
+  - no concrete `SystemSupport` consumer currently requires revealing another user's stored email
+  - no unused privileged reveal path was added
+- [DONE] Completed application-layer test coverage and verification
+  - targeted application tests covered access control, decryption orchestration, deny-by-default behaviour, and authentication lookup
+  - targeted controller tests covered settings, self-service email/password flows, and login redirect seam usage
+  - full-suite verification has since been restored GREEN: 466 total, 465 passed, 1 skipped, 0 failed
+
+---
+
 
 ## Sprint 3 — Reader Font Preferences (IMPLEMENTED)
 
