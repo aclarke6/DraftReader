@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-12
+Last updated: 2026-04-14
 
 ---
 
@@ -76,6 +76,13 @@ none currently logged — add here as discovered
 
 ---
 
+## Test state
+
+- 449 Tests total
+- One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
+
+---
+
 ## Sprint 4 — Email Privacy and Controlled Access (PHASED EXECUTION)
 
 Ensure user email addresses are protected, not exposed to other users, and only accessible through controlled, auditable mechanisms. Align system behaviour with UK GDPR principles of data minimisation, access control, and protection by design.
@@ -137,7 +144,7 @@ Email handling model:
   - the unique index then fails because multiple existing rows receive the same empty value
   - revised the migration so existing rows are backfilled with distinct placeholder protected values before uniqueness is enforced
   - demonstrate the fix by applying the migration successfully to a non-empty local database
-- [ ] Step 6: Introduce the email-encryption seam with correct layer ownership
+- [DONE] Step 6: Introduce the email-encryption seam with correct layer ownership
   - application owns the contract for email encryption/decryption
   - infrastructure owns the concrete implementation
   - domain owns none of the encryption or decryption mechanics
@@ -153,7 +160,7 @@ Email handling model:
   - local/dev registration only at this step
   - do not fold Linux/live key provisioning into this implementation step
 - [DONE] Step 6 review: Step 6 encryption seam is proven GREEN; remaining infrastructure failures belong to plaintext persistence and lookup replacement work
-- [ ] Step 7: Introduce the email-HMAC lookup seam with correct layer ownership
+- [DONE] Step 7: Introduce the email-HMAC lookup seam with correct layer ownership
   - application owns the contract for deterministic email lookup HMAC generation
   - infrastructure owns the concrete implementation
   - domain owns none of the HMAC mechanics
@@ -183,30 +190,32 @@ Email handling model:
   - Moq can no longer proxy `DraftViewDbContext` with the constructor shape those tests expect
   - fix the regression without undoing the protected-email persistence behaviour
   - `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
-- [ ] Step 10: Refactor and review Phase 3 with tests still green
+- [DONE] Step 10: Refactor and review Phase 3 with tests still green
   - review schema, migration, encryption, HMAC, and persistence changes as one coherent Phase 3 unit
   - remove any low-value transitional plumbing introduced during Phase 3
   - confirm no plaintext email persistence or plaintext infrastructure lookup path remains
   - keep `DraftView.Infrastructure.Tests` GREEN throughout
   - do not widen scope into Phase 4 application access-control work during this cleanup
-- [ ] Step 10.1: Freeze the behavioural baseline
+- [DONE] Step 10.1: Freeze the behavioural baseline
   - run `dotnet test DraftView.Infrastructure.Tests --nologo`
   - run `dotnet test --nologo`
   - treat this as the green baseline before any Phase 3 refactor
-- [ ] Step 10.2: Review and rename Phase 3 seams for clarity where the result is materially better
-- [ ] Step 10.3: Extract helpers from `DraftViewDbContext` where this improves cohesion and reduces long blocks
-- [ ] Step 10.4: Remove duplication in the normalize -> HMAC -> encrypt -> protect flow
-- [ ] Step 10.5: Review repository hydration code and extract shared helpers where it improves readability
-- [ ] Step 10.6: Review `DatabaseSeeder` for Phase 3 duplication and extract small local helpers where useful
-- [ ] Step 10.7: Review `DraftViewDbContext` constructor and fallback behaviour for cleaner architecture
-- [ ] Step 10.8: Remove low-value transitional plumbing introduced only to get Phase 3 green
-- [ ] Step 10.9: Re-audit Phase 3 architecture boundaries
+- [DONE] Step 10.2: Review and rename Phase 3 seams for clarity where the result is materially better
+- [DONE] Step 10.3: Extract helpers from `DraftViewDbContext` where this improves cohesion and reduces long blocks
+- [DONE] Step 10.4: Remove duplication in the normalize -> HMAC -> encrypt -> protect flow
+- [DONE] Step 10.5: Review repository hydration code and extract shared helpers where it improves readability
+- [DONE] Step 10.6: Review `DatabaseSeeder` for Phase 3 duplication and extract small local helpers where useful
+- [DONE] Step 10.7: Review `DraftViewDbContext` constructor and fallback behaviour for cleaner architecture
+- [DONE] Step 10.8: Remove low-value transitional plumbing introduced only to get Phase 3 green
+- [DONE] Step 10.9: Re-audit Phase 3 architecture boundaries
   - infrastructure owns persistence, encryption, HMAC, save-time protection, and protected lookup
   - domain owns no crypto or persistence mechanics
   - application contracts remain small and explicit
-- [ ] Step 10.10: Final Phase 3 verification
+- [DONE] Step 10.10: Final Phase 3 verification
   - run `dotnet test DraftView.Infrastructure.Tests --nologo`
   - run `dotnet test --nologo`
+  - `dotnet test DraftView.Infrastructure.Tests --nologo` returned GREEN: 96 passed, 0 failed
+  - `dotnet test --nologo` returned GREEN: 449 total, 448 passed, 1 skipped, 0 failed
   - update task state only after refactor and verification are complete
 
 ---

@@ -13,17 +13,17 @@ public class UserRepository(
     IUserEmailLookupHmacService emailLookupHmacService) : IUserRepository
 {
     public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        await HydrateEmailAsync(await db.AppUsers.FindAsync([id], ct));
+        HydrateEmail(await db.AppUsers.FindAsync([id], ct));
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct = default) =>
-        await HydrateEmailAsync(await db.AppUsers.FirstOrDefaultAsync(
-            u => u.EmailLookupHmac == emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(email)), ct));
+        HydrateEmail(await db.AppUsers.FirstOrDefaultAsync(
+            u => u.EmailLookupHmac == ComputeLookupHmac(email), ct));
 
     public async Task<User?> GetAuthorAsync(CancellationToken ct = default) =>
-        await HydrateEmailAsync(await db.AppUsers.FirstOrDefaultAsync(u => u.Role == Role.Author, ct));
+        HydrateEmail(await db.AppUsers.FirstOrDefaultAsync(u => u.Role == Role.Author, ct));
 
     public async Task<IReadOnlyList<User>> GetAllBetaReadersAsync(CancellationToken ct = default) =>
-        await HydrateEmailsAsync(await db.AppUsers.Where(u => u.Role == Role.BetaReader).ToListAsync(ct));
+        HydrateEmails(await db.AppUsers.Where(u => u.Role == Role.BetaReader).ToListAsync(ct));
 
     public async Task<int> CountActiveBetaReadersAsync(CancellationToken ct = default) =>
         await db.AppUsers.CountAsync(u =>
@@ -36,23 +36,26 @@ public class UserRepository(
 
     public async Task<bool> EmailExistsAsync(string email, CancellationToken ct = default) =>
         await db.AppUsers.AnyAsync(
-            u => u.EmailLookupHmac == emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(email)), ct);
+            u => u.EmailLookupHmac == ComputeLookupHmac(email), ct);
 
-    private Task<User?> HydrateEmailAsync(User? user)
+    private string ComputeLookupHmac(string email) =>
+        emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(email));
+
+    private User? HydrateEmail(User? user)
     {
         if (user is null)
-            return Task.FromResult<User?>(null);
+            return null;
 
         if (string.IsNullOrWhiteSpace(user.Email) && !string.IsNullOrWhiteSpace(user.EmailCiphertext))
             user.LoadEmailForRuntime(emailEncryptionService.Decrypt(user.EmailCiphertext));
 
-        return Task.FromResult<User?>(user);
+        return user;
     }
 
-    private async Task<IReadOnlyList<User>> HydrateEmailsAsync(IReadOnlyList<User> users)
+    private IReadOnlyList<User> HydrateEmails(IReadOnlyList<User> users)
     {
         foreach (var user in users)
-            await HydrateEmailAsync(user);
+            HydrateEmail(user);
 
         return users;
     }

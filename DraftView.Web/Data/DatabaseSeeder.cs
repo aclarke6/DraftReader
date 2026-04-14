@@ -131,7 +131,7 @@ public static class DatabaseSeeder
         // ---------------------------------------------------------------------------
         // Seed Author domain User
         // ---------------------------------------------------------------------------
-        var authorLookup = emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(authorEmail));
+        var authorLookup = ComputeLookup(authorEmail, emailLookupHmacService);
         var existingDomainUser = db.AppUsers.FirstOrDefault(u => u.EmailLookupHmac == authorLookup);
         if (existingDomainUser is null)
         {
@@ -150,7 +150,7 @@ public static class DatabaseSeeder
         // ---------------------------------------------------------------------------
         // Seed Support domain User
         // ---------------------------------------------------------------------------
-        var supportLookup = emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(supportEmail));
+        var supportLookup = ComputeLookup(supportEmail, emailLookupHmacService);
         var existingSupportDomainUser = db.AppUsers.FirstOrDefault(u => u.EmailLookupHmac == supportLookup);
         if (existingSupportDomainUser is null)
         {
@@ -172,10 +172,8 @@ public static class DatabaseSeeder
         {
             try
             {
-                var decryptedEmail = emailEncryptionService.Decrypt(du.EmailCiphertext);
-                du.LoadEmailForRuntime(decryptedEmail);
-
-                var idUser = await userManager.FindByEmailAsync(decryptedEmail);
+                var runtimeEmail = LoadRuntimeEmail(du, emailEncryptionService);
+                var idUser = await userManager.FindByEmailAsync(runtimeEmail);
                 if (idUser is null) continue;
 
                 var roleName = du.Role.ToString();
@@ -201,7 +199,7 @@ public static class DatabaseSeeder
         // The author should reconnect via OAuth to get a proper refresh token.
         // ---------------------------------------------------------------------------
         var authorUser = db.AppUsers.First(u => u.EmailLookupHmac == authorLookup);
-        authorUser.LoadEmailForRuntime(emailEncryptionService.Decrypt(authorUser.EmailCiphertext));
+        LoadRuntimeEmail(authorUser, emailEncryptionService);
         var existingConnection = db.DropboxConnections.FirstOrDefault(d => d.UserId == authorUser.Id);
         if (existingConnection is null)
         {
@@ -240,5 +238,18 @@ public static class DatabaseSeeder
             await db.SaveChangesAsync();
             logger.LogInformation("Test - Book 1 project created: {Path}", scrivTestProjectDropboxPath);
         }
+    }
+
+    private static string ComputeLookup(string email, IUserEmailLookupHmacService emailLookupHmacService) =>
+        emailLookupHmacService.Compute(DraftViewDbContext.NormalizeEmail(email));
+
+    private static string LoadRuntimeEmail(User user, IUserEmailEncryptionService emailEncryptionService)
+    {
+        if (!string.IsNullOrWhiteSpace(user.Email))
+            return user.Email;
+
+        var runtimeEmail = emailEncryptionService.Decrypt(user.EmailCiphertext);
+        user.LoadEmailForRuntime(runtimeEmail);
+        return runtimeEmail;
     }
 }
