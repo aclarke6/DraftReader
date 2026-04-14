@@ -191,7 +191,8 @@ Email handling model:
 
 **Access Rules**
 - [ ] Self access permitted
-- [ ] Authorised admin/support access permitted
+- [ ] `SystemSupport` access permitted for explicit administrative/support purposes
+- [ ] Author access to reader stored email denied once an invitation has been sent
 - [ ] All other access denied (deny-by-default)
 
 **Orchestration**
@@ -199,6 +200,9 @@ Email handling model:
 - [ ] Decrypt only after approval
 - [ ] Centralise all email access through service
 - [ ] Route login identity resolution through the protected authentication lookup seam rather than plaintext email lookup
+- [ ] Migrate `AccountController.Settings` self-access email display to the Phase 4 application seam
+- [ ] Migrate broader current-user resolution paths away from controller-level `User.Identity?.Name` plus generic repository email lookup
+- [ ] Add a `SystemSupport`-only privileged email access path only if an explicit support consumer is required
 
 **Application TDD**
 - [ ] Write failing tests:
@@ -212,6 +216,116 @@ Email handling model:
   - do not bind this test to `IUserRepository.GetByEmailAsync`
 - [ ] Implement to green
 - [ ] Refactor
+
+**High-level stages**
+- [DONE] Stage 1: Define the application seams for protected login lookup and controlled email access
+- [ ] Stage 2: Add governing application tests for deny-by-default access and no-decrypt-before-authorisation
+- [ ] Stage 3: Route self-service and current-user email access through the application layer
+- [ ] Stage 4: Route privileged admin/support email access through the application layer with explicit authorisation
+- [ ] Stage 5: Route authentication identity resolution through the protected lookup seam instead of direct email lookup assumptions
+- [ ] Stage 6: Refactor Phase 4 as one unit and verify the full suite remains green
+
+**Stage 1 breakdown**
+- [DONE] Stage 1.1: Define the application contract for controlled email access
+  - introduce `IUserEmailAccessService`
+  - service decides whether a caller may access a target user's email
+  - deny-by-default is the contract baseline
+  - `SystemSupport` is the only privileged cross-user access role in this phase
+  - `Author` does not gain stored-email access to readers once an invitation has been sent
+- [DONE] Stage 1.2: Define the application contract for protected email material resolution
+  - introduce `IUserEmailProtectionService`
+  - service orchestrates decrypting protected email only after approval
+  - service depends on the existing infrastructure encryption seam rather than duplicating crypto logic
+  - Stage 1.2.1: define the responsibility of `IUserEmailProtectionService`
+    - service resolves a user's stored email only after access has been approved
+    - service is orchestration, not policy and not crypto implementation
+  - Stage 1.2.2: define the minimum input required
+    - target user id
+    - approved-access context or explicit pre-authorised request shape
+    - avoid raw email as the lookup key for this service
+  - Stage 1.2.3: define the output shape
+    - resolved plaintext email only when access is already authorised
+    - failure path should be safe and explicit
+    - no silent fallback to plaintext persistence paths
+  - Stage 1.2.4: define service composition with `IUserEmailAccessService`
+    - `IUserEmailAccessService` decides whether access is allowed
+    - `IUserEmailProtectionService` decrypts only after approval
+    - keep policy and material resolution separate
+  - Stage 1.2.5: define dependency boundaries
+    - application service may depend on `IUserRepository`
+    - application service may depend on existing `IUserEmailEncryptionService`
+    - application service must not implement encryption itself
+    - application service must not depend on plaintext database queries
+  - Stage 1.2.6: define failure behaviour
+    - missing target user fails safely
+    - missing ciphertext or invalid ciphertext fails safely
+    - denied access must return without attempting decryption
+  - Stage 1.2.7: identify first consumers for later migration
+    - account settings self-email display
+    - any future support-only email reveal path
+    - keep login lookup out of this service because that belongs to the authentication lookup seam
+  - Stage 1.2.8: add interface and compile-only placeholder wiring if needed
+    - no controller migration yet
+    - no behaviour change yet
+    - no Phase 5 domain changes yet
+- [DONE] Stage 1.3: Define the application contract for authentication lookup via protected email input
+  - introduce an explicit authentication lookup seam for resolving a domain user from login email input
+  - contract should be phrased around authentication/login lookup, not generic repository email lookup
+  - seam should be named around login/authentication intent rather than generic email lookup
+  - input is login email input and output is the matching domain user or null
+  - normalization and protected lookup remain internal to the seam
+  - do not bind Phase 4 tests to `IUserRepository.GetByEmailAsync`
+- [DONE] Stage 1.4: Define the request and response shapes for controlled access
+  - identify required inputs:
+    - requesting user id or authenticated context
+    - target user id
+    - access purpose where relevant
+  - identify required outputs:
+    - allowed/denied result
+    - resolved email only when authorised
+  - use an explicit request/result pair for `IUserEmailAccessService`
+  - keep plaintext email out of the access-decision result
+  - use target user id rather than raw email as the controlled-access identifier
+  - use an enum for access purpose rather than free text
+  - keep the authentication lookup seam separate from the controlled-access request/response model
+- [DONE] Stage 1.5: Define the authorisation ownership boundary
+  - application layer owns access decisions and orchestration
+  - infrastructure layer continues to own encryption, decryption, HMAC generation, and protected persistence
+  - domain layer continues to own no crypto mechanics
+  - application layer owns the authentication-oriented lookup contracts and controlled-access request/result models
+  - controllers must not own email-disclosure policy or decryption logic
+  - infrastructure must not own `SystemSupport` versus self-access policy decisions
+- [DONE] Stage 1.6: Identify and list the first consumers to migrate in later stages
+  - self-service settings/current-user flows
+  - admin/support privileged access flows
+  - login identity resolution flow
+  - avoid widening Stage 1 into implementation of those consumers
+  - migrate in this order:
+    - account settings self-access email display
+    - current-user application access pattern
+    - support-only privileged access path
+    - login/authentication lookup seam adoption
+- [DONE] Stage 1.7: Add compile-only wiring or stubs only if needed to unblock Stage 2 tests
+  - no behaviour change yet
+  - no controller migration yet
+  - no Phase 5 domain changes yet
+  - if needed, add interfaces and minimal request/result types only
+  - if needed, add `NotImplementedException` or equivalent compile-only placeholder implementations
+  - do not change existing controller/service consumers in this stage
+  - keep Stage 1 limited to design and compilation readiness for Stage 2 tests
+  - compile verification GREEN: `dotnet build --nologo`
+  - full-suite verification GREEN: 449 total, 448 passed, 1 skipped, 0 failed
+
+**Future phase notes**
+- [ ] Stage 3 should include:
+  - `AccountController.Settings` self-access email display
+  - broader current-user application access patterns that currently depend on controller-level identity email lookup
+- [ ] Stage 4 should include:
+  - a `SystemSupport`-only privileged access path if an explicit support consumer is required
+  - no author access to reader stored email after invitation
+- [ ] Stage 5 should include:
+  - `AccountController.Login` domain-user resolution for role-based redirect
+  - migration away from direct controller dependence on generic repository email lookup for authentication-oriented resolution
 
 ---
 

@@ -81,6 +81,9 @@ namespace DraftView.Web.Extensions
             services.AddScoped<IScrivenerProjectDiscoveryService, ScrivenerProjectDiscoveryService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserEmailAccessService, UserEmailAccessService>();
+            services.AddScoped<IUserEmailProtectionService, UserEmailProtectionService>();
+            services.AddScoped<IAuthenticationUserLookupService, AuthenticationUserLookupService>();
             services.AddScoped<IReadingProgressService, ReadingProgressService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDashboardService, DashboardService>();
