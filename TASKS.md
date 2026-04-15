@@ -98,44 +98,6 @@ Email handling model:
 - Controlled access for administrative purposes only
 - New views fail closed by default unless explicitly whitelisted
 
-## Phase 6 [DONE] — End-to-End Integration
-
-**Goal:** Ensure system flows work with new model
-
-**Prerequisite: Stabilise dev key material**
-- [DONE] Step 0.1: Replace transient dev protected-email keys with fixed configuration-backed keys
-  - add one fixed dev encryption key
-  - add one fixed dev lookup-HMAC key
-  - store both in `.NET` user secrets for `DraftView.Web`
-  - fail fast if either key is missing or invalid
-- [DONE] Step 0.2: Repair local dev user email state under the fixed keys without dropping project data
-  - existing dev protected email generated with transient keys must be replaced
-  - selectively rebuild `AppUsers` protected email state under the fixed keys
-  - update matching Identity email/login values where required
-  - confirm dev `Author` and `SystemSupport` users can still log in
-
-**High-level steps**
-- [DONE] Step 1: Confirm which end-to-end outcomes are already covered by Phases 3–5
-  - avoid duplicating infrastructure contract coverage at integration level
-  - limit Phase 6 to real remaining flow gaps
-- [DONE] Step 2: Add one DB-backed login integration proof
-  - real web host boots in `Testing`
-  - login still succeeds under the protected lookup wiring
-- [DONE] Step 3: Add one invitation/provisioning integration proof
-  - author invite flow now runs through the real web host in `Testing`
-  - issuing the same invite twice proves older pending invites are superseded by a fresh token
-  - invitation-related user provisioning persists protected email fields through the real stack
-  - do not invent a standalone registration flow if the product does not actually expose one
-  - before Sprint 4 is complete, sending a fresh invitation must supersede any older pending invite for the same target user
-  - keep the author workflow simple: if an invite is not received, the author just issues a new invite
-  - implement this in the existing invitation send path rather than adding resend/cancel/reissue UI
-- [DONE] Step 4: Add one flow-level no-plaintext-persistence assertion
-  - verify the relevant persisted user row stores protected values rather than plaintext email
-  - keep this compact and complementary to infrastructure contract tests
-- [DONE] Step 5: Re-run governing and full-suite verification
-  - confirmed no end-to-end regression in the protected login path
-  - latest full-suite verification GREEN: 480 total, 479 passed, 1 skipped, 0 failed
-
 ---
 
 ## Phase 7 — Audit and Security Hardening
@@ -520,6 +482,45 @@ Email handling model:
 
 ---
 
+## Phase 6 [DONE] — End-to-End Integration
+
+**Goal:** Ensure system flows work with new model
+
+**Prerequisite: Stabilise dev key material**
+- [DONE] Step 0.1: Replace transient dev protected-email keys with fixed configuration-backed keys
+  - add one fixed dev encryption key
+  - add one fixed dev lookup-HMAC key
+  - store both in `.NET` user secrets for `DraftView.Web`
+  - fail fast if either key is missing or invalid
+- [DONE] Step 0.2: Repair local dev user email state under the fixed keys without dropping project data
+  - existing dev protected email generated with transient keys must be replaced
+  - selectively rebuild `AppUsers` protected email state under the fixed keys
+  - update matching Identity email/login values where required
+  - confirm dev `Author` and `SystemSupport` users can still log in
+
+**High-level steps**
+- [DONE] Step 1: Confirm which end-to-end outcomes are already covered by Phases 3–5
+  - avoid duplicating infrastructure contract coverage at integration level
+  - limit Phase 6 to real remaining flow gaps
+- [DONE] Step 2: Add one DB-backed login integration proof
+  - real web host boots in `Testing`
+  - login still succeeds under the protected lookup wiring
+- [DONE] Step 3: Add one invitation/provisioning integration proof
+  - author invite flow now runs through the real web host in `Testing`
+  - issuing the same invite twice proves older pending invites are superseded by a fresh token
+  - invitation-related user provisioning persists protected email fields through the real stack
+  - do not invent a standalone registration flow if the product does not actually expose one
+  - before Sprint 4 is complete, sending a fresh invitation must supersede any older pending invite for the same target user
+  - keep the author workflow simple: if an invite is not received, the author just issues a new invite
+  - implement this in the existing invitation send path rather than adding resend/cancel/reissue UI
+- [DONE] Step 4: Add one flow-level no-plaintext-persistence assertion
+  - verify the relevant persisted user row stores protected values rather than plaintext email
+  - keep this compact and complementary to infrastructure contract tests
+- [DONE] Step 5: Re-run governing and full-suite verification
+  - confirmed no end-to-end regression in the protected login path
+  - latest full-suite verification GREEN: 480 total, 479 passed, 1 skipped, 0 failed
+
+  ---
 
 ## Sprint 3 — Reader Font Preferences (IMPLEMENTED)
 
