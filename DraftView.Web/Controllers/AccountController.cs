@@ -219,7 +219,7 @@ public class AccountController(
         if (user is not null && user.IsActive && !user.IsSoftDeleted)
         {
             // Generate reset token
-            var resetToken = DraftView.Domain.Entities.PasswordResetToken.Create(model.Email);
+            var resetToken = DraftView.Domain.Entities.PasswordResetToken.Create(user.Id);
             db.PasswordResetTokens.Add(resetToken);
             await db.SaveChangesAsync();
 
@@ -256,7 +256,7 @@ public class AccountController(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to send password reset email to {Email}", model.Email);
+                logger.LogError(ex, "Failed to send password reset email for user {UserId}", user.Id);
                 // Don't reveal email sending failure to user - just log it
             }
         }
@@ -290,23 +290,17 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
     {
-        logger.LogWarning("Reset POST token: '{Token}'", model.Token);
         if (!ModelState.IsValid)
             return View(model);
 
         var resetToken = await db.PasswordResetTokens
             .FirstOrDefaultAsync(t => t.Token == model.Token.Replace(" ", "+"));
 
-        logger.LogWarning("Token found: {Found}, IsUsed={IsUsed}, ExpiresAt={ExpiresAt}, Now={Now}",
-    resetToken is not null, resetToken?.IsUsed, resetToken?.ExpiresAt, DateTime.UtcNow);
-
-
         if (resetToken is null || !resetToken.IsValid())
             return RedirectToAction("ResetPasswordInvalid");
 
         // Update Identity password
-        var identityUser = await userManager.FindByEmailAsync(resetToken.Email);
-        logger.LogWarning("Identity user lookup for {Email}: {Found}", resetToken.Email, identityUser is not null);
+        var identityUser = await userManager.FindByIdAsync(resetToken.UserId.ToString());
         if (identityUser is null)
             return RedirectToAction("ResetPasswordInvalid");
 
@@ -327,7 +321,7 @@ public class AccountController(
         resetToken.MarkUsed();
         await db.SaveChangesAsync();
 
-        logger.LogInformation("Password reset completed for {Email}", resetToken.Email);
+        logger.LogInformation("Password reset completed for user {UserId}", resetToken.UserId);
         TempData["Success"] = "Password reset successfully. Please sign in.";
         return RedirectToAction("Login");
     }

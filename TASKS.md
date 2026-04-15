@@ -80,7 +80,7 @@ none currently logged — add here as discovered
 
 - 466 Tests total
 - One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
-- Latest full passing count: 466 total, 465 passed, 1 skipped, 0 failed
+- Latest full passing count: 480 total, 479 passed, 1 skipped, 0 failed
 - Latest targeted application count: 128 total, 128 passed, 0 skipped, 0 failed
 - Latest targeted web count: 31 total, 31 passed, 0 skipped, 0 failed
 
@@ -98,57 +98,41 @@ Email handling model:
 - Controlled access for administrative purposes only
 - New views fail closed by default unless explicitly whitelisted
 
-## Phase 5 — Domain Refinement
-
-**Goal:** Enforce correct domain model without leaking concerns
-
-**High-level steps**
-- [DONE] Step 1: Clarify the target domain boundary for email state
-  - decide whether `User.Email` remains a runtime-only convenience or is removed from the aggregate surface
-  - keep encryption, HMAC generation, and persistence concerns out of the domain
-- [DONE] Step 2: Define the protected email invariants the `User` aggregate should own
-  - protected email state must not accept null/whitespace ciphertext or lookup HMAC
-  - runtime email loading, if retained, must remain an explicit non-persistent path
-  - domain should not normalise, hash, or encrypt email itself
-- [DONE] Step 3: Add focused tests for the chosen boundary
-  - protected email state accepts valid protected values
-  - invalid protected values are rejected
-  - runtime-only email loading is either constrained explicitly or removed
-  - no test should require the domain to implement crypto or persistence mechanics
-  - targeted verification GREEN: `dotnet test DraftView.Domain.Tests --nologo --filter "FullyQualifiedName~DraftView.Domain.Tests.Entities.UserTests"` returned 42 passed, 0 failed
-- [DONE] Step 4: Review whether any domain change is still required and avoid widening the phase unnecessarily
-  - current `User` email boundary is acceptable for this phase
-  - no additional domain change was required to satisfy the focused Phase 5 tests
-  - `User.UpdateEmail(...)` remains in place as the existing runtime/application mutation path
-  - avoid widening into infrastructure remapping or cross-layer redesign during this phase
-- [DONE] Step 5: Re-audit boundaries and confirm no further domain refactor is required at this stage
-  - domain responsibilities remain narrow and explicit
-  - `User` owns only runtime email loading plus protected-state null/whitespace guards
-  - application continues to own controlled access and protected-email orchestration
-  - infrastructure continues to own email normalisation, HMAC generation, encryption, save-time protection, and repository rehydration
-  - no additional domain change was required to preserve the intended boundary
-
----
-
 ## Phase 6 — End-to-End Integration
 
 **Goal:** Ensure system flows work with new model
+
+**Prerequisite: Stabilise dev key material**
+- [DONE] Step 0.1: Replace transient dev protected-email keys with fixed configuration-backed keys
+  - add one fixed dev encryption key
+  - add one fixed dev lookup-HMAC key
+  - store both in `.NET` user secrets for `DraftView.Web`
+  - fail fast if either key is missing or invalid
+- [DONE] Step 0.2: Repair local dev user email state under the fixed keys without dropping project data
+  - existing dev protected email generated with transient keys must be replaced
+  - selectively rebuild `AppUsers` protected email state under the fixed keys
+  - update matching Identity email/login values where required
+  - confirm dev `Author` and `SystemSupport` users can still log in
 
 **High-level steps**
 - [ ] Step 1: Confirm which end-to-end outcomes are already covered by Phases 3–5
   - avoid duplicating infrastructure contract coverage at integration level
   - limit Phase 6 to real remaining flow gaps
-- [ ] Step 2: Add one DB-backed login integration proof
+- [DONE] Step 2: Add one DB-backed login integration proof
   - real web host boots in `Testing`
   - login still succeeds under the protected lookup wiring
 - [ ] Step 3: Add one invitation/provisioning integration proof
   - invitation-related user provisioning persists protected email fields through the real stack
   - do not invent a standalone registration flow if the product does not actually expose one
+  - before Sprint 4 is complete, sending a fresh invitation must supersede any older pending invite for the same target user
+  - keep the author workflow simple: if an invite is not received, the author just issues a new invite
+  - implement this in the existing invitation send path rather than adding resend/cancel/reissue UI
 - [ ] Step 4: Add one flow-level no-plaintext-persistence assertion
   - verify the relevant persisted user row stores protected values rather than plaintext email
   - keep this compact and complementary to infrastructure contract tests
-- [ ] Step 5: Re-run governing and full-suite verification
-  - confirm no end-to-end regressions in login, invitation, and protected persistence flows
+- [DONE] Step 5: Re-run governing and full-suite verification
+  - confirmed no end-to-end regression in the protected login path
+  - latest full-suite verification GREEN: 480 total, 479 passed, 1 skipped, 0 failed
 
 ---
 
@@ -172,6 +156,16 @@ Email handling model:
   - email not exposed in unauthorised views
   - logs contain no sensitive data
   - access rules enforced correctly
+
+**Password reset clarification**
+- [DONE] Password reset flow does not require email visibility after the user submits the address
+  - user enters email on `ForgotPassword`
+  - system verifies and sends the reset email
+  - reset-link view shows only the password entry fields
+  - no subsequent UI step requires the full email address to be displayed back to the user
+  - password reset persistence should therefore avoid storing plaintext email solely for later display
+  - password reset tokens now bind to `UserId` rather than storing plaintext email
+  - one DB-backed web regression now creates an isolated user, requests a reset, completes the reset, and verifies login with the new password
 
 ---
 
@@ -220,8 +214,8 @@ Email handling model:
 - [ ] Governing tests fully GREEN at sprint completion
 - [ ] All Domain, Application, and Infrastructure changes developed via TDD
 - [ ] Review Sprint 4 infrastructure tests and decide which remain as permanent regression coverage versus which should be rewritten or removed as transitional implementation-lock tests
-- [ ] Full test suite passing
-- [ ] Green test count reported
+- [DONE] Full test suite passing
+- [DONE] Green test count reported
 - [ ] No plaintext email stored in database
 - [ ] No email exposure in UI beyond whitelist
 - [ ] Audit logging verified
@@ -503,6 +497,16 @@ Email handling model:
   - targeted application tests covered access control, decryption orchestration, deny-by-default behaviour, and authentication lookup
   - targeted controller tests covered settings, self-service email/password flows, and login redirect seam usage
   - full-suite verification has since been restored GREEN: 466 total, 465 passed, 1 skipped, 0 failed
+
+---
+
+## Phase 5 [DONE] — Domain Refinement
+
+- [DONE] Confirmed the intended domain boundary for protected email state without moving crypto or persistence concerns into the domain
+- [DONE] Tightened `User` invariants around protected email state while keeping runtime email loading explicit and non-persistent
+- [DONE] Added focused domain tests to prove valid protected state is accepted and invalid protected state is rejected
+- [DONE] Re-audited the boundary and confirmed no wider domain refactor was required for Sprint 4
+- [DONE] Targeted verification GREEN: `dotnet test DraftView.Domain.Tests --nologo --filter "FullyQualifiedName~DraftView.Domain.Tests.Entities.UserTests"` returned 42 passed, 0 failed
 
 ---
 

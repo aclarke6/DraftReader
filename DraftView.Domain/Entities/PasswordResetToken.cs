@@ -3,7 +3,7 @@
 public class PasswordResetToken
 {
     public Guid   Id        { get; private set; }
-    public string Email     { get; private set; } = string.Empty;
+    public Guid   UserId    { get; private set; }
     public string Token     { get; private set; } = string.Empty;
     public DateTime ExpiresAt { get; private set; }
     public bool   IsUsed    { get; private set; }
@@ -11,12 +11,12 @@ public class PasswordResetToken
 
     private PasswordResetToken() { }
 
-    public static PasswordResetToken Create(string email)
+    public static PasswordResetToken Create(Guid userId)
     {
         return new PasswordResetToken
         {
             Id        = Guid.NewGuid(),
-            Email     = email,
+            UserId    = userId,
             Token     = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32))
                             .Replace("+", "-").Replace("/", "_").Replace("=", ""),
             ExpiresAt = DateTime.UtcNow.AddHours(24),
