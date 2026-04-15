@@ -23,6 +23,12 @@
     <ProjectReference Include="..\DraftView.Application\DraftView.Application.csproj" />
     <ProjectReference Include="..\DraftView.Infrastructure\DraftView.Infrastructure.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Testing.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
   
 </Project>
 

@@ -83,8 +83,6 @@ public sealed class AccountLoginRegressionTests :
         public const string AuthorPassword = "Password1!";
 
         private const string DatabaseName = "draftview_webtests_login";
-        private const string TestEncryptionKey = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY=";
-        private const string TestLookupHmacKey = "RkVEQ0JBOTg3NjU0MzIxMEZFRENCQTk4NzY1NDMyMTA=";
         private bool initialized;
         private string? testConnectionString;
 
@@ -101,9 +99,7 @@ public sealed class AccountLoginRegressionTests :
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:DefaultConnection"] = testConnectionString,
-                    ["Email:Provider"] = "Console",
-                    ["EmailProtection:EncryptionKey"] = TestEncryptionKey,
-                    ["EmailProtection:LookupHmacKey"] = TestLookupHmacKey
+                    ["Email:Provider"] = "Console"
                 });
             });
 

@@ -17,8 +17,6 @@ using DraftView.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-EnsureTestingEmailProtectionKeys(builder);
-
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
@@ -90,27 +88,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-
-static void EnsureTestingEmailProtectionKeys(WebApplicationBuilder builder)
-{
-    if (!builder.Environment.IsEnvironment("Testing"))
-        return;
-
-    const string encryptionKeyPath = "EmailProtection:EncryptionKey";
-    const string lookupHmacKeyPath = "EmailProtection:LookupHmacKey";
-
-    var hasEncryptionKey = !string.IsNullOrWhiteSpace(builder.Configuration[encryptionKeyPath]);
-    var hasLookupHmacKey = !string.IsNullOrWhiteSpace(builder.Configuration[lookupHmacKeyPath]);
-
-    if (hasEncryptionKey && hasLookupHmacKey)
-        return;
-
-    builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-    {
-        [encryptionKeyPath] = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY=",
-        [lookupHmacKeyPath] = "RkVEQ0JBOTg3NjU0MzIxMEZFRENCQTk4NzY1NDMyMTA="
-    });
-}
 
 // Expose Program so WebApplicationFactory<Program> can host the real app in tests.
 public partial class Program;

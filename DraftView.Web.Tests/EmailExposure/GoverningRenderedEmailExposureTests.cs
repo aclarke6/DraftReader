@@ -80,8 +80,6 @@ public class GoverningRenderedEmailExposureTests :
     public sealed class RenderedPrivacyFactory : WebApplicationFactory<Program>
     {
         private const string DatabaseName = "draftview_tests";
-        private const string TestEncryptionKey = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY=";
-        private const string TestLookupHmacKey = "RkVEQ0JBOTg3NjU0MzIxMEZFRENCQTk4NzY1NDMyMTA=";
         private readonly User authorUser = User.Create(KnownEmail, "Governing Author", Role.Author);
         private readonly User invitedReader = User.Create(KnownEmail, "Pending", Role.BetaReader);
         private readonly UserPreferences authorPrefs;
@@ -115,9 +113,7 @@ public class GoverningRenderedEmailExposureTests :
                     ["Seed:SupportPassword"] = "Password1!",
                     ["Seed:SupportName"] = "Support",
                     ["Seed:TestProjectPath"] = "/Apps/Scrivener/Test.scriv",
-                    ["Email:Provider"] = "Console",
-                    ["EmailProtection:EncryptionKey"] = TestEncryptionKey,
-                    ["EmailProtection:LookupHmacKey"] = TestLookupHmacKey
+                    ["Email:Provider"] = "Console"
                 });
             });
 
