@@ -28,6 +28,7 @@ public class AuthorControllerTests
     private readonly Mock<IServiceScopeFactory> scopeFactory = new();
     private readonly Mock<ISyncProgressTracker> progressTracker = new();
     private readonly Mock<IReaderAccessRepository> readerAccessRepo = new();
+    private readonly Mock<IUnitOfWork> unitOfWork = new();
     private readonly Mock<ILogger<AuthorController>> logger = new();
 
     private AuthorController CreateSut(string email = "author@example.test")
@@ -57,6 +58,12 @@ public class AuthorControllerTests
                         "TestAuth"))
             }
         };
+        var services = new ServiceCollection();
+        services.AddSingleton(unitOfWork.Object);
+        controller.ControllerContext.HttpContext.RequestServices = services.BuildServiceProvider();
+        var urlHelper = new Mock<Microsoft.AspNetCore.Mvc.IUrlHelper>();
+        urlHelper.Setup(u => u.IsLocalUrl(It.IsAny<string?>())).Returns(false);
+        controller.Url = urlHelper.Object;
         controller.TempData = new Mock<ITempDataDictionary>().Object;
 
         return controller;
@@ -114,5 +121,29 @@ public class AuthorControllerTests
             DisplayName = "Reader Name",
             NeverExpires = true
         }));
+    }
+
+    [Fact]
+    public async Task SoftDeleteReader_WhenAuthorRemovesReader_SoftDeletesUser()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var project = Project.Create("Project One", "/Apps/Scrivener/ProjectOne", author.Id, "sync-root");
+        var sut = CreateSut();
+        var readerId = Guid.NewGuid();
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+        projectRepo.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync([project]);
+        readerAccessRepo.Setup(r => r.GetByReaderAndProjectAsync(readerId, project.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((ReaderAccess?)null);
+
+        var result = await sut.SoftDeleteReader(readerId);
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Readers", redirect.ActionName);
+        userService.Verify(s => s.SoftDeleteUserAsync(readerId, author.Id, It.IsAny<CancellationToken>()), Times.Once);
+        userService.Verify(s => s.DeactivateUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

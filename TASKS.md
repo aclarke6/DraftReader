@@ -81,34 +81,29 @@ Any modification of a view must include an audit of that view for style leakage.
   - current behaviour: the request crashes instead of returning a controlled application error page or successful redirect
   - likely fault area: operational failure in invitation sending, configuration, or persistence after Sprint 4 error-handling changes
   - investigation focus: production logs for the failing request, SMTP/config state, and exception handling through the invite submission path
-- [OPEN] Removing invitations from `/Author/Readers` has no visible effect
-  - observed when attempting to remove/cancel invitations from the author readers screen
-  - current behaviour: the action completes with no visible change in the readers list or invitation state
-  - expected behaviour: the pending invitation should be removed from the active readers/invitations view, or the UI should clearly report why the action was not applied
-  - investigation focus: controller action wiring, persistence save path, and whether `/Author/Readers` is rendering stale invitation state after the mutation
+- [OPEN] Removing a reader from `/Author/Readers` does not remove the reader from the list
+  - observed when using the remove action for both invited and active readers
+  - current behaviour: the action completes but the reader remains visible in `/Author/Readers`
+  - expected behaviour: the reader should be removed from the list, or the UI should clearly report why the removal was not applied
+  - investigation focus: `AuthorController.SoftDeleteReader`, whether `SoftDeleteUserAsync` is actually called, and how `/Author/Readers` filters non-soft-deleted beta readers
 - [OPEN] System Support has no readers page for Sprint 4 verification
   - observed while attempting to verify that System Support cannot see reader email addresses
   - current behaviour: there is no System Support page to view or inspect readers, so the negative-access check cannot be exercised through the UI
   - expected behaviour: either provide an explicit System Support readers surface with the correct deny-by-default email behaviour, or remove this UI verification path from Sprint 4 UAT if no such surface is intended
   - investigation focus: whether support should have a dedicated readers screen, a limited support operation flow, or no reader-list UI at all
-- [OPEN] DraftView Mobile top bar shows `?` instead of a hamburger menu symbol
-  - observed on the mobile top bar at the right-hand side where the navigation toggle appears
-  - current behaviour: the toggle renders as `?`; pressing it still opens the menu
-  - expected behaviour: the toggle should display a hamburger menu symbol/icon rather than a question mark placeholder
-  - investigation focus: mobile navigation toggle markup, icon rendering, encoding, and any fallback character introduced in the shared layout
-- [OPEN] Mobile portrait `Author/Dashboard` hides the Projects actions column
-  - observed on `Author/Dashboard` in portrait orientation on mobile
-  - current behaviour: the Projects table does not show the Actions column, preventing access to project row actions from that view
-  - expected behaviour: project row actions should remain available on mobile portrait, either as a visible actions column or an equivalent mobile-friendly affordance
-  - investigation focus: responsive table/layout CSS for the dashboard projects section and whether the actions cell is being clipped, hidden, or dropped at mobile breakpoints
+- [OPEN] Reader settings shows protected-email decryption exception as an on-screen form error
+  - observed when changing display name and new password in reader settings
+  - current behaviour: the page shows `Ciphertext is not in the expected format`
+  - expected behaviour: protected-email decryption failures should be treated as operational failures, logged, and shown through the controlled 500 error path rather than reflected as a user-facing settings validation message
+  - investigation focus: `AccountController` settings actions, the controlled email retrieval path, and production rows with invalid `EmailCiphertext`
 
 ---
 
 ## Test state
 
-- 496 Tests total
+- 498 Tests total
 - One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
-- Latest full passing count: 496 total, 495 passed, 1 skipped, 0 failed
+- Latest full passing count: 498 total, 497 passed, 1 skipped, 0 failed
 - Latest targeted application count: 129 total, 129 passed, 0 skipped, 0 failed
 - Latest targeted web count: 32 total, 32 passed, 0 skipped, 0 failed
 

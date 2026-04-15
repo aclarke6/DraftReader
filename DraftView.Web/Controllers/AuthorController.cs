@@ -593,9 +593,7 @@ public class AuthorController(
             access?.Revoke();
         }
 
-        // Deactivate the user
-        try { await userService.DeactivateUserAsync(userId, author.Id); }
-        catch { /* already inactive */ }
+        await userService.SoftDeleteUserAsync(userId, author.Id);
 
         await GetUnitOfWork().SaveChangesAsync();
         TempData["Success"] = "Reader removed.";
