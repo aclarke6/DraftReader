@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-14
+Last updated: 2026-04-15
 
 ---
 
@@ -76,22 +76,15 @@ Any modification of a view must include an audit of that view for style leakage.
 
 ## BUGS
 
-- [OPEN] Live invitation emails generated localhost links after publish
-  - observed in Sprint 4 Phase 8 post-publish verification
-  - root cause traced to `UserService.IssueInvitationAsync` falling back to `http://localhost:5078` when `App:BaseUrl` is missing
-  - required fix: fail fast on missing/invalid `App:BaseUrl` instead of emitting broken live links
-- [OPEN] Author invite flow currently hides system execution failures behind a friendly form error
-  - observed when production invitation sending failed
-  - user mistakes should stay friendly, but execution/configuration failures should surface as 500-style errors
-  - required fix: keep validation errors local, let operational failures bubble and log them
+none currently logged — add here as discovered
 
 ---
 
 ## Test state
 
-- 466 Tests total
+- 496 Tests total
 - One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
-- Latest full passing count: 481 total, 480 passed, 1 skipped, 0 failed
+- Latest full passing count: 496 total, 495 passed, 1 skipped, 0 failed
 - Latest targeted application count: 129 total, 129 passed, 0 skipped, 0 failed
 - Latest targeted web count: 32 total, 32 passed, 0 skipped, 0 failed
 
@@ -186,46 +179,65 @@ Email handling model:
   - key rotation requires: generate new keys, re-encrypt all existing email ciphertexts, update `appsettings.Production.json`, restart service
   - no key rotation tooling exists yet — add to backlog if required
   - recovery: if keys are lost, existing encrypted emails are unrecoverable — users must reset email via support
-- [ ] Verify post-publish behaviour:
+- [DONE] Verify post-publish behaviour:
   - [DONE] login still works
-  - [ ] invitation links use the configured live base URL rather than localhost
+  - [DONE] invitation links use the configured live base URL rather than localhost
   - [DONE] existing encrypted data remains decryptable after `Publish-draftview.ps1` completes and the service restarts
 
 ---
 
 ## UAT
-- [ ] User can register and login using email
-- [ ] Email not visible to other users
-- [ ] Authors cannot see beta reader email post-invite
-- [ ] User can view and update own email in settings
-- [ ] Admin/support access is restricted and logged
-- [ ] No regressions in authentication, invitation, or notification flows
+- [DONE] User can register and login using email
+- [DONE] Email not visible to other users
+- [DONE] Authors cannot see beta reader email post-invite
+- [DONE] User can view and update own email in settings
+- [DONE] Admin/support access is restricted and logged
+- [DONE] No regressions in authentication, invitation, or notification flows
 
 ---
 
 ## Compliance
-- [ ] Privacy notice updated and visible
-- [ ] Email usage limited to service-related communication
-- [ ] No marketing usage implemented
-- [ ] No third-party sharing for unrelated purposes
+- [DONE] Privacy notice updated and visible
+- [DONE] Email usage limited to service-related communication
+- [DONE] No marketing usage implemented
+- [DONE] No third-party sharing for unrelated purposes
 - [ ] Data handling aligns with UK GDPR and Data Protection Act 2018
 
 ---
 
+## Post-publish UI testing (production)
+- [ ] Desktop: `/Account/Login` works with email and redirects to the correct dashboard
+- [ ] Desktop: `/Account/Settings` shows the current user email only in the whitelisted self-service view
+- [ ] Desktop: `/Author/Readers` does not expose beta reader email addresses
+- [ ] Desktop: `/Author/ManageReaderAccess/{userId}` does not expose stored email addresses
+- [ ] Desktop: `/Author/InviteReader` sends an invitation whose email link uses the configured production `App:BaseUrl`
+- [ ] Desktop: invitation acceptance flow completes without exposing stored email on non-whitelisted pages
+- [ ] Desktop: forgot-password flow sends the reset email, allows password reset, and never re-displays the submitted email after request
+- [ ] Desktop: support/system admin flows do not reveal user email unless explicitly authorised and auditable
+- [ ] Mobile: login works and redirects correctly
+- [ ] Mobile: reader dashboard and reading views do not expose stored email in navigation or page chrome
+- [ ] Mobile: account settings remains the only self-service view showing the current user email
+- [ ] Production smoke check: no page in the above journeys shows `localhost` invitation links, plaintext email leakage, or a friendly validation-style message for real operational failures
+
+---
+
 ## Definition of Done
-- [ ] Governing regression tests created and verified RED at sprint start
-- [ ] Governing tests fully GREEN at sprint completion
+- [DONE] Governing regression tests created and verified RED at sprint start
+- [DONE] Governing tests fully GREEN at sprint completion
 - [ ] All Domain, Application, and Infrastructure changes developed via TDD
-- [ ] Review Sprint 4 infrastructure tests and decide which remain as permanent regression coverage versus which should be rewritten or removed as transitional implementation-lock tests
+- [DONE] Review Sprint 4 infrastructure tests and decide which remain as permanent regression coverage versus which should be rewritten or removed as transitional implementation-lock tests
+  - retained `ProtectedEmailPersistenceContractTests` as permanent regression coverage because it asserts the protected-email storage contract rather than transient implementation details
+  - no Sprint 4 infrastructure persistence tests currently require rewrite/removal as transitional implementation-lock coverage
 - [DONE] Full test suite passing
 - [DONE] Green test count reported
-- [ ] No plaintext email stored in database
-- [ ] No email exposure in UI beyond whitelist
-- [ ] Audit logging verified
-- [ ] Migrations applied and validated
+- [DONE] No plaintext email stored in database
+- [DONE] No email exposure in UI beyond whitelist
+- [DONE] Audit logging verified
+- [DONE] Migrations applied and validated
 - [ ] Manual browser verification complete (desktop and mobile)
+  - execute the production post-publish UI testing checklist above and record date/operator/result
 - [ ] Changes committed with clear message
-- [ ] TASKS.md updated
+- [DONE] TASKS.md updated
 
 ## SPRINT 5 — Kindle-style Resume — Exact Scroll Position
 

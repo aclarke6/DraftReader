@@ -23,6 +23,12 @@ public class HomeController(IUserRepository userRepo) : BaseController(userRepo)
     }
 
     [HttpGet]
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+
+    [HttpGet]
     public IActionResult NotFoundPage()
     {
         Response.StatusCode = StatusCodes.Status404NotFound;
