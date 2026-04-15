@@ -277,13 +277,13 @@
             margin: var(--space-1) var(--space-1) 0 0;
         }
 
-        td:last-child {
+        .dashboard-table__actions {
             display: flex;
             flex-wrap: wrap;
             gap: var(--space-1);
         }
 
-            td:last-child .btn {
+            .dashboard-table__actions .btn {
                 flex: 0 0 auto;
             }
 

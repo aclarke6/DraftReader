@@ -76,7 +76,31 @@ Any modification of a view must include an audit of that view for style leakage.
 
 ## BUGS
 
-none currently logged — add here as discovered
+- [OPEN] `/Author/InviteReader` submit fails with browser "This page isn't working" on production
+  - observed at `https://draftview.co.uk/Author/InviteReader` when submitting the invite form
+  - current behaviour: the request crashes instead of returning a controlled application error page or successful redirect
+  - likely fault area: operational failure in invitation sending, configuration, or persistence after Sprint 4 error-handling changes
+  - investigation focus: production logs for the failing request, SMTP/config state, and exception handling through the invite submission path
+- [OPEN] Removing invitations from `/Author/Readers` has no visible effect
+  - observed when attempting to remove/cancel invitations from the author readers screen
+  - current behaviour: the action completes with no visible change in the readers list or invitation state
+  - expected behaviour: the pending invitation should be removed from the active readers/invitations view, or the UI should clearly report why the action was not applied
+  - investigation focus: controller action wiring, persistence save path, and whether `/Author/Readers` is rendering stale invitation state after the mutation
+- [OPEN] System Support has no readers page for Sprint 4 verification
+  - observed while attempting to verify that System Support cannot see reader email addresses
+  - current behaviour: there is no System Support page to view or inspect readers, so the negative-access check cannot be exercised through the UI
+  - expected behaviour: either provide an explicit System Support readers surface with the correct deny-by-default email behaviour, or remove this UI verification path from Sprint 4 UAT if no such surface is intended
+  - investigation focus: whether support should have a dedicated readers screen, a limited support operation flow, or no reader-list UI at all
+- [OPEN] DraftView Mobile top bar shows `?` instead of a hamburger menu symbol
+  - observed on the mobile top bar at the right-hand side where the navigation toggle appears
+  - current behaviour: the toggle renders as `?`; pressing it still opens the menu
+  - expected behaviour: the toggle should display a hamburger menu symbol/icon rather than a question mark placeholder
+  - investigation focus: mobile navigation toggle markup, icon rendering, encoding, and any fallback character introduced in the shared layout
+- [OPEN] Mobile portrait `Author/Dashboard` hides the Projects actions column
+  - observed on `Author/Dashboard` in portrait orientation on mobile
+  - current behaviour: the Projects table does not show the Actions column, preventing access to project row actions from that view
+  - expected behaviour: project row actions should remain available on mobile portrait, either as a visible actions column or an equivalent mobile-friendly affordance
+  - investigation focus: responsive table/layout CSS for the dashboard projects section and whether the actions cell is being clipped, hidden, or dropped at mobile breakpoints
 
 ---
 
@@ -206,16 +230,16 @@ Email handling model:
 ---
 
 ## Post-publish UI testing (production)
-- [ ] Desktop: `/Account/Login` works with email and redirects to the correct dashboard
-- [ ] Desktop: `/Account/Settings` shows the current user email only in the whitelisted self-service view
-- [ ] Desktop: `/Author/Readers` does not expose beta reader email addresses
-- [ ] Desktop: `/Author/ManageReaderAccess/{userId}` does not expose stored email addresses
+- [DONE] Desktop: `/Account/Login` works with email and redirects to the correct dashboard
+- [DONE] Desktop: `/Account/Settings` shows the current user email only in the whitelisted self-service view
+- [DONE] Desktop: `/Author/Readers` does not expose beta reader email addresses
+- [DONE] Desktop: `/Author/ManageReaderAccess/{userId}` does not expose stored email addresses
 - [ ] Desktop: `/Author/InviteReader` sends an invitation whose email link uses the configured production `App:BaseUrl`
 - [ ] Desktop: invitation acceptance flow completes without exposing stored email on non-whitelisted pages
 - [ ] Desktop: forgot-password flow sends the reset email, allows password reset, and never re-displays the submitted email after request
 - [ ] Desktop: support/system admin flows do not reveal user email unless explicitly authorised and auditable
-- [ ] Mobile: login works and redirects correctly
-- [ ] Mobile: reader dashboard and reading views do not expose stored email in navigation or page chrome
+- [DONE] Mobile: login works and redirects correctly
+- [DONE] Mobile: reader dashboard and reading views do not expose stored email in navigation or page chrome
 - [ ] Mobile: account settings remains the only self-service view showing the current user email
 - [ ] Production smoke check: no page in the above journeys shows `localhost` invitation links, plaintext email leakage, or a friendly validation-style message for real operational failures
 
@@ -410,6 +434,8 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 ### Additional Completed Tasks
 
 - [DONE] Layout top bar now shows the current user display name instead of email; falls back to `Account settings` when display name is missing, with hover text `Account settings`
+- [DONE] Audited `Views/Shared/_Layout.cshtml` for style leakage while fixing the mobile nav toggle placeholder; no additional style leakage required CSS changes
+- [DONE] Audited `Views/Author/Dashboard.cshtml` for style leakage while fixing the mobile projects actions layout; replaced inline actions-row styling with dashboard CSS classes
 - [DONE] Fixed style leakage by scoping prose font preferences to reader surfaces only so system UI remains on standard typography
 - [DONE] Fixed style leakage in `Views/Author/InviteReader.cshtml` by replacing inline layout styling with dashboard CSS classes while adding the invite display-name field
 - [DONE] Sprint 4 Phase 6 end-to-end integration is complete
