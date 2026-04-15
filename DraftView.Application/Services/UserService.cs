@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Net.Mail;
+using Microsoft.Extensions.Configuration;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
 using DraftView.Domain.Exceptions;
@@ -21,11 +22,13 @@ public class UserService(
 
 {
     public async Task<Invitation> IssueInvitationAsync(
-        string email, ExpiryPolicy expiryPolicy, DateTime? expiresAt,
+        string email, string displayName, ExpiryPolicy expiryPolicy, DateTime? expiresAt,
         Guid authorId, CancellationToken ct = default)
     {
         if (!authFacade.IsAuthor())
             throw new UnauthorisedOperationException("Only the Author may issue invitations.");
+
+        var validatedDisplayName = ValidateDisplayName(displayName);
 
         var user = await userRepo.GetByEmailAsync(email, ct);
         var isExistingPendingInvitee = user is not null
@@ -39,7 +42,11 @@ public class UserService(
 
         if (user is null)
         {
-            user = User.Create(email, "Pending", Role.BetaReader);
+            user = User.Create(email, validatedDisplayName, Role.BetaReader);
+        }
+        else
+        {
+            user.UpdateDisplayName(validatedDisplayName);
         }
 
         if (expiryPolicy == ExpiryPolicy.ExpiresAt && !expiresAt.HasValue)
@@ -76,7 +83,7 @@ public class UserService(
             ? "<p>This invitation does not expire.</p>"
             : $"<p>This invitation expires on <strong>{expiresAt!.Value:d MMMM yyyy}</strong>.</p>";
 
-        var toName = email.Contains('@') ? email.Split('@')[0] : email;
+        var toName = validatedDisplayName;
 
         await emailSender.SendAsync(
             email,
@@ -180,9 +187,10 @@ public class UserService(
 
     public async Task UpdateDisplayNameAsync(Guid userId, string displayName, CancellationToken ct = default)
     {
+        var validatedDisplayName = ValidateDisplayName(displayName);
         var user = await userRepo.GetByIdAsync(userId, ct)
             ?? throw new EntityNotFoundException(nameof(User), userId);
-        user.UpdateDisplayName(displayName);
+        user.UpdateDisplayName(validatedDisplayName);
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -242,6 +250,26 @@ public class UserService(
                 "Configuration value 'App:BaseUrl' must be a valid absolute URL.");
 
         return configuredBaseUrl;
+    }
+
+    private static string ValidateDisplayName(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            throw new InvariantViolationException("I-DISPLAYNAME",
+                "Display name must not be null or whitespace.");
+
+        var trimmedDisplayName = displayName.Trim();
+        if (LooksLikeEmailAddress(trimmedDisplayName))
+            throw new InvariantViolationException("I-DISPLAYNAME",
+                "Display name must not be an email address. Please enter a real name or label.");
+
+        return trimmedDisplayName;
+    }
+
+    private static bool LooksLikeEmailAddress(string value)
+    {
+        return MailAddress.TryCreate(value, out var address)
+            && string.Equals(address.Address, value, StringComparison.OrdinalIgnoreCase);
     }
 }
 

@@ -5,7 +5,7 @@ namespace DraftView.Domain.Interfaces.Services;
 
 public interface IUserService
 {
-    Task<Invitation> IssueInvitationAsync(string email, ExpiryPolicy expiryPolicy, DateTime? expiresAt, Guid authorId, CancellationToken ct = default);
+    Task<Invitation> IssueInvitationAsync(string email, string displayName, ExpiryPolicy expiryPolicy, DateTime? expiresAt, Guid authorId, CancellationToken ct = default);
     Task<User> AcceptInvitationAsync(string token, string displayName, CancellationToken ct = default);
     Task CancelInvitationAsync(Guid invitationId, Guid authorId, CancellationToken ct = default);
     Task DeactivateUserAsync(Guid targetUserId, Guid authorId, CancellationToken ct = default);

@@ -119,6 +119,24 @@
         margin: 0;
     }
 
+.invite-reader-card {
+    max-width: 520px;
+}
+
+.invite-reader-actions {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.readers-table__name-link {
+    font-weight: var(--font-medium);
+}
+
+.readers-table__joined {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+}
+
 /* --------------------------------------------------------------------------
    3. Tables
    -------------------------------------------------------------------------- */

@@ -260,7 +260,7 @@ public class AuthorController(
             rows.Add(new ReaderRowViewModel
             {
                 Id          = r.Id,
-                DisplayName = r.DisplayName == "Pending" ? "-" : r.DisplayName,
+                DisplayName = string.IsNullOrWhiteSpace(r.DisplayName) ? "Pending reader" : r.DisplayName,
                 Email       = string.Empty,
                 Status      = status,
                 ActivatedAt = r.ActivatedAt
@@ -298,7 +298,7 @@ public class AuthorController(
             }
 
             var policy = model.NeverExpires ? ExpiryPolicy.AlwaysOpen : ExpiryPolicy.ExpiresAt;
-            await userService.IssueInvitationAsync(model.Email, policy, expiresAtUtc, author.Id);
+            await userService.IssueInvitationAsync(model.Email, model.DisplayName, policy, expiresAtUtc, author.Id);
 
             TempData["Success"] = "Invitation sent.";
             return RedirectToAction("Readers");
@@ -313,12 +313,6 @@ public class AuthorController(
         {
             logger.LogWarning(ex, "InviteReader validation failure by author {AuthorId}", author.Id);
             ModelState.AddModelError(string.Empty, ex.Message);
-            return View(model);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "InviteReader unexpected failure by author {AuthorId}", author.Id);
-            ModelState.AddModelError(string.Empty, "Unable to send invitation due to an unexpected error.");
             return View(model);
         }
     }

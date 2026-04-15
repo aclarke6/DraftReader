@@ -1,0 +1,118 @@
+using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
+using DraftView.Domain.Exceptions;
+using DraftView.Domain.Interfaces.Repositories;
+using DraftView.Domain.Interfaces.Services;
+using DraftView.Web.Controllers;
+using DraftView.Web.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+
+namespace DraftView.Web.Tests.Controllers;
+
+public class AuthorControllerTests
+{
+    private readonly Mock<IProjectRepository> projectRepo = new();
+    private readonly Mock<ISectionRepository> sectionRepo = new();
+    private readonly Mock<IPublicationService> publicationService = new();
+    private readonly Mock<IUserService> userService = new();
+    private readonly Mock<IDashboardService> dashboardService = new();
+    private readonly Mock<ISyncService> syncService = new();
+    private readonly Mock<IUserRepository> userRepo = new();
+    private readonly Mock<IProjectDiscoveryService> discoveryService = new();
+    private readonly Mock<IInvitationRepository> invitationRepo = new();
+    private readonly Mock<IServiceScopeFactory> scopeFactory = new();
+    private readonly Mock<ISyncProgressTracker> progressTracker = new();
+    private readonly Mock<IReaderAccessRepository> readerAccessRepo = new();
+    private readonly Mock<ILogger<AuthorController>> logger = new();
+
+    private AuthorController CreateSut(string email = "author@example.test")
+    {
+        var controller = new AuthorController(
+            projectRepo.Object,
+            sectionRepo.Object,
+            publicationService.Object,
+            userService.Object,
+            dashboardService.Object,
+            syncService.Object,
+            userRepo.Object,
+            discoveryService.Object,
+            invitationRepo.Object,
+            scopeFactory.Object,
+            progressTracker.Object,
+            readerAccessRepo.Object,
+            logger.Object);
+
+        controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext
+            {
+                User = new System.Security.Claims.ClaimsPrincipal(
+                    new System.Security.Claims.ClaimsIdentity(
+                        [new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, email)],
+                        "TestAuth"))
+            }
+        };
+        controller.TempData = new Mock<ITempDataDictionary>().Object;
+
+        return controller;
+    }
+
+    [Fact]
+    public async Task InviteReader_WhenValidationFails_ReturnsViewWithFriendlyMessage()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var sut = CreateSut();
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+        userService.Setup(s => s.IssueInvitationAsync(
+                "reader@example.test",
+                "reader@example.test",
+                ExpiryPolicy.AlwaysOpen,
+                null,
+                author.Id,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvariantViolationException("I-DISPLAYNAME", "Display name must not be an email address. Please enter a real name or label."));
+
+        var result = await sut.InviteReader(new InviteReaderViewModel
+        {
+            Email = "reader@example.test",
+            DisplayName = "reader@example.test",
+            NeverExpires = true
+        });
+
+        var view = Assert.IsType<ViewResult>(result);
+        Assert.IsType<InviteReaderViewModel>(view.Model);
+        Assert.False(sut.ModelState.IsValid);
+    }
+
+    [Fact]
+    public async Task InviteReader_WhenSystemFailureOccurs_BubblesException()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var sut = CreateSut();
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+        userService.Setup(s => s.IssueInvitationAsync(
+                "reader@example.test",
+                "Reader Name",
+                ExpiryPolicy.AlwaysOpen,
+                null,
+                author.Id,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Missing required configuration value 'App:BaseUrl'."));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => sut.InviteReader(new InviteReaderViewModel
+        {
+            Email = "reader@example.test",
+            DisplayName = "Reader Name",
+            NeverExpires = true
+        }));
+    }
+}

@@ -1,4 +1,5 @@
-﻿using DraftView.Domain.Entities;
+﻿using System.ComponentModel.DataAnnotations;
+using DraftView.Domain.Entities;
 using DraftView.Domain.Notifications;
 
 namespace DraftView.Web.Models;
@@ -35,6 +36,12 @@ public class ReaderRowViewModel
 
 public class InviteReaderViewModel
 {
+    [Required(ErrorMessage = "Please enter a display name.")]
+    [StringLength(100, MinimumLength = 2, ErrorMessage = "Display name must be at least 2 characters.")]
+    public string DisplayName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please enter an email address.")]
+    [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
     public string Email { get; set; } = string.Empty;
     public bool NeverExpires { get; set; } = true;
     public DateTime? ExpiresAt { get; set; }

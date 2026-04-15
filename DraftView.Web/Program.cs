@@ -66,10 +66,13 @@ if (!app.Environment.IsEnvironment("Testing"))
     await app.ResetStaleSyncProjectsAsync();
 }
 
-app.UseExceptionHandler("/Home/Error");
-
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
 {
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 

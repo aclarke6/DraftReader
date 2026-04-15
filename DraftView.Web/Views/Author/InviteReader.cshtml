@@ -8,7 +8,7 @@
     <p class="page-subtitle">An email will be sent with a link to create their account.</p>
 </div>
 
-<div class="card" style="max-width: 520px;">
+<div class="card invite-reader-card">
     <div class="card__body">
         <form asp-action="InviteReader" method="post">
             @Html.AntiForgeryToken()
@@ -16,8 +16,16 @@
             <div asp-validation-summary="All" class="form-error"></div>
 
             <div class="form-group">
+                <label asp-for="DisplayName">Reader display name</label>
+                <input asp-for="DisplayName" type="text" />
+                <span asp-validation-for="DisplayName" class="form-error"></span>
+                <div class="form-hint">Shown on your readers list before the invitation is accepted.</div>
+            </div>
+
+            <div class="form-group">
                 <label asp-for="Email">Email address</label>
                 <input asp-for="Email" type="email" />
+                <span asp-validation-for="Email" class="form-error"></span>
             </div>
 
             <div class="form-group">
@@ -33,7 +41,7 @@
                 <input asp-for="ExpiresAt" type="datetime-local" />
             </div>
 
-            <div style="display:flex; gap:12px;">
+            <div class="invite-reader-actions">
                 <button type="submit" class="btn btn--primary">Send Invitation</button>
                 <a asp-action="Readers" class="btn btn--secondary">Cancel</a>
             </div>

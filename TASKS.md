@@ -68,6 +68,10 @@ Any modification of a view must include an audit of that view for style leakage.
 - If appropriate, leaked inline or view-local styling must be replaced with CSS
 - A `[DONE]` update reporting the style fix must be added under `## DONE (this project)` in `### Additional Completed Tasks`
 
+### Error Handling Rule — MANDATORY
+- If the user made a mistake, return a friendly error message with guidance.
+- If the system failed to execute the action, treat it as a 500-style error, log it as an operational failure, and do not convert it into a user-facing workflow success-equivalent response.
+
 ---
 
 ## BUGS
@@ -76,6 +80,10 @@ Any modification of a view must include an audit of that view for style leakage.
   - observed in Sprint 4 Phase 8 post-publish verification
   - root cause traced to `UserService.IssueInvitationAsync` falling back to `http://localhost:5078` when `App:BaseUrl` is missing
   - required fix: fail fast on missing/invalid `App:BaseUrl` instead of emitting broken live links
+- [OPEN] Author invite flow currently hides system execution failures behind a friendly form error
+  - observed when production invitation sending failed
+  - user mistakes should stay friendly, but execution/configuration failures should surface as 500-style errors
+  - required fix: keep validation errors local, let operational failures bubble and log them
 
 ---
 
@@ -365,6 +373,12 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 
 ---
 
+## BACKLOG — UX / Identity
+
+- [ ] Invite reader flow: require author-supplied non-email display names and prevent email-shaped display names across display-name update flows
+
+---
+
 ## BACKLOG — CSS / Frontend
 
 - [ ] CSS naming conventions refactor (BEM consistency)
@@ -385,6 +399,7 @@ Work captured for future sprints. Do not start until the relevant sprint is acti
 
 - [DONE] Layout top bar now shows the current user display name instead of email; falls back to `Account settings` when display name is missing, with hover text `Account settings`
 - [DONE] Fixed style leakage by scoping prose font preferences to reader surfaces only so system UI remains on standard typography
+- [DONE] Fixed style leakage in `Views/Author/InviteReader.cshtml` by replacing inline layout styling with dashboard CSS classes while adding the invite display-name field
 - [DONE] Sprint 4 Phase 6 end-to-end integration is complete
   - fixed configuration-backed protected-email keys are in place for dev and testing
   - DB-backed real-host regression coverage now exists for login, password reset, and invitation provisioning

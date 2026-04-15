@@ -42,14 +42,14 @@ public sealed class InvitationProvisioningRegressionTests :
 
         await LogInAsAuthorAsync(client);
 
-        await PostInviteAsync(client, InvitationProvisioningWebFactory.ReaderEmail);
-        await PostInviteAsync(client, InvitationProvisioningWebFactory.ReaderEmail);
+        await PostInviteAsync(client, InvitationProvisioningWebFactory.ReaderEmail, "Reader Invite Name");
+        await PostInviteAsync(client, InvitationProvisioningWebFactory.ReaderEmail, "Reader Invite Name");
 
         await using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<DraftViewDbContext>();
 
         var invitedUser = await db.AppUsers
-            .SingleAsync(u => u.DisplayName == "Pending" && u.Role == Role.BetaReader);
+            .SingleAsync(u => u.DisplayName == "Reader Invite Name" && u.Role == Role.BetaReader);
 
         Assert.False(invitedUser.IsActive);
         Assert.False(invitedUser.IsSoftDeleted);
@@ -95,7 +95,7 @@ public sealed class InvitationProvisioningRegressionTests :
         Assert.Equal("/Author/Dashboard", loginPost.Headers.Location?.OriginalString);
     }
 
-    private static async Task PostInviteAsync(HttpClient client, string email)
+    private static async Task PostInviteAsync(HttpClient client, string email, string displayName)
     {
         var inviteGet = await client.GetAsync("/Author/InviteReader");
         Assert.Equal(HttpStatusCode.OK, inviteGet.StatusCode);
@@ -105,6 +105,7 @@ public sealed class InvitationProvisioningRegressionTests :
 
         var formData = new List<KeyValuePair<string, string>>
         {
+            new("DisplayName", displayName),
             new("Email", email),
             new("NeverExpires", "true"),
             new("NeverExpires", "false"),
@@ -158,6 +159,7 @@ public sealed class InvitationProvisioningRegressionTests :
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:DefaultConnection"] = testConnectionString,
+                    ["App:BaseUrl"] = "https://draftview.example.test",
                     ["Email:Provider"] = "Console"
                 });
             });
