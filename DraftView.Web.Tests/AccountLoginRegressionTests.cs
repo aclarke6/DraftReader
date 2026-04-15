@@ -63,6 +63,7 @@ public sealed class AccountLoginRegressionTests :
 
         var dashboardHtml = await dashboard.Content.ReadAsStringAsync();
         Assert.Contains("Dashboard", dashboardHtml, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Login Regression Author", dashboardHtml, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ExtractAntiforgeryToken(string html)
@@ -82,6 +83,8 @@ public sealed class AccountLoginRegressionTests :
         public const string AuthorPassword = "Password1!";
 
         private const string DatabaseName = "draftview_webtests_login";
+        private const string TestEncryptionKey = "MDEyMzQ1Njc4OUFCQ0RFRjAxMjM0NTY3ODlBQkNERUY=";
+        private const string TestLookupHmacKey = "RkVEQ0JBOTg3NjU0MzIxMEZFRENCQTk4NzY1NDMyMTA=";
         private bool initialized;
         private string? testConnectionString;
 
@@ -98,7 +101,9 @@ public sealed class AccountLoginRegressionTests :
                 config.AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["ConnectionStrings:DefaultConnection"] = testConnectionString,
-                    ["Email:Provider"] = "Console"
+                    ["Email:Provider"] = "Console",
+                    ["EmailProtection:EncryptionKey"] = TestEncryptionKey,
+                    ["EmailProtection:LookupHmacKey"] = TestLookupHmacKey
                 });
             });
 
@@ -165,7 +170,6 @@ public sealed class AccountLoginRegressionTests :
 
             return Path.Combine(dir, "DraftView.Web");
         }
-
         private static async Task SeedAuthorAsync(IServiceProvider services, DraftViewDbContext db)
         {
             var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
