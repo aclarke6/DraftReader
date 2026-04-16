@@ -31,7 +31,7 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Dashboard()
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null)
             return RedirectToAction("Index", "Reader");
 
@@ -69,7 +69,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ClearAllNotifications()
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
         await dashboardService.DismissAllNotificationsAsync(author.Id);
         return RedirectToAction("Dashboard");
@@ -204,7 +204,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PublishChapter(Guid chapterId, Guid projectId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         try
@@ -226,7 +226,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UnpublishChapter(Guid chapterId, Guid projectId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         await publicationService.UnpublishChapterAsync(chapterId, author.Id);
@@ -279,7 +279,7 @@ public class AuthorController(
     {
         if (!ModelState.IsValid) return View(model);
 
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         try
@@ -321,7 +321,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReactivateReader(Guid userId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         await userService.ReactivateUserAsync(userId, author.Id);
@@ -333,7 +333,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeactivateReader(Guid userId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         await userService.DeactivateUserAsync(userId, author.Id);
@@ -346,7 +346,7 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Section(Guid id)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         var s = await sectionRepo.GetByIdAsync(id);
@@ -387,7 +387,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReplyToComment(Guid parentCommentId, Guid sectionId, string body)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
         try
         {
@@ -403,7 +403,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetCommentStatus(Guid commentId, Guid sectionId, Domain.Enumerations.CommentStatus status)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
         try
         {
@@ -420,7 +420,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveProject(Guid projectId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         var project = await projectRepo.GetByIdAsync(projectId);
@@ -438,7 +438,7 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Projects()
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         var discovered = await discoveryService.DiscoverAsync(author.Id);
@@ -449,7 +449,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddProjects(List<string> selectedUuids)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         if (selectedUuids is null || selectedUuids.Count == 0)
@@ -512,7 +512,7 @@ public class AuthorController(
     [HttpGet]
     public async Task<IActionResult> ManageReaderAccess(Guid readerId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         var reader = await userRepo.GetByIdAsync(readerId);
@@ -547,7 +547,7 @@ public class AuthorController(
     public async Task<IActionResult> UpdateReaderAccess(
         Guid readerId, List<Guid> grantIds, List<Guid> revokeIds)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         foreach (var projectId in grantIds)
@@ -582,7 +582,7 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SoftDeleteReader(Guid userId)
     {
-        var author = await GetAuthorAsync();
+        var author = await TryGetCurrentAuthorAsync();
         if (author is null) return Forbid();
 
         // Revoke all ReaderAccess for this author
@@ -603,14 +603,6 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
-    private async Task<User?> GetAuthorAsync()
-    {
-        var email = User.Identity?.Name;
-        if (email is null) return null;
-        var user = await userRepo.GetByEmailAsync(email);
-        return user?.Role == Role.Author ? user : null;
-    }
-
     private IUnitOfWork GetUnitOfWork() =>
         HttpContext.RequestServices.GetRequiredService<IUnitOfWork>();
 
