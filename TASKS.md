@@ -453,14 +453,14 @@ Each phase is independently executable, low-risk, and grounded in current DraftV
 
 **Targets:**
 
-- Consolidate repeated author guard logic currently duplicated in:
+- [DONE] Consolidate repeated author guard logic currently duplicated in:
   - `AuthorController.GetAuthorAsync`
   - `DropboxController.GetAuthorAsync`
   - direct `User.Identity?.Name` reads in controller actions
-- Introduce shared helpers in `BaseController`:
+- [DONE] Introduce shared helpers in `BaseController`:
   - `TryGetCurrentAuthorAsync`
   - `RequireCurrentAuthorAsync`
-- Replace per-controller guard copies with the shared pattern.
+- [DONE] Replace per-controller guard copies with the shared pattern.
 
 **Outcome:**
 

@@ -20,7 +20,7 @@ public class AccountController(
     IUserPreferencesRepository prefsRepo,
     DraftView.Application.Interfaces.IControlledUserEmailService controlledUserEmailService,
     IEmailSender emailSender,
-    ILogger<AccountController> logger) : Controller
+    ILogger<AccountController> logger) : BaseController(userRepo)
 {
     // ---------------------------------------------------------------------------
     // Login
@@ -393,11 +393,9 @@ public class AccountController(
     [HttpGet]
     public async Task<IActionResult> Settings()
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
-
-        var user = currentUser.User!;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
         var prefs = await prefsRepo.GetByUserIdAsync(user.Id);
         var resolvedEmail = await controlledUserEmailService.GetEmailAsync(new DraftView.Application.Contracts.UserEmailAccessRequest(
@@ -430,11 +428,9 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeDisplayTheme(ChangeDisplayThemeViewModel model)
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
-
-        var user = currentUser.User!;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
         if (!ModelState.IsValid)
         {
@@ -465,11 +461,9 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeProseFontPreferences(ChangeProseFontPreferencesViewModel model)
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
-
-        var user = currentUser.User!;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
         if (!ModelState.IsValid)
         {
@@ -501,11 +495,9 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeDisplayName(ChangeDisplayNameViewModel model)
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
-
-        var user = currentUser.User!;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
         if (!ModelState.IsValid)
         {
@@ -530,11 +522,10 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeEmail(ChangeEmailViewModel model)
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
-        var user = currentUser.User!;
         var currentStoredEmail = await controlledUserEmailService.GetEmailAsync(new DraftView.Application.Contracts.UserEmailAccessRequest(
             user.Id,
             user.Role,
@@ -581,11 +572,10 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
     {
-        var currentUser = await GetCurrentUserOrLoginRedirectAsync();
-        if (currentUser.RedirectResult is not null)
-            return currentUser.RedirectResult;
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return RedirectToAction("Login");
 
-        var user = currentUser.User!;
         var currentStoredEmail = await controlledUserEmailService.GetEmailAsync(new DraftView.Application.Contracts.UserEmailAccessRequest(
             user.Id,
             user.Role,
@@ -620,19 +610,6 @@ public class AccountController(
         var connectionRepo = HttpContext.RequestServices
             .GetRequiredService<DraftView.Domain.Interfaces.Repositories.IDropboxConnectionRepository>();
         return await connectionRepo.GetByUserIdAsync(userId);
-    }
-
-    private async Task<(DraftView.Domain.Entities.User? User, IActionResult? RedirectResult)> GetCurrentUserOrLoginRedirectAsync()
-    {
-        var email = User.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(email))
-            return (null, RedirectToAction("Login"));
-
-        var user = await userRepo.GetByEmailAsync(email);
-        if (user is null)
-            return (null, RedirectToAction("Login"));
-
-        return (user, null);
     }
 }
 
