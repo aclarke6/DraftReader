@@ -70,4 +70,16 @@ public abstract class BaseController(IUserRepository userRepo) : Controller
         return user?.Role == Role.SystemSupport;
         
     }
+
+    /// <summary>
+    /// Attempts to get the current author user. If the user is not an author, returns a Forbid result.
+    /// </summary>
+    /// <param name="ct">Cancellation token</param>
+    /// <returns>A tuple containing the User if successful, or an error IActionResult if the user is not an author</returns>
+    protected async Task<(User? User, IActionResult? Error)> RequireCurrentAuthorAsync(CancellationToken ct = default)
+    {
+        var author = await TryGetCurrentAuthorAsync(ct);
+        if (author is null) return (null, Forbid());
+        return (author, null);
+    }
 }

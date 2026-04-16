@@ -69,8 +69,9 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ClearAllNotifications()
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+        
         await dashboardService.DismissAllNotificationsAsync(author.Id);
         return RedirectToAction("Dashboard");
     }
@@ -204,8 +205,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PublishChapter(Guid chapterId, Guid projectId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         try
         {
@@ -226,8 +227,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UnpublishChapter(Guid chapterId, Guid projectId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         await publicationService.UnpublishChapterAsync(chapterId, author.Id);
         TempData["Success"] = "Chapter unpublished.";
@@ -279,8 +280,8 @@ public class AuthorController(
     {
         if (!ModelState.IsValid) return View(model);
 
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         try
         {
@@ -321,8 +322,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReactivateReader(Guid userId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         await userService.ReactivateUserAsync(userId, author.Id);
         TempData["Success"] = "Reader reactivated.";
@@ -333,8 +334,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeactivateReader(Guid userId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         await userService.DeactivateUserAsync(userId, author.Id);
         TempData["Success"] = "Reader deactivated.";
@@ -346,8 +347,8 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Section(Guid id)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         var s = await sectionRepo.GetByIdAsync(id);
         if (s is null) return NotFound();
@@ -387,8 +388,9 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ReplyToComment(Guid parentCommentId, Guid sectionId, string body)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+        
         try
         {
             await GetCommentService().CreateReplyAsync(
@@ -403,8 +405,9 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SetCommentStatus(Guid commentId, Guid sectionId, Domain.Enumerations.CommentStatus status)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+        
         try
         {
             await GetCommentService().SetCommentStatusAsync(commentId, author.Id, status);
@@ -420,8 +423,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveProject(Guid projectId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         var project = await projectRepo.GetByIdAsync(projectId);
         if (project is null) return NotFound();
@@ -438,8 +441,8 @@ public class AuthorController(
     // ---------------------------------------------------------------------------
     public async Task<IActionResult> Projects()
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         var discovered = await discoveryService.DiscoverAsync(author.Id);
         return View(discovered);
@@ -449,8 +452,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddProjects(List<string> selectedUuids)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         if (selectedUuids is null || selectedUuids.Count == 0)
         {
@@ -512,8 +515,8 @@ public class AuthorController(
     [HttpGet]
     public async Task<IActionResult> ManageReaderAccess(Guid readerId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         var reader = await userRepo.GetByIdAsync(readerId);
         if (reader is null) return NotFound();
@@ -547,8 +550,8 @@ public class AuthorController(
     public async Task<IActionResult> UpdateReaderAccess(
         Guid readerId, List<Guid> grantIds, List<Guid> revokeIds)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         foreach (var projectId in grantIds)
         {
@@ -582,8 +585,8 @@ public class AuthorController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SoftDeleteReader(Guid userId)
     {
-        var author = await TryGetCurrentAuthorAsync();
-        if (author is null) return Forbid();
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
 
         // Revoke all ReaderAccess for this author
         var allProjects = await projectRepo.GetAllAsync();
