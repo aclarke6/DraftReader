@@ -30,6 +30,12 @@ public abstract class BaseController(IUserRepository userRepo) : Controller
         return CurrentUser;
     }
 
+    protected async Task<User?> TryGetCurrentAuthorAsync(CancellationToken ct = default)
+    {
+        var user = await GetCurrentUserAsync(ct);
+        return user?.Role == Role.Author ? user : null;
+    }
+
     // ---------------------------------------------------------------------------
     // Role helpers
     // ---------------------------------------------------------------------------

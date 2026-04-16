@@ -146,4 +146,20 @@ public class AuthorControllerTests
         userService.Verify(s => s.DeactivateUserAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
         unitOfWork.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task Dashboard_WhenCurrentUserIsNotAuthor_RedirectsToReaderIndex()
+    {
+        var reader = User.Create("author@example.test", "Reader", Role.BetaReader);
+        var sut = CreateSut();
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reader);
+
+        var result = await sut.Dashboard();
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal("Index", redirect.ActionName);
+        Assert.Equal("Reader", redirect.ControllerName);
+    }
 }
