@@ -109,7 +109,7 @@ public class AccountController(
                     : "This invitation has been cancelled. Please ask the author to send a new one." });
 
         // Find the user this invitation is for
-        var user = await userRepo.GetByIdAsync(invitation.UserId);
+        var user = await GetUserByIdAsync(invitation.UserId);
         if (user is null)
             return RedirectToAction("InvitationInvalid",
                 new { reason = "Invitation account not found." });
@@ -145,7 +145,7 @@ public class AccountController(
                         ? "This invitation has expired. Please ask the author to send a new one."
                         : "This invitation has been cancelled. Please ask the author to send a new one." });
 
-            var user = await userRepo.GetByIdAsync(invitation.UserId);
+            var user = await GetUserByIdAsync(invitation.UserId);
             if (user is null)
                 return RedirectToAction("InvitationInvalid",
                     new { reason = "Invitation account not found." });
@@ -215,7 +215,7 @@ public class AccountController(
         if (!ModelState.IsValid)
             return View(model);
 
-        var user = await userRepo.GetByEmailAsync(model.Email);
+        var user = await GetUserByEmailAsync(model.Email);
         if (user is not null && user.IsActive && !user.IsSoftDeleted)
         {
             // Generate reset token

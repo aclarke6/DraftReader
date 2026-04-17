@@ -30,6 +30,12 @@ public abstract class BaseController(IUserRepository userRepo) : Controller
         return CurrentUser;
     }
 
+    protected Task<User?> GetUserByIdAsync(Guid userId, CancellationToken ct = default) =>
+        userRepo.GetByIdAsync(userId, ct);
+
+    protected Task<User?> GetUserByEmailAsync(string email, CancellationToken ct = default) =>
+        userRepo.GetByEmailAsync(email, ct);
+
     protected async Task<User?> TryGetCurrentAuthorAsync(CancellationToken ct = default)
     {
         var user = await GetCurrentUserAsync(ct);
