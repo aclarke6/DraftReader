@@ -97,4 +97,59 @@ public class ReadEventTests
         // I-13
         Assert.True(readEvent.OpenCount >= 1);
     }
+
+    // ---------------------------------------------------------------------------
+    // UpdateLastReadVersion
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void UpdateLastReadVersion_SetsVersionNumber()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        readEvent.UpdateLastReadVersion(5);
+
+        Assert.Equal(5, readEvent.LastReadVersionNumber);
+    }
+
+    [Fact]
+    public void UpdateLastReadVersion_OverwritesPreviousValue()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        readEvent.UpdateLastReadVersion(3);
+        readEvent.UpdateLastReadVersion(7);
+
+        Assert.Equal(7, readEvent.LastReadVersionNumber);
+    }
+
+    [Fact]
+    public void UpdateLastReadVersion_WithVersionNumberZero_ThrowsInvariantViolation()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        var ex = Assert.Throws<InvariantViolationException>(
+            () => readEvent.UpdateLastReadVersion(0));
+
+        Assert.Equal("I-READ-VER", ex.InvariantCode);
+    }
+
+    [Fact]
+    public void UpdateLastReadVersion_WithNegativeVersionNumber_ThrowsInvariantViolation()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        var ex = Assert.Throws<InvariantViolationException>(
+            () => readEvent.UpdateLastReadVersion(-1));
+
+        Assert.Equal("I-READ-VER", ex.InvariantCode);
+    }
+
+    [Fact]
+    public void Create_LastReadVersionNumberIsNull()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        Assert.Null(readEvent.LastReadVersionNumber);
+    }
 }
