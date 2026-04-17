@@ -97,6 +97,16 @@ else
                                         <input type="hidden" name="projectId" value="@project!.Id" />
                                         <button type="submit" class="btn btn--danger btn--sm">Unpublish</button>
                                     </form>
+
+                                    @if (s.ContentChangedSincePublish)
+                                    {
+                                        <form asp-action="RepublishChapter" method="post" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="chapterId" value="@s.Id" />
+                                            <input type="hidden" name="projectId" value="@project!.Id" />
+                                            <button type="submit" class="btn btn--republish btn--sm">Republish</button>
+                                        </form>
+                                    }
                                 }
                                 else if (publishable.Contains(s.Id))
                                 {
