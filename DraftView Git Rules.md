@@ -7,19 +7,21 @@
 ```
 main
 └── vsprint-{N}
-    └── vsprint-{N}/phase-{P}-{slug}
+    └── vsprint-{N}--phase-{P}-{slug}
 ```
 
 Every branch has exactly one parent. Phase branches are cut from their sprint branch. Sprint branches are cut from main. No exceptions.
 
+**Important:** Phase branches use a double-dash (`--`) separator between the sprint prefix and the phase segment. A forward slash cannot be used because Git treats `vsprint-1` as a directory prefix in refs, which prevents creating a branch named `vsprint-1` once any `vsprint-1/...` branch exists. This was discovered during V-Sprint 1 Phase 1.
+
 ```
 main
 └── vsprint-1
-    ├── vsprint-1/phase-1-domain-infrastructure
-    ├── vsprint-1/phase-2-tree-service-import
-    ├── vsprint-1/phase-3-versioning-service
-    ├── vsprint-1/phase-4-reader-content-source
-    └── vsprint-1/phase-5-author-ui-manual-upload
+    ├── vsprint-1--phase-1-domain-infrastructure
+    ├── vsprint-1--phase-2-tree-service-import
+    ├── vsprint-1--phase-3-versioning-service
+    ├── vsprint-1--phase-4-reader-content-source
+    └── vsprint-1--phase-5-author-ui-manual-upload
 ```
 
 ---
@@ -29,7 +31,7 @@ main
 | Level | Pattern | Example |
 |-------|---------|---------|
 | Sprint | `vsprint-{N}` | `vsprint-1` |
-| Phase | `vsprint-{N}/phase-{P}-{slug}` | `vsprint-1/phase-2-tree-service-import` |
+| Phase | `vsprint-{N}--phase-{P}-{slug}` | `vsprint-1--phase-2-tree-service-import` |
 | Hotfix | `hotfix/{slug}` | `hotfix/fix-sync-null-reference` |
 | Debt | `debt/{slug}` | `debt/remove-section-htmlcontent-fallback` |
 
@@ -340,8 +342,8 @@ START SPRINT      git checkout main && git pull
                   git push -u origin vsprint-{N}
 
 START PHASE       git checkout vsprint-{N} && git pull
-                  git checkout -b vsprint-{N}/phase-{P}-{slug}
-                  git push -u origin vsprint-{N}/phase-{P}-{slug}
+                  git checkout -b vsprint-{N}--phase-{P}-{slug}
+                  git push -u origin vsprint-{N}--phase-{P}-{slug}
 
 COMMIT            git add . && git commit -m "{type}: {summary}"
 
@@ -358,6 +360,6 @@ HOTFIX            git checkout main && git pull
                   [fix + test]
                   PR hotfix → main, merge
                   git checkout vsprint-{N} && git rebase main
-                  git checkout vsprint-{N}/phase-{P}-{slug}
+                  git checkout vsprint-{N}--phase-{P}-{slug}
                   git rebase vsprint-{N}
 ```
