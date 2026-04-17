@@ -17,6 +17,22 @@ if ($gitStatus) {
 }
 Write-Host "Git working tree is clean." -ForegroundColor Green
 
+# ---------------------------------------------------------------------------
+# Guard: require full test suite to pass before publishing
+# ---------------------------------------------------------------------------
+$solution = "C:\Users\alast\source\repos\DraftView\DraftView.slnx"
+Write-Host "Running full test suite..." -ForegroundColor Cyan
+$testOutput = dotnet test $solution --nologo 2>&1
+$testOutput | Write-Host
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Test suite failed. Fix all failing tests before publishing." -ForegroundColor Red
+    exit 1
+}
+# Extract and display summary line
+$summary = $testOutput | Select-String -Pattern "^Test summary:"
+if ($summary) { Write-Host $summary -ForegroundColor Green }
+Write-Host "All tests passed." -ForegroundColor Green
+
 Write-Host "Cleaning previous publish..." -ForegroundColor Cyan
 if (Test-Path $output) { Remove-Item $output -Recurse -Force }
 
