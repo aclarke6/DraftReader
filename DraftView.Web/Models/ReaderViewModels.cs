@@ -1,4 +1,5 @@
 using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 
 namespace DraftView.Web.Models;
 
@@ -34,6 +35,8 @@ public class DesktopChapterReadViewModel
     public string ProjectName { get; set; } = string.Empty;
     public Guid CurrentUserId { get; set; }
     public bool CurrentUserIsModerator { get; set; }
+    public ProseFont ProseFont { get; set; } = ProseFont.SystemSerif;
+    public ProseFontSize ProseFontSize { get; set; } = ProseFontSize.Medium;
 }
 
 public class SceneWithComments

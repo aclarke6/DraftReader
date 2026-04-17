@@ -14,11 +14,14 @@ public class ReaderController(
     ICommentService commentService,
     IReadingProgressService progressService,
     IUserRepository userRepository,
+    IUserPreferencesRepository userPreferencesRepo,
     IReaderAccessRepository readerAccessRepo,
     ILogger<ReaderController> logger)
     : BaseReaderController(projectRepo, sectionRepo, commentService, progressService,
                            userRepository, readerAccessRepo, logger)
 {
+    private readonly IUserPreferencesRepository _userPreferencesRepo = userPreferencesRepo;
+
     // -----------------------------------------------------------------------
     // GET: /Reader/Dashboard
     // -----------------------------------------------------------------------
@@ -356,6 +359,7 @@ public class ReaderController(
         var chapterComments    = await BuildCommentDisplayModelsAsync(chapterCommentsRaw, user.Id, isModerator);
         var breadcrumb         = BuildBreadcrumb(chapter, allSections);
         var topAncestor        = GetTopLevelAncestor(chapter, allSections);
+        var preferences        = await _userPreferencesRepo.GetByUserIdAsync(user.Id);
 
         DesktopSectionContentsViewModel? bookContents = null;
         if (topAncestor is not null)
@@ -375,7 +379,9 @@ public class ReaderController(
             BookContents           = bookContents,
             ProjectName            = project?.Name ?? string.Empty,
             CurrentUserId          = user.Id,
-            CurrentUserIsModerator = isModerator
+            CurrentUserIsModerator = isModerator,
+            ProseFont              = preferences?.ProseFont ?? ProseFont.SystemSerif,
+            ProseFontSize          = preferences?.ProseFontSize ?? ProseFontSize.Medium
         });
     }
 
@@ -418,6 +424,7 @@ public class ReaderController(
 
         var commentsRaw = await CommentService.GetThreadsForSectionAsync(id, user.Id);
         var comments    = await BuildCommentDisplayModelsAsync(commentsRaw, user.Id, isModerator);
+        var preferences = await _userPreferencesRepo.GetByUserIdAsync(user.Id);
 
         return View("MobileRead", new MobileReadViewModel {
             Scene                  = scene,
@@ -427,7 +434,9 @@ public class ReaderController(
             PrevSceneId            = prevSceneId,
             NextSceneId            = nextSceneId,
             CurrentUserId          = user.Id,
-            CurrentUserIsModerator = isModerator
+            CurrentUserIsModerator = isModerator,
+            ProseFont              = preferences?.ProseFont ?? ProseFont.SystemSerif,
+            ProseFontSize          = preferences?.ProseFontSize ?? ProseFontSize.Medium
         });
     }
 }

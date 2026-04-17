@@ -1,4 +1,5 @@
 using DraftView.Domain.Entities;
+using DraftView.Domain.Enumerations;
 
 namespace DraftView.Web.Models;
 
@@ -54,6 +55,8 @@ public class MobileReadViewModel
     public Guid? NextSceneId { get; set; }
     public Guid CurrentUserId { get; set; }
     public bool CurrentUserIsModerator { get; set; }
+    public ProseFont ProseFont { get; set; } = ProseFont.SystemSerif;
+    public ProseFontSize ProseFontSize { get; set; } = ProseFontSize.Medium;
     public bool HasPrev => PrevSceneId.HasValue;
     public bool HasNext => NextSceneId.HasValue;
 }
