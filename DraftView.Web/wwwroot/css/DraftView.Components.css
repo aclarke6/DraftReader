@@ -102,6 +102,18 @@
         border-color: var(--color-danger);
     }
 
+/* Author/Sections.cshtml — Republish button for chapters with changed content */
+.btn--republish {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+    .btn--republish:hover {
+        background: var(--color-accent-light);
+        border-color: var(--color-accent-hover);
+    }
+
 .btn--ghost {
     background: transparent;
     color: var(--color-accent);

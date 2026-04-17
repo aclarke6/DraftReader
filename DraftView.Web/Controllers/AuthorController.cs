@@ -24,6 +24,7 @@ public class AuthorController(
     IServiceScopeFactory scopeFactory,
     ISyncProgressTracker progressTracker,
     IReaderAccessRepository readerAccessRepo,
+    IVersioningService versioningService,
     ILogger<AuthorController> logger) : BaseController(userRepo)
 {
     // ---------------------------------------------------------------------------
@@ -236,6 +237,26 @@ public class AuthorController(
         {
             projectId
         }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RepublishChapter(Guid chapterId, Guid projectId)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.RepublishChapterAsync(chapterId, author.Id);
+            TempData["Success"] = "Chapter republished. Readers will see the updated content.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Sections", new { projectId }) + "#section-" + chapterId);
     }
 
     // ---------------------------------------------------------------------------
