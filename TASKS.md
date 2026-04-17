@@ -1,5 +1,5 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-15
+Last updated: 2026-04-17
 
 ---
 
@@ -322,6 +322,7 @@ Completed on the day of go-live, not before:
 # DraftView Publishing and Versioning Architecture (v4.1)
 See `Publishing And Versioning Architecture.md` for the full architecture document including V-Sprints 1–10.
 See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
+- [x] V-Sprint 1 Phase 1 — Domain + Infrastructure Foundation — 529 tests, 6 commits, migration applied 2026-04-17
 - [ ] V-Sprint 1 — Core versioning backbone + manual upload — Republish → Version → Reader flow
 - [ ] V-Sprint 2 — Paragraph diff highlighting — deliver core reader value
 - [ ] V-Sprint 3 — Reader experience layer — update messaging and banner
