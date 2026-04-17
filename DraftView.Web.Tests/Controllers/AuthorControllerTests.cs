@@ -28,6 +28,9 @@ public class AuthorControllerTests
     private readonly Mock<IServiceScopeFactory> scopeFactory = new();
     private readonly Mock<ISyncProgressTracker> progressTracker = new();
     private readonly Mock<IReaderAccessRepository> readerAccessRepo = new();
+    private readonly Mock<IVersioningService> versioningService = new();
+    private readonly Mock<IImportService> importService = new();
+    private readonly Mock<ISectionTreeService> sectionTreeService = new();
     private readonly Mock<IUnitOfWork> unitOfWork = new();
     private readonly Mock<ILogger<AuthorController>> logger = new();
 
@@ -46,6 +49,9 @@ public class AuthorControllerTests
             scopeFactory.Object,
             progressTracker.Object,
             readerAccessRepo.Object,
+            versioningService.Object,
+            importService.Object,
+            sectionTreeService.Object,
             logger.Object);
 
         controller.ControllerContext = new ControllerContext
@@ -161,5 +167,77 @@ public class AuthorControllerTests
         var redirect = Assert.IsType<RedirectToActionResult>(result);
         Assert.Equal("Index", redirect.ActionName);
         Assert.Equal("Reader", redirect.ControllerName);
+    }
+
+    // ---------------------------------------------------------------------------
+    // RepublishChapter
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task RepublishChapter_CallsVersioningService_WithCorrectChapterId()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var chapterId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        await sut.RepublishChapter(chapterId, projectId);
+
+        versioningService.Verify(v => v.RepublishChapterAsync(chapterId, author.Id, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task RepublishChapter_SetsTempDataSuccess_WhenRepublishSucceeds()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        await sut.RepublishChapter(Guid.NewGuid(), Guid.NewGuid());
+
+        Assert.Equal("Chapter republished. Readers will see the updated content.", sut.TempData["Success"]);
+    }
+
+    [Fact]
+    public async Task RepublishChapter_SetsTempDataError_WhenVersioningServiceThrows()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var chapterId = Guid.NewGuid();
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+        versioningService.Setup(v => v.RepublishChapterAsync(chapterId, author.Id, default))
+            .ThrowsAsync(new InvariantViolationException("I-VER-NO-DOCS", "No documents"));
+
+        await sut.RepublishChapter(chapterId, Guid.NewGuid());
+
+        Assert.Equal("No documents", sut.TempData["Error"]);
+    }
+
+    [Fact]
+    public async Task RepublishChapter_RedirectsToSections_AfterRepublish()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var chapterId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        var result = await sut.RepublishChapter(chapterId, projectId);
+
+        var redirect = Assert.IsType<RedirectResult>(result);
+        Assert.Contains($"#section-{chapterId}", redirect.Url);
     }
 }

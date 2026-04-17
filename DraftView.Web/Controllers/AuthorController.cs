@@ -24,6 +24,9 @@ public class AuthorController(
     IServiceScopeFactory scopeFactory,
     ISyncProgressTracker progressTracker,
     IReaderAccessRepository readerAccessRepo,
+    IVersioningService versioningService,
+    IImportService importService,
+    ISectionTreeService sectionTreeService,
     ILogger<AuthorController> logger) : BaseController(userRepo)
 {
     // ---------------------------------------------------------------------------
@@ -236,6 +239,85 @@ public class AuthorController(
         {
             projectId
         }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RepublishChapter(Guid chapterId, Guid projectId)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.RepublishChapterAsync(chapterId, author.Id);
+            TempData["Success"] = "Chapter republished. Readers will see the updated content.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Sections", new { projectId }) + "#section-" + chapterId);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Manual Upload
+    // ---------------------------------------------------------------------------
+    [HttpGet]
+    public async Task<IActionResult> UploadScene(Guid projectId, Guid? parentChapterId)
+    {
+        var project = await projectRepo.GetByIdAsync(projectId);
+        if (project is null) return NotFound();
+
+        return View(new UploadSceneViewModel
+        {
+            ProjectId       = projectId,
+            ParentChapterId = parentChapterId
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadScene(UploadSceneViewModel model)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        if (!ModelState.IsValid)
+            return View(model);
+
+        try
+        {
+            var section = await sectionTreeService.GetOrCreateForUploadAsync(
+                model.ProjectId,
+                model.SceneTitle,
+                model.ParentChapterId,
+                sortOrder: null);
+
+            await using var stream = model.File!.OpenReadStream();
+            await importService.ImportAsync(
+                model.ProjectId,
+                section.Id,
+                stream,
+                model.File.FileName,
+                author.Id);
+
+            TempData["Success"] = $"\"{model.SceneTitle}\" uploaded successfully.";
+        }
+        catch (UnsupportedFileTypeException ex)
+        {
+            TempData["Error"] = $"Unsupported file type: {ex.Extension}. Only RTF files are supported.";
+            return View(model);
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+            return View(model);
+        }
+
+        return Redirect(Url.Action("Sections", new { projectId = model.ProjectId })
+            + (model.ParentChapterId.HasValue ? "#section-" + model.ParentChapterId : string.Empty));
     }
 
     // ---------------------------------------------------------------------------

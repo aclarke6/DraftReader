@@ -61,6 +61,9 @@ else
                     // (i.e. it doesn't contain sub-folders itself, only scenes)
                     var isChapter = isFolder && !folderChildIds.Contains(s.Id);
 
+                    // Manual project documents need upload button
+                    var isManualDocument = !isFolder && project?.ProjectType == ProjectType.Manual;
+
                     <tr class="@(isFolder ? "tr--folder" : "tr--scene")" id="section-@s.Id">
                         <td style="padding-left: @(8 + indent)px">
                             @if (!isFolder)
@@ -97,6 +100,16 @@ else
                                         <input type="hidden" name="projectId" value="@project!.Id" />
                                         <button type="submit" class="btn btn--danger btn--sm">Unpublish</button>
                                     </form>
+
+                                    @if (s.ContentChangedSincePublish)
+                                    {
+                                        <form asp-action="RepublishChapter" method="post" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="chapterId" value="@s.Id" />
+                                            <input type="hidden" name="projectId" value="@project!.Id" />
+                                            <button type="submit" class="btn btn--republish btn--sm">Republish</button>
+                                        </form>
+                                    }
                                 }
                                 else if (publishable.Contains(s.Id))
                                 {
@@ -111,6 +124,16 @@ else
                                 {
                                     <span style="color:var(--color-text-subtle); font-size:var(--text-xs)">Not ready</span>
                                 }
+                            }
+
+                            @if (isManualDocument)
+                            {
+                                <a asp-action="UploadScene"
+                                   asp-route-projectId="@project!.Id"
+                                   asp-route-parentChapterId="@s.ParentId"
+                                   class="btn btn--secondary btn--sm">
+                                    Upload
+                                </a>
                             }
                         </td>
                     </tr>

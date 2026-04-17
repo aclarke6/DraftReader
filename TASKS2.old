@@ -5,9 +5,11 @@ Last updated: 2026-04-17
 
 ## Test State
 
-- 575 tests passing (1 skipped — SMTP integration test)
-- Baseline after V-Sprint 1 complete (Phases 1–6)
+- 529 tests passing (1 skipped — SMTP integration test)
+- Baseline after V-Sprint 1 Phase 1 complete
 
+- Test summary: total: 533, failed: 0, succeeded: 532, skipped: 1, duration: 8.0s  17-04-2026 122:33
+- 
 ---
 
 ## ARCHITECTURE RULES
@@ -326,16 +328,12 @@ Completed on the day of go-live, not before:
 - [ ] Send password reset emails to Becca (becca@the-dunlops.co.uk) and Hilary (hilaryrrb@gmail.com)
 - [ ] Confirm Becca and Hilary can log in and access The Fractured Lattice
 
-# DraftView Publishing and Versioning Architecture (v4.3)
+# DraftView Publishing and Versioning Architecture (v4.1)
 See `Publishing And Versioning Architecture.md` for the full architecture document including V-Sprints 1–10.
 See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
 - [x] V-Sprint 1 Phase 1 — Domain + Infrastructure Foundation — 529 tests, 6 commits, migration applied 2026-04-17
-- [x] V-Sprint 1 Phase 2 — Section Tree Service + Import Provider — 558 tests, forensic review passed, committed 2026-04-17
-- [x] V-Sprint 1 Phase 3 — Versioning Application Layer — 567 tests, VersioningService with full TDD coverage, committed 2026-04-17
-- [x] V-Sprint 1 Phase 4 — Reader Content Source — 571 tests, version resolution and anchoring, committed 2026-04-17
-- [x] V-Sprint 1 Phase 5 — Author Republish UI — 575 tests, RepublishChapter action with TDD coverage, committed 2026-04-17
-- [x] V-Sprint 1 Phase 6 — Manual Upload UI — 575 tests, UploadScene GET/POST with form and button, committed 2026-04-17
-- [x] V-Sprint 1 — Core versioning backbone + manual upload — Republish → Version → Reader flow — COMPLETE
+- [ ] V-Sprint 1 Phase 2 — Section Tree Service + Import Provider
+- [ ] V-Sprint 1 — Core versioning backbone + manual upload — Republish → Version → Reader flow
 - [ ] V-Sprint 2 — Paragraph diff highlighting — deliver core reader value
 - [ ] V-Sprint 3 — Reader experience layer — update messaging and banner
 - [ ] V-Sprint 4 — Pending change indicator and classification for authors

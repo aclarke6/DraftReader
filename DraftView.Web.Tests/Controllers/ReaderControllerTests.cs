@@ -34,6 +34,7 @@ public class ReaderControllerTests
     private readonly Mock<IUserRepository> userRepo = new();
     private readonly Mock<IUserPreferencesRepository> prefsRepo = new();
     private readonly Mock<IReaderAccessRepository> readerAccessRepo = new();
+    private readonly Mock<ISectionVersionRepository> sectionVersionRepo = new();
     private readonly Mock<ILogger<ReaderController>> logger = new();
 
     [Fact]
@@ -123,6 +124,7 @@ public class ReaderControllerTests
             userRepo.Object,
             prefsRepo.Object,
             readerAccessRepo.Object,
+            sectionVersionRepo.Object,
             logger.Object);
 
         controller.ControllerContext = new ControllerContext
@@ -268,6 +270,7 @@ public class ReaderReadRenderingRegressionTests : IClassFixture<ReaderReadRender
                 services.RemoveAll<ICommentService>();
                 services.RemoveAll<IReadingProgressService>();
                 services.RemoveAll<IReaderAccessRepository>();
+                services.RemoveAll<ISectionVersionRepository>();
                 services.RemoveAll<ISystemStateMessageService>();
 
                 services.AddSingleton(userRepo.Object);
@@ -277,6 +280,7 @@ public class ReaderReadRenderingRegressionTests : IClassFixture<ReaderReadRender
                 services.AddSingleton(commentService.Object);
                 services.AddSingleton(progressService.Object);
                 services.AddSingleton(Mock.Of<IReaderAccessRepository>());
+                services.AddSingleton(Mock.Of<ISectionVersionRepository>());
                 services.AddSingleton(systemStateMessageService.Object);
             });
         }
