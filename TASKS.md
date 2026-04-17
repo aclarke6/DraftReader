@@ -3,9 +3,14 @@ Last updated: 2026-04-17
 
 ---
 
-## ARCHITECTURE RULES
+## Test State
 
-These rules govern all new development and must be applied consistently.
+- 529 tests passing (1 skipped — SMTP integration test)
+- Baseline after V-Sprint 1 Phase 1 complete
+
+---
+
+## ARCHITECTURE RULES
 
 ### Tenancy Stance: Tenancy-Agnostic
 Build everything tenancy-agnostic — not tenancy-unaware, not tenancy-enabled.
@@ -76,6 +81,7 @@ Any modification of a view must include an audit of that view for style leakage.
 
 ## BUGS
 
+- [DONE] Reader view does not apply saved Reading Preferences (font face and font size) — fixed 2026-04-17: added `data-prose-font` / `data-prose-font-size` to `<body>` in `_Layout.cshtml`; added CSS attribute selectors to `DraftView.Core.css`
 - [OPEN] `/Author/InviteReader` submit fails with browser "This page isn't working" on production
   - observed at `https://draftview.co.uk/Author/InviteReader` when submitting the invite form
   - current behaviour: the request crashes instead of returning a controlled application error page or successful redirect
@@ -323,6 +329,7 @@ Completed on the day of go-live, not before:
 See `Publishing And Versioning Architecture.md` for the full architecture document including V-Sprints 1–10.
 See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
 - [x] V-Sprint 1 Phase 1 — Domain + Infrastructure Foundation — 529 tests, 6 commits, migration applied 2026-04-17
+- [ ] V-Sprint 1 Phase 2 — Section Tree Service + Import Provider
 - [ ] V-Sprint 1 — Core versioning backbone + manual upload — Republish → Version → Reader flow
 - [ ] V-Sprint 2 — Paragraph diff highlighting — deliver core reader value
 - [ ] V-Sprint 3 — Reader experience layer — update messaging and banner
