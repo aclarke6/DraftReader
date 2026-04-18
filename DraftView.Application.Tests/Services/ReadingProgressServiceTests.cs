@@ -255,4 +255,36 @@ public class ReadingProgressServiceTests
 
         _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
+
+    [Fact]
+    public async Task DismissBannerAsync_SetsBannerDismissedAtVersion_WhenReadEventExists()
+    {
+        var sectionId = Guid.NewGuid();
+        var userId    = Guid.NewGuid();
+        var sut       = CreateSut();
+
+        var readEvent = ReadEvent.Create(sectionId, userId);
+        _readEventRepo.Setup(r => r.GetAsync(sectionId, userId, default))
+            .ReturnsAsync(readEvent);
+
+        await sut.DismissBannerAsync(sectionId, userId, 4);
+
+        Assert.Equal(4, readEvent.BannerDismissedAtVersion);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task DismissBannerAsync_DoesNotThrow_WhenNoReadEventExists()
+    {
+        var sectionId = Guid.NewGuid();
+        var userId    = Guid.NewGuid();
+        var sut       = CreateSut();
+
+        _readEventRepo.Setup(r => r.GetAsync(sectionId, userId, default))
+            .ReturnsAsync((ReadEvent?)null);
+
+        await sut.DismissBannerAsync(sectionId, userId, 4);
+
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Never);
+    }
 }

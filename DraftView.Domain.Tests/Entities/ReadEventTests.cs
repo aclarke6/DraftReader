@@ -152,4 +152,48 @@ public class ReadEventTests
 
         Assert.Null(readEvent.LastReadVersionNumber);
     }
+
+    // ---------------------------------------------------------------------------
+    // DismissBannerAtVersion
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void DismissBannerAtVersion_SetsBannerDismissedAtVersion()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        readEvent.DismissBannerAtVersion(3);
+
+        Assert.Equal(3, readEvent.BannerDismissedAtVersion);
+    }
+
+    [Fact]
+    public void DismissBannerAtVersion_OverwritesPreviousValue()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        readEvent.DismissBannerAtVersion(2);
+        readEvent.DismissBannerAtVersion(7);
+
+        Assert.Equal(7, readEvent.BannerDismissedAtVersion);
+    }
+
+    [Fact]
+    public void DismissBannerAtVersion_WithVersionLessThanOne_ThrowsInvariantViolation()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        var ex = Assert.Throws<InvariantViolationException>(() =>
+            readEvent.DismissBannerAtVersion(0));
+
+        Assert.Equal("I-READ-BANNER", ex.InvariantCode);
+    }
+
+    [Fact]
+    public void Create_HasNullBannerDismissedAtVersion()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        Assert.Null(readEvent.BannerDismissedAtVersion);
+    }
 }

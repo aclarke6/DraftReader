@@ -64,6 +64,25 @@ public class SceneWithComments
     /// True when DiffParagraphs contains highlighted changes to show the reader.
     /// </summary>
     public bool HasDiff => DiffParagraphs.Any(p => p.Type != DiffResultType.Unchanged);
+
+    /// <summary>
+    /// True when the reader has previously read this section and a newer version
+    /// now exists. Drives the "Updated since you last read" inline message.
+    /// False on first read or when the reader is already on the latest version.
+    /// </summary>
+    public bool UpdatedSinceLastRead { get; set; }
+
+    /// <summary>
+    /// True when the update banner should be shown for this scene.
+    /// Requires: reader has read before, a newer version exists, and
+    /// the reader has not yet dismissed the banner at the current version.
+    /// </summary>
+    public bool ShowUpdateBanner { get; set; }
+
+    /// <summary>
+    /// The current version number. Used in the banner label.
+    /// </summary>
+    public int? CurrentVersionNumber { get; set; }
 }
 
 public class CommentDisplayViewModel
