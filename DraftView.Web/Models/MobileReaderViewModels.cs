@@ -86,4 +86,7 @@ public class MobileReadViewModel
     /// True when the reader has previously read this scene and a newer version exists.
     /// </summary>
     public bool UpdatedSinceLastRead { get; set; }
+
+    /// <summary>True when the update banner should be shown.</summary>
+    public bool ShowUpdateBanner { get; set; }
 }

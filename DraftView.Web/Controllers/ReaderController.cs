@@ -188,6 +188,21 @@ public class ReaderController(
     }
 
     // -----------------------------------------------------------------------
+    // POST: /Reader/DismissBanner
+    // -----------------------------------------------------------------------
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DismissBanner(Guid sectionId, int versionNumber)
+    {
+        var user = await GetCurrentUserAsync();
+        if (user is null)
+            return Forbid();
+
+        await ProgressService.DismissBannerAsync(sectionId, user.Id, versionNumber);
+        return Ok();
+    }
+
+    // -----------------------------------------------------------------------
     // Private: Desktop implementations
     // -----------------------------------------------------------------------
     private async Task<IActionResult> DesktopDashboard(Domain.Entities.User user)
@@ -407,7 +422,7 @@ public class ReaderController(
 
         await ProgressService.RecordOpenAsync(id, user.Id);
 
-        var (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead) = 
+        var (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead, showUpdateBanner) = 
             await ResolveSceneContentAndDiffAsync(scene, user.Id);
 
         var allSections = await SectionRepo.GetByProjectIdAsync(project.Id);
@@ -431,7 +446,8 @@ public class ReaderController(
             ResolvedHtmlContent    = resolvedHtml,
             CurrentVersionNumber   = currentVersionNumber,
             DiffParagraphs         = diffParagraphs,
-            UpdatedSinceLastRead   = updatedSinceLastRead
+            UpdatedSinceLastRead   = updatedSinceLastRead,
+            ShowUpdateBanner       = showUpdateBanner
         });
     }
 
@@ -447,7 +463,7 @@ public class ReaderController(
     {
         await ProgressService.RecordOpenAsync(scene.Id, user.Id, ct);
 
-        var (resolvedHtml, _, diffParagraphs, updatedSinceLastRead) = 
+        var (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead, showUpdateBanner) = 
             await ResolveSceneContentAndDiffAsync(scene, user.Id, ct);
 
         var comments = await CommentService.GetThreadsForSectionAsync(scene.Id, user.Id, ct);
@@ -459,16 +475,18 @@ public class ReaderController(
             Comments = displayComments,
             ResolvedHtmlContent = resolvedHtml,
             DiffParagraphs = diffParagraphs,
-            UpdatedSinceLastRead = updatedSinceLastRead
+            UpdatedSinceLastRead = updatedSinceLastRead,
+            ShowUpdateBanner = showUpdateBanner,
+            CurrentVersionNumber = currentVersionNumber
         };
     }
 
     /// <summary>
     /// Resolves scene content from the latest version (or fallback to working content),
     /// computes diff if reader has a prior read version, and updates reader progress.
-    /// Returns: (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead)
+    /// Returns: (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead, showUpdateBanner)
     /// </summary>
-    private async Task<(string? resolvedHtml, int? currentVersionNumber, IReadOnlyList<ParagraphDiffResult> diffParagraphs, bool updatedSinceLastRead)> 
+    private async Task<(string? resolvedHtml, int? currentVersionNumber, IReadOnlyList<ParagraphDiffResult> diffParagraphs, bool updatedSinceLastRead, bool showUpdateBanner)> 
         ResolveSceneContentAndDiffAsync(
             Section scene,
             Guid userId,
@@ -488,6 +506,11 @@ public class ReaderController(
             && diffResult.HasChanges
             && readEvent?.LastReadVersionNumber is not null;
 
+        var showUpdateBanner = diffResult is not null
+            && diffResult.HasChanges
+            && readEvent?.LastReadVersionNumber is not null
+            && readEvent?.BannerDismissedAtVersion != diffResult.CurrentVersionNumber;
+
         if (latestVersion is not null)
         {
             await ProgressService.UpdateLastReadVersionAsync(scene.Id, userId, latestVersion.VersionNumber, ct);
@@ -497,7 +520,7 @@ public class ReaderController(
             ? diffResult.Paragraphs
             : Array.Empty<ParagraphDiffResult>();
 
-        return (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead);
+        return (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead, showUpdateBanner);
     }
 
     /// <summary>
