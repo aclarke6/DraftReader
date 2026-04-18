@@ -81,4 +81,9 @@ public class MobileReadViewModel
 
     /// <summary>True when the reader has changes to see.</summary>
     public bool HasDiff => DiffParagraphs.Any(p => p.Type != DiffResultType.Unchanged);
+
+    /// <summary>
+    /// True when the reader has previously read this scene and a newer version exists.
+    /// </summary>
+    public bool UpdatedSinceLastRead { get; set; }
 }

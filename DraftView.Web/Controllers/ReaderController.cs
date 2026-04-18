@@ -407,7 +407,7 @@ public class ReaderController(
 
         await ProgressService.RecordOpenAsync(id, user.Id);
 
-        var (resolvedHtml, currentVersionNumber, diffParagraphs) = 
+        var (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead) = 
             await ResolveSceneContentAndDiffAsync(scene, user.Id);
 
         var allSections = await SectionRepo.GetByProjectIdAsync(project.Id);
@@ -430,7 +430,8 @@ public class ReaderController(
             ProseFontSize          = preferences?.ProseFontSize ?? ProseFontSize.Medium,
             ResolvedHtmlContent    = resolvedHtml,
             CurrentVersionNumber   = currentVersionNumber,
-            DiffParagraphs         = diffParagraphs
+            DiffParagraphs         = diffParagraphs,
+            UpdatedSinceLastRead   = updatedSinceLastRead
         });
     }
 
@@ -446,7 +447,7 @@ public class ReaderController(
     {
         await ProgressService.RecordOpenAsync(scene.Id, user.Id, ct);
 
-        var (resolvedHtml, _, diffParagraphs) = 
+        var (resolvedHtml, _, diffParagraphs, updatedSinceLastRead) = 
             await ResolveSceneContentAndDiffAsync(scene, user.Id, ct);
 
         var comments = await CommentService.GetThreadsForSectionAsync(scene.Id, user.Id, ct);
@@ -457,16 +458,17 @@ public class ReaderController(
             Scene = scene,
             Comments = displayComments,
             ResolvedHtmlContent = resolvedHtml,
-            DiffParagraphs = diffParagraphs
+            DiffParagraphs = diffParagraphs,
+            UpdatedSinceLastRead = updatedSinceLastRead
         };
     }
 
     /// <summary>
     /// Resolves scene content from the latest version (or fallback to working content),
     /// computes diff if reader has a prior read version, and updates reader progress.
-    /// Returns: (resolvedHtml, currentVersionNumber, diffParagraphs)
+    /// Returns: (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead)
     /// </summary>
-    private async Task<(string? resolvedHtml, int? currentVersionNumber, IReadOnlyList<ParagraphDiffResult> diffParagraphs)> 
+    private async Task<(string? resolvedHtml, int? currentVersionNumber, IReadOnlyList<ParagraphDiffResult> diffParagraphs, bool updatedSinceLastRead)> 
         ResolveSceneContentAndDiffAsync(
             Section scene,
             Guid userId,
@@ -482,6 +484,10 @@ public class ReaderController(
         var diffResult = await sectionDiffService.GetDiffForReaderAsync(
             scene.Id, lastReadVersionNumber, ct);
 
+        var updatedSinceLastRead = diffResult is not null
+            && diffResult.HasChanges
+            && readEvent?.LastReadVersionNumber is not null;
+
         if (latestVersion is not null)
         {
             await ProgressService.UpdateLastReadVersionAsync(scene.Id, userId, latestVersion.VersionNumber, ct);
@@ -491,7 +497,7 @@ public class ReaderController(
             ? diffResult.Paragraphs
             : Array.Empty<ParagraphDiffResult>();
 
-        return (resolvedHtml, currentVersionNumber, diffParagraphs);
+        return (resolvedHtml, currentVersionNumber, diffParagraphs, updatedSinceLastRead);
     }
 
     /// <summary>
