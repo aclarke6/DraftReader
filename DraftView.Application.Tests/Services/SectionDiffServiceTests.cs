@@ -37,8 +37,8 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenReaderHasNeverRead_ReturnsNoChanges()
     {
-        var sectionId = Guid.NewGuid();
-        var latestVersion = CreateVersion(sectionId, 1, "<p>Content</p>");
+        var latestVersion = CreateVersion(1, "<p>Content</p>");
+        var sectionId = latestVersion.SectionId;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -55,8 +55,8 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenReaderIsOnLatestVersion_ReturnsNoChanges()
     {
-        var sectionId = Guid.NewGuid();
-        var latestVersion = CreateVersion(sectionId, 3, "<p>Content</p>");
+        var latestVersion = CreateVersion(3, "<p>Content</p>");
+        var sectionId = latestVersion.SectionId;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -73,9 +73,10 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenNewerVersionExists_ReturnsHasChanges()
     {
-        var sectionId = Guid.NewGuid();
-        var fromVersion = CreateVersion(sectionId, 1, "<p>Old</p>");
-        var latestVersion = CreateVersion(sectionId, 2, "<p>New</p>");
+        var section = CreateSection();
+        var fromVersion = CreateVersionForSection(section, 1, "<p>Old</p>");
+        var latestVersion = CreateVersionForSection(section, 2, "<p>New</p>");
+        var sectionId = section.Id;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -101,9 +102,10 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenNewerVersionExists_ReturnsCorrectVersionNumbers()
     {
-        var sectionId = Guid.NewGuid();
-        var fromVersion = CreateVersion(sectionId, 5, "<p>Old</p>");
-        var latestVersion = CreateVersion(sectionId, 8, "<p>New</p>");
+        var section = CreateSection();
+        var fromVersion = CreateVersionForSection(section, 5, "<p>Old</p>");
+        var latestVersion = CreateVersionForSection(section, 8, "<p>New</p>");
+        var sectionId = section.Id;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -123,9 +125,10 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenNewerVersionExists_CallsDiffService()
     {
-        var sectionId = Guid.NewGuid();
-        var fromVersion = CreateVersion(sectionId, 1, "<p>From</p>");
-        var latestVersion = CreateVersion(sectionId, 2, "<p>To</p>");
+        var section = CreateSection();
+        var fromVersion = CreateVersionForSection(section, 1, "<p>From</p>");
+        var latestVersion = CreateVersionForSection(section, 2, "<p>To</p>");
+        var sectionId = section.Id;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -143,8 +146,8 @@ public class SectionDiffServiceTests
     [Fact]
     public async Task GetDiffForReaderAsync_WhenFromVersionNotFound_ReturnsHasChangesWithEmptyParagraphs()
     {
-        var sectionId = Guid.NewGuid();
-        var latestVersion = CreateVersion(sectionId, 5, "<p>Latest</p>");
+        var latestVersion = CreateVersion(5, "<p>Latest</p>");
+        var sectionId = latestVersion.SectionId;
 
         versionRepo.Setup(r => r.GetLatestAsync(sectionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(latestVersion);
@@ -160,22 +163,22 @@ public class SectionDiffServiceTests
         Assert.Empty(result.Paragraphs);
     }
 
-    private static SectionVersion CreateVersion(Guid sectionId, int versionNumber, string htmlContent)
+    private static Section CreateSection()
+    {
+        var projectId = Guid.NewGuid();
+        return Section.CreateDocumentForUpload(projectId, "Test", null, 1);
+    }
+
+    private static SectionVersion CreateVersion(int versionNumber, string htmlContent)
+    {
+        var section = CreateSection();
+        return CreateVersionForSection(section, versionNumber, htmlContent);
+    }
+
+    private static SectionVersion CreateVersionForSection(Section section, int versionNumber, string htmlContent)
     {
         var authorId = Guid.NewGuid();
-        var projectId = Guid.NewGuid();
-        var section = Section.CreateDocumentForUpload(projectId, "Test", null, 1);
-
-        // Use reflection to set the Id and HtmlContent since Section uses private setters
-        var idProperty = typeof(Section).GetProperty("Id");
-        idProperty?.SetValue(section, sectionId);
-
-        var htmlContentProperty = typeof(Section).GetProperty("HtmlContent");
-        htmlContentProperty?.SetValue(section, htmlContent);
-
-        var contentHashProperty = typeof(Section).GetProperty("ContentHash");
-        contentHashProperty?.SetValue(section, "hash-" + versionNumber);
-
+        section.UpdateContent(htmlContent, "hash-" + versionNumber);
         return SectionVersion.Create(section, authorId, versionNumber);
     }
 }
