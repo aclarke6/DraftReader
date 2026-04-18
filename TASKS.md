@@ -326,6 +326,47 @@ Completed on the day of go-live, not before:
 - [ ] Send password reset emails to Becca (becca@the-dunlops.co.uk) and Hilary (hilaryrrb@gmail.com)
 - [ ] Confirm Becca and Hilary can log in and access The Fractured Lattice
 
+---
+
+## POST-VSPRINT-4 — Production Database Rebuild
+
+Once V-Sprint 4 is complete and deployed, the production database must be rebuilt
+so all published content is versioned correctly under the new methodology.
+
+Current state: existing published sections have no `SectionVersion` records.
+Readers are served via the `Section.HtmlContent` fallback path. Diff, classification,
+and banner features have no data to operate against until a rebuild is done.
+
+**Why after V-Sprint 4:** The first Republish after rebuild will automatically
+classify each chapter. Rebuilding before V-Sprint 4 would require republishing twice.
+
+**Rebuild sequence — run over SSH on production VM:**
+
+Step 1 — SSH to production:
+```
+ssh -i C:\Users\alast\.ssh\draftview-prod.key ubuntu@193.123.182.208
+```
+
+Step 2 — Write and run the rebuild SQL via psql (password from appsettings.Production.json):
+```bash
+psql -U draftview -d draftview <<'EOF'
+TRUNCATE "SectionVersions" CASCADE;
+UPDATE "Sections" SET "IsPublished" = false, "PublishedAt" = null, "ContentChangedSincePublish" = false;
+UPDATE "ReadEvents" SET "LastReadVersionNumber" = null, "BannerDismissedAtVersion" = null, "LastReadAt" = null;
+EOF
+```
+
+Step 3 — Back on Windows, trigger a Dropbox sync for The Fractured Lattice project
+from the Author dashboard to pull the latest Scrivener content into `Section.HtmlContent`.
+
+Step 4 — Republish all chapters from Author/Sections. This creates `SectionVersion`
+records for every document, anchors future comments, and populates `ChangeClassification`.
+
+Step 5 — Verify readers can access the chapters and diff/banner features are operational.
+
+**Note:** `BannerDismissedAtVersion` column only exists after V-Sprint 3 Phase 3 migration.
+Do not run this rebuild until that migration has been applied to production.
+
 # DraftView Publishing and Versioning Architecture (v4.3)
 See `Publishing And Versioning Architecture.md` for the full architecture document including V-Sprints 1–10.
 See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
