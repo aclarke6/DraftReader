@@ -30,6 +30,30 @@ else
                     </span>
                 }
 
+                @if (chapter.Chapter.ScheduledPublishAt.HasValue)
+                {
+                    <span class="schedule-indicator">
+                        Suggested: @chapter.Chapter.ScheduledPublishAt.Value.ToString("d MMM yyyy")
+                    </span>
+                    <form asp-action="ClearChapterSchedule" method="post" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="chapterId" value="@chapter.Chapter.Id" />
+                        <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                        <button type="submit" class="btn btn--sm btn--ghost">Clear date</button>
+                    </form>
+                }
+                else
+                {
+                    <form asp-action="ScheduleChapter" method="post" style="display:inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="chapterId" value="@chapter.Chapter.Id" />
+                        <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                        <input type="date" name="scheduledAt" class="input input--sm"
+                               min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                        <button type="submit" class="btn btn--sm btn--ghost">Set date</button>
+                    </form>
+                }
+
                 <div class="publishing-chapter__actions">
                     @if (chapter.HasChanges && !chapter.Chapter.IsLocked)
                     {

@@ -422,7 +422,7 @@ See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
     - [x] Phase 2 — Publishing Page UI and controller endpoints
 - [ ] V-Sprint 7 — Scheduling and locking
     - [x] Phase 1 — Chapter locking (domain lock state + versioning lock guards + publishing lock controls + reader lock notice)
-    - [ ] Phase 2 — Scheduling
+    - [x] Phase 2 — Scheduling
 - [ ] V-Sprint 8 — Dropbox incremental sync
     - [ ] Phase 1 — Cursor-based incremental sync — `Project.DropboxCursor`, `ListChangedEntriesAsync`, `ListAllEntriesWithCursorAsync`, full sync on first run to establish cursor, incremental on subsequent runs, cursor-expired fallback, deleted entries soft-deleted
 - [ ] V-Sprint 9 — Version retention and deletion
@@ -784,6 +784,7 @@ Controllers should follow this structure only:
 - [DONE] Fixed reader diff UX for removed paragraphs — removed paragraphs now render as thin visual markers instead of strikethrough deleted text, allowing beta readers to focus on published content rather than editorial changes (2026-04-18)
 - [DONE] Audited `Views/Author/Sections.cshtml` and new `Views/Author/Publishing.cshtml` for style leakage while implementing V-Sprint 6 Phase 2; kept inline form display usage as existing pattern and moved new page layout styling to `DraftView.Core.css`
 - [DONE] Audited `Views/Author/Publishing.cshtml`, `Views/Reader/DesktopRead.cshtml`, and `Views/Reader/MobileRead.cshtml` for style leakage while implementing V-Sprint 7 Phase 1 chapter locking; kept existing inline form pattern only and moved lock notice/indicator styling into `DraftView.Core.css`
+- [DONE] Audited `Views/Author/Publishing.cshtml` for style leakage while implementing V-Sprint 7 Phase 2 scheduling; kept existing inline form pattern only and reused shared button/input styles while adding schedule indicator styling in `DraftView.Core.css`
 - [DONE] Sprint 4 Phase 6 end-to-end integration is complete
   - fixed configuration-backed protected-email keys are in place for dev and testing
   - DB-backed real-host regression coverage now exists for login, password reset, and invitation provisioning

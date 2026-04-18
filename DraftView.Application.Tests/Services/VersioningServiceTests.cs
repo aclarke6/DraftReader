@@ -791,6 +791,84 @@ public class VersioningServiceTests
             () => _sut.RepublishSectionAsync(document.Id, Guid.NewGuid(), default));
     }
 
+    [Fact]
+    public async Task ScheduleChapterAsync_SetsScheduledPublishAt()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+        var scheduledAt = DateTime.UtcNow.Date.AddDays(1);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await _sut.ScheduleChapterAsync(chapter.Id, Guid.NewGuid(), scheduledAt, default);
+
+        Assert.Equal(scheduledAt, chapter.ScheduledPublishAt);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ScheduleChapterAsync_WithNonFolder_ThrowsInvariantViolation()
+    {
+        var section = MakeDocument(Guid.NewGuid(), null);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default))
+            .ReturnsAsync(section);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.ScheduleChapterAsync(section.Id, Guid.NewGuid(), DateTime.UtcNow.Date.AddDays(1), default));
+    }
+
+    [Fact]
+    public async Task ScheduleChapterAsync_WithMissingSection_ThrowsEntityNotFoundException()
+    {
+        var chapterId = Guid.NewGuid();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapterId, default))
+            .ReturnsAsync((Section?)null);
+
+        await Assert.ThrowsAsync<EntityNotFoundException>(
+            () => _sut.ScheduleChapterAsync(chapterId, Guid.NewGuid(), DateTime.UtcNow.Date.AddDays(1), default));
+    }
+
+    [Fact]
+    public async Task ScheduleChapterAsync_WithPastDate_ThrowsInvariantViolation()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.ScheduleChapterAsync(chapter.Id, Guid.NewGuid(), DateTime.UtcNow.Date.AddDays(-1), default));
+    }
+
+    [Fact]
+    public async Task ClearScheduleAsync_ClearsScheduledPublishAt()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+        chapter.SchedulePublish(DateTime.UtcNow.Date.AddDays(1));
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await _sut.ClearScheduleAsync(chapter.Id, Guid.NewGuid(), default);
+
+        Assert.Null(chapter.ScheduledPublishAt);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task ClearScheduleAsync_WithNonFolder_ThrowsInvariantViolation()
+    {
+        var section = MakeDocument(Guid.NewGuid(), null);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default))
+            .ReturnsAsync(section);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.ClearScheduleAsync(section.Id, Guid.NewGuid(), default));
+    }
+
     // Test helpers
     private static Section MakeChapter(Guid projectId) =>
         Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Chapter 1", null, 0);

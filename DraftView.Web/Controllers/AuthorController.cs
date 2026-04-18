@@ -372,6 +372,46 @@ public class AuthorController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ScheduleChapter(Guid chapterId, Guid projectId, DateTime scheduledAt)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.ScheduleChapterAsync(chapterId, author.Id, scheduledAt.ToUniversalTime());
+            TempData["Success"] = "Publish date set.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Publishing", new { projectId }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearChapterSchedule(Guid chapterId, Guid projectId)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.ClearScheduleAsync(chapterId, author.Id);
+            TempData["Success"] = "Publish date cleared.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Publishing", new { projectId }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RepublishDocument(Guid sectionId, Guid projectId)
     {
         var (author, error) = await RequireCurrentAuthorAsync();

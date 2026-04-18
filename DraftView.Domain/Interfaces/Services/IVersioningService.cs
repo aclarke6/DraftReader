@@ -53,4 +53,19 @@ public interface IVersioningService
     /// Throws if the section does not exist, is not a Folder, or is not locked.
     /// </summary>
     Task UnlockChapterAsync(Guid chapterId, Guid authorId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Sets a suggested publish date for a chapter.
+    /// Scheduling is advisory — it never blocks the republish action.
+    /// Throws if the section does not exist or is not a Folder.
+    /// </summary>
+    Task ScheduleChapterAsync(Guid chapterId, Guid authorId, DateTime scheduledAt,
+        CancellationToken ct = default);
+
+    /// <summary>
+    /// Clears the scheduled publish date for a chapter.
+    /// Throws if the section does not exist or is not a Folder.
+    /// </summary>
+    Task ClearScheduleAsync(Guid chapterId, Guid authorId,
+        CancellationToken ct = default);
 }

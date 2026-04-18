@@ -21,6 +21,7 @@ public sealed class Section
     public DateTime? UnpublishedAt { get; private set; }
     public bool IsLocked { get; private set; }
     public DateTime? LockedAt { get; private set; }
+    public DateTime? ScheduledPublishAt { get; private set; }
     public bool IsSoftDeleted { get; private set; }
     public DateTime? SoftDeletedAt { get; private set; }
 
@@ -171,6 +172,20 @@ public sealed class Section
 
         IsLocked = false;
         LockedAt = null;
+    }
+
+    public void SchedulePublish(DateTime scheduledAt)
+    {
+        if (scheduledAt.Date < DateTime.UtcNow.Date)
+            throw new InvariantViolationException("I-SCHED-PAST",
+                "Scheduled publish date must not be in the past.");
+
+        ScheduledPublishAt = scheduledAt;
+    }
+
+    public void ClearSchedule()
+    {
+        ScheduledPublishAt = null;
     }
 
     public void MarkContentChanged()

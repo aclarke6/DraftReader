@@ -13,7 +13,7 @@
    -------------------------------------------------------------------------- */
 :root {
     /* Update for every change */
-    --css-version: "v2026-04-18-7";
+    --css-version: "v2026-04-18-8";
     /* Colour palette now split into Light and Dark theme files */
     /* Typography */
     --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
@@ -387,6 +387,19 @@ a {
     border-radius: 0 var(--radius-md, 6px) var(--radius-md, 6px) 0;
     color: var(--color-warning-text, #92400e);
     font-size: var(--text-sm);
+}
+
+/* Chapter scheduling — Publishing.cshtml */
+.schedule-indicator {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.input--sm {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--text-sm);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm, 4px);
 }
 
 

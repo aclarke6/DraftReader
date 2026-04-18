@@ -117,6 +117,38 @@ public class VersioningService(
     }
 
     /// <summary>
+    /// Sets a suggested publish date for a chapter.
+    /// </summary>
+    public Task ScheduleChapterAsync(Guid chapterId, Guid authorId, DateTime scheduledAt,
+        CancellationToken ct = default)
+    {
+        return ScheduleChapterInternalAsync(chapterId, scheduledAt, ct);
+    }
+
+    /// <summary>
+    /// Clears a chapter's suggested publish date.
+    /// </summary>
+    public Task ClearScheduleAsync(Guid chapterId, Guid authorId,
+        CancellationToken ct = default)
+    {
+        return ClearChapterScheduleInternalAsync(chapterId, ct);
+    }
+
+    private async Task ScheduleChapterInternalAsync(Guid chapterId, DateTime scheduledAt, CancellationToken ct)
+    {
+        var chapter = await LoadAndValidateChapterAsync(chapterId, ct);
+        chapter.SchedulePublish(scheduledAt);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    private async Task ClearChapterScheduleInternalAsync(Guid chapterId, CancellationToken ct)
+    {
+        var chapter = await LoadAndValidateChapterAsync(chapterId, ct);
+        chapter.ClearSchedule();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
     /// Creates, classifies, summarizes, and persists a new version for one document.
     /// </summary>
     private async Task CreateVersionForDocumentAsync(Section document, Guid authorId, CancellationToken ct)
@@ -172,6 +204,21 @@ public class VersioningService(
     {
         if (chapter.NodeType != NodeType.Folder)
             throw new InvariantViolationException("I-LOCK-NOT-CHAPTER", "Only Folder sections can be locked or unlocked.");
+    }
+
+    private static void EnsureSchedulableChapter(Section chapter)
+    {
+        if (chapter.NodeType != NodeType.Folder)
+            throw new InvariantViolationException("I-SCHED-NOT-CHAPTER", "Only Folder sections can be scheduled.");
+    }
+
+    private async Task<Section> LoadAndValidateChapterAsync(Guid chapterId, CancellationToken ct)
+    {
+        var chapter = await sectionRepository.GetByIdAsync(chapterId, ct)
+            ?? throw new EntityNotFoundException(nameof(Section), chapterId);
+
+        EnsureSchedulableChapter(chapter);
+        return chapter;
     }
 
     private static void AssertChapterNotLocked(Section chapter)

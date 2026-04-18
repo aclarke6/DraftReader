@@ -58,6 +58,7 @@
     <File Path="vsprint6-phase2.prompt.md" />
     <File Path="vsprint7-phase1.prompt.md" />
     <File Path="vsprint7-phase2.prompt.md" />
+    <File Path="vsprint8-phase1.prompt.md" />
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="DraftView.Application.Tests/DraftView.Application.Tests.csproj" />

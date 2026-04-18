@@ -471,6 +471,75 @@ public class SectionTests
 
         Assert.Equal("I-LOCK-NOT-LOCKED", ex.InvariantCode);
     }
+
+    // ---------------------------------------------------------------------------
+    // Scheduling
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void SchedulePublish_SetsScheduledPublishAt()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        var tomorrow = DateTime.UtcNow.Date.AddDays(1);
+
+        section.SchedulePublish(tomorrow);
+
+        Assert.Equal(tomorrow, section.ScheduledPublishAt);
+    }
+
+    [Fact]
+    public void SchedulePublish_WithYesterdayDate_ThrowsInvariantViolation()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        var yesterday = DateTime.UtcNow.Date.AddDays(-1);
+
+        var ex = Assert.Throws<InvariantViolationException>(() => section.SchedulePublish(yesterday));
+
+        Assert.Equal("I-SCHED-PAST", ex.InvariantCode);
+    }
+
+    [Fact]
+    public void SchedulePublish_WithTodayDate_DoesNotThrow()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        var today = DateTime.UtcNow.Date;
+
+        var ex = Record.Exception(() => section.SchedulePublish(today));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void SchedulePublish_WithTomorrowDate_DoesNotThrow()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        var tomorrow = DateTime.UtcNow.Date.AddDays(1);
+
+        var ex = Record.Exception(() => section.SchedulePublish(tomorrow));
+
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public void ClearSchedule_SetsScheduledPublishAtToNull()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        section.SchedulePublish(DateTime.UtcNow.Date.AddDays(1));
+
+        section.ClearSchedule();
+
+        Assert.Null(section.ScheduledPublishAt);
+    }
+
+    [Fact]
+    public void ClearSchedule_WhenNotScheduled_DoesNotThrow()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+
+        var ex = Record.Exception(() => section.ClearSchedule());
+
+        Assert.Null(ex);
+    }
 }
 
 
