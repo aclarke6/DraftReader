@@ -102,6 +102,7 @@ namespace DraftView.Web.Extensions
             services.AddScoped<ISystemStateMessageService, SystemStateMessageService>();
             services.AddScoped<IVersioningService, VersioningService>();
             services.AddScoped<IHtmlDiffService, HtmlDiffService>();
+            services.AddScoped<ISectionDiffService, SectionDiffService>();
 
             return services;
         }
