@@ -16,6 +16,13 @@ public sealed class ReadEvent
     public int OpenCount { get; private set; }
     public int? LastReadVersionNumber { get; private set; }
 
+    /// <summary>
+    /// The most recent time the reader completed reading this section.
+    /// Null until the reader has read the section with a current SectionVersion.
+    /// Set alongside LastReadVersionNumber when a reader opens a versioned section.
+    /// </summary>
+    public DateTime? LastReadAt { get; private set; }
+
     // ---------------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------------
@@ -65,5 +72,15 @@ public sealed class ReadEvent
                 "Version number must be 1 or greater.");
 
         LastReadVersionNumber = versionNumber;
+    }
+
+    /// <summary>
+    /// Records that the reader has read this section at the current version.
+    /// Sets LastReadAt to the current UTC time.
+    /// Called when a reader opens a section that has a current SectionVersion.
+    /// </summary>
+    public void RecordRead()
+    {
+        LastReadAt = DateTime.UtcNow;
     }
 }

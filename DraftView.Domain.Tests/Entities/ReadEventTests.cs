@@ -152,4 +152,65 @@ public class ReadEventTests
 
         Assert.Null(readEvent.LastReadVersionNumber);
     }
+
+    // ---------------------------------------------------------------------------
+    // RecordRead
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void RecordRead_SetsLastReadAt()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+        var before = DateTime.UtcNow;
+
+        readEvent.RecordRead();
+
+        Assert.NotNull(readEvent.LastReadAt);
+        Assert.True(readEvent.LastReadAt >= before);
+        Assert.True(readEvent.LastReadAt <= DateTime.UtcNow.AddSeconds(1));
+    }
+
+    [Fact]
+    public void RecordRead_OverwritesPreviousLastReadAt()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        readEvent.RecordRead();
+        var firstRead = readEvent.LastReadAt;
+
+        System.Threading.Thread.Sleep(10);
+        readEvent.RecordRead();
+
+        Assert.NotNull(readEvent.LastReadAt);
+        Assert.True(readEvent.LastReadAt >= firstRead);
+    }
+
+    [Fact]
+    public void RecordRead_DoesNotAffectOtherProperties()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+        readEvent.UpdateLastReadVersion(5);
+
+        var sectionId = readEvent.SectionId;
+        var userId = readEvent.UserId;
+        var firstOpenedAt = readEvent.FirstOpenedAt;
+        var openCount = readEvent.OpenCount;
+        var lastReadVersionNumber = readEvent.LastReadVersionNumber;
+
+        readEvent.RecordRead();
+
+        Assert.Equal(sectionId, readEvent.SectionId);
+        Assert.Equal(userId, readEvent.UserId);
+        Assert.Equal(firstOpenedAt, readEvent.FirstOpenedAt);
+        Assert.Equal(openCount, readEvent.OpenCount);
+        Assert.Equal(lastReadVersionNumber, readEvent.LastReadVersionNumber);
+    }
+
+    [Fact]
+    public void Create_HasNullLastReadAt()
+    {
+        var readEvent = ReadEvent.Create(SectionId, UserId);
+
+        Assert.Null(readEvent.LastReadAt);
+    }
 }
