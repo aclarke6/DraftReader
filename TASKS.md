@@ -423,8 +423,6 @@ See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
 - [ ] V-Sprint 7 — Scheduling and locking
     - [x] Phase 1 — Chapter locking (domain lock state + versioning lock guards + publishing lock controls + reader lock notice)
     - [ ] Phase 2 — Scheduling
-    - [ ] Phase 1 — Chapter Locking — `Section.Lock()` / `Unlock()`, `IsLocked` + `LockedAt`, lock guard in `RepublishChapterAsync` and `RepublishSectionAsync`, Lock/Unlock on Publishing Page, reader lock message
-    - [ ] Phase 2 — Scheduling — `Section.SchedulePublish()` / `ClearSchedule()`, `ScheduledPublishAt`, advisory date on Publishing Page, never blocks republish
 - [ ] V-Sprint 8 — Dropbox incremental sync
     - [ ] Phase 1 — Cursor-based incremental sync — `Project.DropboxCursor`, `ListChangedEntriesAsync`, `ListAllEntriesWithCursorAsync`, full sync on first run to establish cursor, incremental on subsequent runs, cursor-expired fallback, deleted entries soft-deleted
 - [ ] V-Sprint 9 — Version retention and deletion
