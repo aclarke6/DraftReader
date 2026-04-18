@@ -191,6 +191,13 @@
 
                 <div class="scene-block" id="scene-@item.Scene.Id">
                     <div class="scene-prose">
+                        @if (Model.Chapter.IsLocked)
+                        {
+                            <div class="lock-notice">
+                                <p>The author is currently revising this chapter.</p>
+                            </div>
+                        }
+
                         <h4 class="scene-heading">@item.Scene.Title</h4>
 
                         @if (item.ShowUpdateBanner)

@@ -41,4 +41,16 @@ public interface IVersioningService
         Guid sectionId,
         Guid authorId,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Locks a chapter (Folder section), blocking all publish actions.
+    /// Throws if the section does not exist or is not a Folder.
+    /// </summary>
+    Task LockChapterAsync(Guid chapterId, Guid authorId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Unlocks a chapter, re-enabling publish actions.
+    /// Throws if the section does not exist, is not a Folder, or is not locked.
+    /// </summary>
+    Task UnlockChapterAsync(Guid chapterId, Guid authorId, CancellationToken ct = default);
 }

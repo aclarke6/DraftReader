@@ -31,6 +31,7 @@ public class VersioningService(
             ?? throw new EntityNotFoundException(nameof(Section), chapterId);
 
         EnsureFolderChapter(chapter);
+        AssertChapterNotLocked(chapter);
 
         var descendants = await sectionRepository.GetAllDescendantsAsync(chapterId, ct);
         var publishableDocuments = descendants
@@ -58,6 +59,7 @@ public class VersioningService(
             ?? throw new EntityNotFoundException(nameof(Section), sectionId);
 
         EnsureDocumentPublishable(section);
+        await AssertParentChapterNotLockedAsync(section, ct);
 
         await CreateVersionForDocumentAsync(section, authorId, ct);
         await unitOfWork.SaveChangesAsync(ct);
@@ -85,6 +87,32 @@ public class VersioningService(
             .First();
 
         await sectionVersionRepository.DeleteAsync(latestVersion.Id, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Locks a chapter to block publish actions.
+    /// </summary>
+    public async Task LockChapterAsync(Guid chapterId, Guid authorId, CancellationToken ct = default)
+    {
+        var chapter = await sectionRepository.GetByIdAsync(chapterId, ct)
+            ?? throw new EntityNotFoundException(nameof(Section), chapterId);
+
+        EnsureLockableChapter(chapter);
+        chapter.Lock();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Unlocks a chapter to re-enable publish actions.
+    /// </summary>
+    public async Task UnlockChapterAsync(Guid chapterId, Guid authorId, CancellationToken ct = default)
+    {
+        var chapter = await sectionRepository.GetByIdAsync(chapterId, ct)
+            ?? throw new EntityNotFoundException(nameof(Section), chapterId);
+
+        EnsureLockableChapter(chapter);
+        chapter.Unlock();
         await unitOfWork.SaveChangesAsync(ct);
     }
 
@@ -138,6 +166,30 @@ public class VersioningService(
         if (chapter.NodeType != NodeType.Folder)
             throw new InvariantViolationException("I-VER-CHAPTER",
                 "Only Folder sections can be republished. Document sections cannot be republished directly.");
+    }
+
+    private static void EnsureLockableChapter(Section chapter)
+    {
+        if (chapter.NodeType != NodeType.Folder)
+            throw new InvariantViolationException("I-LOCK-NOT-CHAPTER", "Only Folder sections can be locked or unlocked.");
+    }
+
+    private static void AssertChapterNotLocked(Section chapter)
+    {
+        if (chapter.IsLocked)
+            throw new InvariantViolationException("I-LOCK-BLOCKED",
+                "Cannot republish a locked chapter. Unlock the chapter first.");
+    }
+
+    private async Task AssertParentChapterNotLockedAsync(Section section, CancellationToken ct)
+    {
+        if (!section.ParentId.HasValue)
+            return;
+
+        var parentChapter = await sectionRepository.GetByIdAsync(section.ParentId.Value, ct);
+        if (parentChapter is { IsLocked: true })
+            throw new InvariantViolationException("I-LOCK-BLOCKED",
+                "Cannot republish a document in a locked chapter. Unlock the chapter first.");
     }
 
     private static void EnsureDocumentPublishable(Section section)

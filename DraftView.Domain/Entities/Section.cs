@@ -19,6 +19,8 @@ public sealed class Section
     public bool ContentChangedSincePublish { get; private set; }
     public DateTime? PublishedAt { get; private set; }
     public DateTime? UnpublishedAt { get; private set; }
+    public bool IsLocked { get; private set; }
+    public DateTime? LockedAt { get; private set; }
     public bool IsSoftDeleted { get; private set; }
     public DateTime? SoftDeletedAt { get; private set; }
 
@@ -151,6 +153,24 @@ public sealed class Section
         if (!IsPublished) return;
         IsPublished   = false;
         UnpublishedAt = DateTime.UtcNow;
+    }
+
+    public void Lock()
+    {
+        if (IsLocked)
+            throw new InvariantViolationException("I-LOCK-ALREADY", "Section is already locked.");
+
+        IsLocked = true;
+        LockedAt = DateTime.UtcNow;
+    }
+
+    public void Unlock()
+    {
+        if (!IsLocked)
+            throw new InvariantViolationException("I-LOCK-NOT-LOCKED", "Section is not locked.");
+
+        IsLocked = false;
+        LockedAt = null;
     }
 
     public void MarkContentChanged()

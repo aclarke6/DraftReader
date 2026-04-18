@@ -5,7 +5,7 @@ Last updated: 2026-04-18
 
 ## Test State
 
-- 656 tests passing (1 skipped — SMTP integration test)
+- 672 tests passing (1 skipped — SMTP integration test)
 - Baseline after V-Sprint 1 complete + V-Sprint 2 Phase 1–3 + V-Sprint 3 Phase 3 + V-Sprint 4 Phase 1–3
 
 ---
@@ -130,11 +130,11 @@ Any modification of a view must include an audit of that view for style leakage.
 
 ## Test state
 
-- 657 Tests total
+- 673 Tests total
 - One skipped test is `SmtpEmailSenderIntegrationTests` which sends a real email, so is not suitable for regular test runs but is included in the solution for manual execution when needed.
-- Latest full passing count: 657 total, 656 passed, 1 skipped, 0 failed
-- Latest targeted application count: 223 total, 223 passed, 0 skipped, 0 failed
-- Latest targeted web count: 61 total, 61 passed, 0 skipped, 0 failed
+- Latest full passing count: 673 total, 672 passed, 1 skipped, 0 failed
+- Latest targeted application count: 231 total, 231 passed, 0 skipped, 0 failed
+- Latest targeted web count: 63 total, 63 passed, 0 skipped, 0 failed
 
 ---
 
@@ -421,11 +421,20 @@ See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
     - [x] Phase 1 — Per-document publishing application layer (`IVersioningService` + `VersioningService` section republish/revoke)
     - [x] Phase 2 — Publishing Page UI and controller endpoints
 - [ ] V-Sprint 7 — Scheduling and locking
+    - [x] Phase 1 — Chapter locking (domain lock state + versioning lock guards + publishing lock controls + reader lock notice)
+    - [ ] Phase 2 — Scheduling
     - [ ] Phase 1 — Chapter Locking — `Section.Lock()` / `Unlock()`, `IsLocked` + `LockedAt`, lock guard in `RepublishChapterAsync` and `RepublishSectionAsync`, Lock/Unlock on Publishing Page, reader lock message
     - [ ] Phase 2 — Scheduling — `Section.SchedulePublish()` / `ClearSchedule()`, `ScheduledPublishAt`, advisory date on Publishing Page, never blocks republish
 - [ ] V-Sprint 8 — Dropbox incremental sync
+    - [ ] Phase 1 — Cursor-based incremental sync — `Project.DropboxCursor`, `ListChangedEntriesAsync`, `ListAllEntriesWithCursorAsync`, full sync on first run to establish cursor, incremental on subsequent runs, cursor-expired fallback, deleted entries soft-deleted
 - [ ] V-Sprint 9 — Version retention and deletion
+    - [ ] Phase 1 — Retention domain — version retention rules per pricing tier, `SectionVersion` physical deletion
+    - [ ] Phase 2 — Enforcement — limit check before version creation, prompt author to delete when limit reached
+    - [ ] Phase 3 — Version management UI — version list on Publishing Page, controlled deletion flow with confirmation
 - [ ] V-Sprint 10 — Tree builder UI (Option A, post-launch)
+    - [ ] Phase 1 — Tree service extension — `CreateSection`, `MoveSection`, `DeleteSection` on `SectionTreeService`
+    - [ ] Phase 2 — Tree builder UI — drag-and-drop section tree, create/rename/reorder/nest sections
+    - [ ] Phase 3 — Sync project tree display — read-only tree for `ScrivenerDropbox` projects, structural changes shown as incoming sync updates
 
 ---
 
@@ -776,6 +785,7 @@ Controllers should follow this structure only:
 - [DONE] Fixed style leakage in `Views/Author/InviteReader.cshtml` by replacing inline layout styling with dashboard CSS classes while adding the invite display-name field
 - [DONE] Fixed reader diff UX for removed paragraphs — removed paragraphs now render as thin visual markers instead of strikethrough deleted text, allowing beta readers to focus on published content rather than editorial changes (2026-04-18)
 - [DONE] Audited `Views/Author/Sections.cshtml` and new `Views/Author/Publishing.cshtml` for style leakage while implementing V-Sprint 6 Phase 2; kept inline form display usage as existing pattern and moved new page layout styling to `DraftView.Core.css`
+- [DONE] Audited `Views/Author/Publishing.cshtml`, `Views/Reader/DesktopRead.cshtml`, and `Views/Reader/MobileRead.cshtml` for style leakage while implementing V-Sprint 7 Phase 1 chapter locking; kept existing inline form pattern only and moved lock notice/indicator styling into `DraftView.Core.css`
 - [DONE] Sprint 4 Phase 6 end-to-end integration is complete
   - fixed configuration-backed protected-email keys are in place for dev and testing
   - DB-backed real-host regression coverage now exists for login, password reset, and invitation provisioning

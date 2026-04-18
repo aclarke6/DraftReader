@@ -352,4 +352,38 @@ public class AuthorControllerTests
 
         versioningService.Verify(v => v.RevokeLatestVersionAsync(sectionId, author.Id, default), Times.Once);
     }
+
+    [Fact]
+    public async Task LockChapter_CallsVersioningService_WithCorrectChapterId()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var chapterId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        await sut.LockChapter(chapterId, projectId);
+
+        versioningService.Verify(v => v.LockChapterAsync(chapterId, author.Id, default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UnlockChapter_CallsVersioningService_WithCorrectChapterId()
+    {
+        var author = User.Create("author@example.test", "Author", Role.Author);
+        var chapterId = Guid.NewGuid();
+        var projectId = Guid.NewGuid();
+        var sut = CreateSut();
+        sut.TempData = new TempDataDictionary(sut.HttpContext, Mock.Of<ITempDataProvider>());
+
+        userRepo.Setup(r => r.GetByEmailAsync("author@example.test", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(author);
+
+        await sut.UnlockChapter(chapterId, projectId);
+
+        versioningService.Verify(v => v.UnlockChapterAsync(chapterId, author.Id, default), Times.Once);
+    }
 }

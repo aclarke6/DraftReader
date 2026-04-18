@@ -332,6 +332,46 @@ public class AuthorController(
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LockChapter(Guid chapterId, Guid projectId)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.LockChapterAsync(chapterId, author.Id);
+            TempData["Success"] = "Chapter locked.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Publishing", new { projectId }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnlockChapter(Guid chapterId, Guid projectId)
+    {
+        var (author, error) = await RequireCurrentAuthorAsync();
+        if (error is not null || author is null) return error ?? Forbid();
+
+        try
+        {
+            await versioningService.UnlockChapterAsync(chapterId, author.Id);
+            TempData["Success"] = "Chapter unlocked.";
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = ex.Message;
+        }
+
+        return Redirect(Url.Action("Publishing", new { projectId }) + "#section-" + chapterId);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> RepublishDocument(Guid sectionId, Guid projectId)
     {
         var (author, error) = await RequireCurrentAuthorAsync();

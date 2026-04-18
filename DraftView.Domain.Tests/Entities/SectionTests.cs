@@ -404,6 +404,73 @@ public class SectionTests
 
         Assert.Equal("I-SEC-TITLE", ex.InvariantCode);
     }
+
+    // ---------------------------------------------------------------------------
+    // Locking
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public void Lock_SetsIsLockedTrue()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+
+        section.Lock();
+
+        Assert.True(section.IsLocked);
+    }
+
+    [Fact]
+    public void Lock_SetsLockedAt()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+
+        section.Lock();
+
+        Assert.NotNull(section.LockedAt);
+    }
+
+    [Fact]
+    public void Lock_WhenAlreadyLocked_ThrowsInvariantViolation()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        section.Lock();
+
+        var ex = Assert.Throws<InvariantViolationException>(() => section.Lock());
+
+        Assert.Equal("I-LOCK-ALREADY", ex.InvariantCode);
+    }
+
+    [Fact]
+    public void Unlock_SetsIsLockedFalse_WhenLocked()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        section.Lock();
+
+        section.Unlock();
+
+        Assert.False(section.IsLocked);
+    }
+
+    [Fact]
+    public void Unlock_ClearsLockedAt()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+        section.Lock();
+
+        section.Unlock();
+
+        Assert.Null(section.LockedAt);
+    }
+
+    [Fact]
+    public void Unlock_WhenNotLocked_ThrowsInvariantViolation()
+    {
+        var section = Section.CreateFolder(ProjectId, ValidUuid, ValidTitle, null, 1);
+
+        var ex = Assert.Throws<InvariantViolationException>(() => section.Unlock());
+
+        Assert.Equal("I-LOCK-NOT-LOCKED", ex.InvariantCode);
+    }
 }
 
 

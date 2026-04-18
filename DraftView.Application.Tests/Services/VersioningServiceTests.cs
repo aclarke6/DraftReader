@@ -684,6 +684,113 @@ public class VersioningServiceTests
             () => _sut.RevokeLatestVersionAsync(section.Id, Guid.NewGuid(), default));
     }
 
+    [Fact]
+    public async Task LockChapterAsync_SetsIsLocked()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await _sut.LockChapterAsync(chapter.Id, Guid.NewGuid(), default);
+
+        Assert.True(chapter.IsLocked);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task LockChapterAsync_WithNonFolder_ThrowsInvariantViolation()
+    {
+        var section = MakeDocument(Guid.NewGuid(), null);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default))
+            .ReturnsAsync(section);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.LockChapterAsync(section.Id, Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public async Task LockChapterAsync_WithMissingSection_ThrowsEntityNotFoundException()
+    {
+        var chapterId = Guid.NewGuid();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapterId, default))
+            .ReturnsAsync((Section?)null);
+
+        await Assert.ThrowsAsync<EntityNotFoundException>(
+            () => _sut.LockChapterAsync(chapterId, Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public async Task UnlockChapterAsync_ClearsIsLocked()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+        chapter.Lock();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await _sut.UnlockChapterAsync(chapter.Id, Guid.NewGuid(), default);
+
+        Assert.False(chapter.IsLocked);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task UnlockChapterAsync_WithNonFolder_ThrowsInvariantViolation()
+    {
+        var section = MakeDocument(Guid.NewGuid(), null);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(section.Id, default))
+            .ReturnsAsync(section);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.UnlockChapterAsync(section.Id, Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public async Task UnlockChapterAsync_WhenNotLocked_ThrowsInvariantViolation()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.UnlockChapterAsync(chapter.Id, Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public async Task RepublishChapterAsync_WhenLocked_ThrowsInvariantViolation()
+    {
+        var chapter = MakeChapter(Guid.NewGuid());
+        chapter.Lock();
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.RepublishChapterAsync(chapter.Id, Guid.NewGuid(), default));
+    }
+
+    [Fact]
+    public async Task RepublishSectionAsync_WhenParentChapterLocked_ThrowsInvariantViolation()
+    {
+        var projectId = Guid.NewGuid();
+        var chapter = MakeChapter(projectId);
+        chapter.Lock();
+        var document = MakeDocument(projectId, chapter.Id);
+
+        _sectionRepo.Setup(r => r.GetByIdAsync(document.Id, default))
+            .ReturnsAsync(document);
+        _sectionRepo.Setup(r => r.GetByIdAsync(chapter.Id, default))
+            .ReturnsAsync(chapter);
+
+        await Assert.ThrowsAsync<InvariantViolationException>(
+            () => _sut.RepublishSectionAsync(document.Id, Guid.NewGuid(), default));
+    }
+
     // Test helpers
     private static Section MakeChapter(Guid projectId) =>
         Section.CreateFolder(projectId, Guid.NewGuid().ToString(), "Chapter 1", null, 0);
