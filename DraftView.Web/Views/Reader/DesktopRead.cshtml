@@ -191,6 +191,13 @@
                     <div class="scene-prose">
                         <h4 class="scene-heading">@item.Scene.Title</h4>
 
+                        @if (item.UpdatedSinceLastRead)
+                        {
+                            <div class="scene-updated-notice">
+                                Updated since you last read
+                            </div>
+                        }
+
                         <div class="scene-prose-shell">
                             <div class="scene-prose-content prose">
                                 @if (item.HasDiff)
