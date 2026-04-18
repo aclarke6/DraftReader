@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using DraftView.Domain.Diff;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
 using DraftView.Domain.Interfaces.Repositories;
@@ -17,6 +18,8 @@ public class ReaderController(
     IUserPreferencesRepository userPreferencesRepo,
     IReaderAccessRepository readerAccessRepo,
     ISectionVersionRepository sectionVersionRepo,
+    IReadEventRepository readEventRepo,
+    ISectionDiffService sectionDiffService,
     ILogger<ReaderController> logger)
     : BaseReaderController(projectRepo, sectionRepo, commentService, progressService,
                            userRepository, readerAccessRepo, logger)
@@ -356,6 +359,14 @@ public class ReaderController(
             var latestVersion = await sectionVersionRepo.GetLatestAsync(scene.Id);
             var resolvedHtml = latestVersion?.HtmlContent ?? scene.HtmlContent;
 
+            // Load the reader's last read version number for this scene
+            var readEvent = await readEventRepo.GetAsync(scene.Id, user.Id);
+            var lastReadVersionNumber = readEvent?.LastReadVersionNumber;
+
+            // Compute diff
+            var diffResult = await sectionDiffService.GetDiffForReaderAsync(
+                scene.Id, lastReadVersionNumber);
+
             // Update last read version if version exists
             if (latestVersion is not null)
             {
@@ -368,7 +379,10 @@ public class ReaderController(
             {
                 Scene = scene,
                 Comments = displayComments,
-                ResolvedHtmlContent = resolvedHtml
+                ResolvedHtmlContent = resolvedHtml,
+                DiffParagraphs = diffResult?.HasChanges == true
+                    ? diffResult.Paragraphs
+                    : Array.Empty<ParagraphDiffResult>()
             });
         }
 
@@ -427,6 +441,14 @@ public class ReaderController(
         var resolvedHtml = latestVersion?.HtmlContent ?? scene.HtmlContent;
         var currentVersionNumber = latestVersion?.VersionNumber;
 
+        // Load the reader's last read version number for this scene
+        var readEvent = await readEventRepo.GetAsync(scene.Id, user.Id);
+        var lastReadVersionNumber = readEvent?.LastReadVersionNumber;
+
+        // Compute diff
+        var diffResult = await sectionDiffService.GetDiffForReaderAsync(
+            scene.Id, lastReadVersionNumber);
+
         // Update last read version if version exists
         if (latestVersion is not null)
         {
@@ -466,7 +488,10 @@ public class ReaderController(
             ProseFont              = preferences?.ProseFont ?? ProseFont.SystemSerif,
             ProseFontSize          = preferences?.ProseFontSize ?? ProseFontSize.Medium,
             ResolvedHtmlContent    = resolvedHtml,
-            CurrentVersionNumber   = currentVersionNumber
+            CurrentVersionNumber   = currentVersionNumber,
+            DiffParagraphs         = diffResult?.HasChanges == true
+                ? diffResult.Paragraphs
+                : Array.Empty<ParagraphDiffResult>()
         });
     }
 }

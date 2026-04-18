@@ -1,3 +1,4 @@
+using DraftView.Domain.Diff;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
 
@@ -50,6 +51,19 @@ public class SceneWithComments
     /// for pre-versioning published sections.
     /// </summary>
     public string? ResolvedHtmlContent { get; set; }
+
+    /// <summary>
+    /// Paragraph-level diff results when the reader has a prior read version
+    /// and a newer version exists. Empty when no diff or no changes.
+    /// When non-empty, the view renders diff paragraphs instead of ResolvedHtmlContent.
+    /// </summary>
+    public IReadOnlyList<ParagraphDiffResult> DiffParagraphs { get; set; }
+        = Array.Empty<ParagraphDiffResult>();
+
+    /// <summary>
+    /// True when DiffParagraphs contains highlighted changes to show the reader.
+    /// </summary>
+    public bool HasDiff => DiffParagraphs.Any(p => p.Type != DiffResultType.Unchanged);
 }
 
 public class CommentDisplayViewModel
