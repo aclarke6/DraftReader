@@ -485,6 +485,7 @@ public class ReaderController(
         if (latestVersion is not null)
         {
             await ProgressService.UpdateLastReadVersionAsync(scene.Id, userId, latestVersion.VersionNumber, ct);
+            await ProgressService.RecordReadAsync(scene.Id, userId, ct);
         }
 
         var diffParagraphs = diffResult?.HasChanges == true
