@@ -20,4 +20,11 @@ public interface IReadingProgressService
         Guid userId,
         int versionNumber,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Records that the reader dismissed the update banner for a section at a
+    /// specific version. Subsequent views of the same version will not show the banner.
+    /// No-op if no ReadEvent exists.
+    /// </summary>
+    Task DismissBannerAsync(Guid sectionId, Guid userId, int versionNumber, CancellationToken ct = default);
 }
