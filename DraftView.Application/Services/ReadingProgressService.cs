@@ -74,4 +74,13 @@ public class ReadingProgressService(
             await unitOfWork.SaveChangesAsync(ct);
         }
     }
+
+    public async Task DismissBannerAsync(Guid sectionId, Guid userId, int versionNumber, CancellationToken ct = default)
+    {
+        var readEvent = await readEventRepo.GetAsync(sectionId, userId, ct);
+        if (readEvent is null) return;
+
+        readEvent.DismissBannerAtVersion(versionNumber);
+        await unitOfWork.SaveChangesAsync(ct);
+    }
 }

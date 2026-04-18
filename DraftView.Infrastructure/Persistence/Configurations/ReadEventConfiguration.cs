@@ -22,5 +22,9 @@ public class ReadEventConfiguration : IEntityTypeConfiguration<ReadEvent>
 
         builder.Property(r => r.OpenCount)
             .IsRequired();
+
+        builder.Property(e => e.BannerDismissedAtVersion)
+            .HasColumnName("BannerDismissedAtVersion")
+            .IsRequired(false);
     }
 }

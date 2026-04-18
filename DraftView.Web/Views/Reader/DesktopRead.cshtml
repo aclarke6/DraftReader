@@ -10,6 +10,8 @@
     {
         editCommentId = parsedEditCommentId;
     }
+
+@Html.AntiForgeryToken()
 }
 
 <div class="reader-page"
@@ -190,6 +192,18 @@
                 <div class="scene-block" id="scene-@item.Scene.Id">
                     <div class="scene-prose">
                         <h4 class="scene-heading">@item.Scene.Title</h4>
+
+                        @if (item.ShowUpdateBanner)
+                        {
+                            <div class="update-banner" data-section-id="@item.Scene.Id" data-version="@item.CurrentVersionNumber">
+                                <span class="update-banner__text">
+                                    This section has been updated — version @item.CurrentVersionNumber
+                                </span>
+                                <button type="button" class="update-banner__dismiss" aria-label="Dismiss update notice">
+                                    Dismiss
+                                </button>
+                            </div>
+                        }
 
                         @if (item.UpdatedSinceLastRead)
                         {
