@@ -1,3 +1,4 @@
+using DraftView.Domain.Diff;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
 
@@ -71,4 +72,13 @@ public class MobileReadViewModel
     /// Null if no version exists yet (pre-versioning section).
     /// </summary>
     public int? CurrentVersionNumber { get; set; }
+
+    /// <summary>
+    /// Paragraph-level diff results for this scene. Empty when no changes.
+    /// </summary>
+    public IReadOnlyList<ParagraphDiffResult> DiffParagraphs { get; set; }
+        = Array.Empty<ParagraphDiffResult>();
+
+    /// <summary>True when the reader has changes to see.</summary>
+    public bool HasDiff => DiffParagraphs.Any(p => p.Type != DiffResultType.Unchanged);
 }

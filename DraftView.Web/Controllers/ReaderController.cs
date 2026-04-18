@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using DraftView.Domain.Diff;
 using DraftView.Domain.Entities;
 using DraftView.Domain.Enumerations;
 using DraftView.Domain.Interfaces.Repositories;
@@ -17,6 +18,8 @@ public class ReaderController(
     IUserPreferencesRepository userPreferencesRepo,
     IReaderAccessRepository readerAccessRepo,
     ISectionVersionRepository sectionVersionRepo,
+    IReadEventRepository readEventRepo,
+    ISectionDiffService sectionDiffService,
     ILogger<ReaderController> logger)
     : BaseReaderController(projectRepo, sectionRepo, commentService, progressService,
                            userRepository, readerAccessRepo, logger)
@@ -350,26 +353,8 @@ public class ReaderController(
         var scenesWithComments = new List<SceneWithComments>();
         foreach (var scene in scenes)
         {
-            await ProgressService.RecordOpenAsync(scene.Id, user.Id);
-
-            // Resolve content from latest version or fallback to scene content
-            var latestVersion = await sectionVersionRepo.GetLatestAsync(scene.Id);
-            var resolvedHtml = latestVersion?.HtmlContent ?? scene.HtmlContent;
-
-            // Update last read version if version exists
-            if (latestVersion is not null)
-            {
-                await ProgressService.UpdateLastReadVersionAsync(scene.Id, user.Id, latestVersion.VersionNumber);
-            }
-
-            var comments        = await CommentService.GetThreadsForSectionAsync(scene.Id, user.Id);
-            var displayComments = await BuildCommentDisplayModelsAsync(comments, user.Id, isModerator);
-            scenesWithComments.Add(new SceneWithComments
-            {
-                Scene = scene,
-                Comments = displayComments,
-                ResolvedHtmlContent = resolvedHtml
-            });
+            var sceneWithComments = await BuildSceneWithCommentsAsync(scene, user, isModerator);
+            scenesWithComments.Add(sceneWithComments);
         }
 
         var chapterCommentsRaw = await CommentService.GetThreadsForSectionAsync(id, user.Id);
@@ -422,33 +407,11 @@ public class ReaderController(
 
         await ProgressService.RecordOpenAsync(id, user.Id);
 
-        // Resolve content from latest version or fallback to scene content
-        var latestVersion = await sectionVersionRepo.GetLatestAsync(scene.Id);
-        var resolvedHtml = latestVersion?.HtmlContent ?? scene.HtmlContent;
-        var currentVersionNumber = latestVersion?.VersionNumber;
-
-        // Update last read version if version exists
-        if (latestVersion is not null)
-        {
-            await ProgressService.UpdateLastReadVersionAsync(scene.Id, user.Id, latestVersion.VersionNumber);
-        }
+        var (resolvedHtml, currentVersionNumber, diffParagraphs) = 
+            await ResolveSceneContentAndDiffAsync(scene, user.Id);
 
         var allSections = await SectionRepo.GetByProjectIdAsync(project.Id);
-
-        var siblingScenes = allSections
-            .Where(s => s.ParentId == chapter.Id &&
-                        s.NodeType == NodeType.Document &&
-                        s.IsPublished && !s.IsSoftDeleted)
-            .OrderBy(s => s.SortOrder)
-            .ToList();
-
-        var currentIndex = siblingScenes.FindIndex(s => s.Id == id);
-        var prevSceneId  = currentIndex > 0
-            ? siblingScenes[currentIndex - 1].Id
-            : (Guid?)null;
-        var nextSceneId  = currentIndex >= 0 && currentIndex < siblingScenes.Count - 1
-            ? siblingScenes[currentIndex + 1].Id
-            : (Guid?)null;
+        var (prevSceneId, nextSceneId) = GetPrevNextSceneIds(scene.Id, chapter.Id, allSections);
 
         var commentsRaw = await CommentService.GetThreadsForSectionAsync(id, user.Id);
         var comments    = await BuildCommentDisplayModelsAsync(commentsRaw, user.Id, isModerator);
@@ -466,7 +429,95 @@ public class ReaderController(
             ProseFont              = preferences?.ProseFont ?? ProseFont.SystemSerif,
             ProseFontSize          = preferences?.ProseFontSize ?? ProseFontSize.Medium,
             ResolvedHtmlContent    = resolvedHtml,
-            CurrentVersionNumber   = currentVersionNumber
+            CurrentVersionNumber   = currentVersionNumber,
+            DiffParagraphs         = diffParagraphs
         });
+    }
+
+    /// <summary>
+    /// Builds a SceneWithComments view model by resolving content, computing diff,
+    /// and loading comments for a scene.
+    /// </summary>
+    private async Task<SceneWithComments> BuildSceneWithCommentsAsync(
+        Section scene,
+        Domain.Entities.User user,
+        bool isModerator,
+        CancellationToken ct = default)
+    {
+        await ProgressService.RecordOpenAsync(scene.Id, user.Id, ct);
+
+        var (resolvedHtml, _, diffParagraphs) = 
+            await ResolveSceneContentAndDiffAsync(scene, user.Id, ct);
+
+        var comments = await CommentService.GetThreadsForSectionAsync(scene.Id, user.Id, ct);
+        var displayComments = await BuildCommentDisplayModelsAsync(comments, user.Id, isModerator);
+
+        return new SceneWithComments
+        {
+            Scene = scene,
+            Comments = displayComments,
+            ResolvedHtmlContent = resolvedHtml,
+            DiffParagraphs = diffParagraphs
+        };
+    }
+
+    /// <summary>
+    /// Resolves scene content from the latest version (or fallback to working content),
+    /// computes diff if reader has a prior read version, and updates reader progress.
+    /// Returns: (resolvedHtml, currentVersionNumber, diffParagraphs)
+    /// </summary>
+    private async Task<(string? resolvedHtml, int? currentVersionNumber, IReadOnlyList<ParagraphDiffResult> diffParagraphs)> 
+        ResolveSceneContentAndDiffAsync(
+            Section scene,
+            Guid userId,
+            CancellationToken ct = default)
+    {
+        var latestVersion = await sectionVersionRepo.GetLatestAsync(scene.Id, ct);
+        var resolvedHtml = latestVersion?.HtmlContent ?? scene.HtmlContent;
+        var currentVersionNumber = latestVersion?.VersionNumber;
+
+        var readEvent = await readEventRepo.GetAsync(scene.Id, userId, ct);
+        var lastReadVersionNumber = readEvent?.LastReadVersionNumber;
+
+        var diffResult = await sectionDiffService.GetDiffForReaderAsync(
+            scene.Id, lastReadVersionNumber, ct);
+
+        if (latestVersion is not null)
+        {
+            await ProgressService.UpdateLastReadVersionAsync(scene.Id, userId, latestVersion.VersionNumber, ct);
+        }
+
+        var diffParagraphs = diffResult?.HasChanges == true
+            ? diffResult.Paragraphs
+            : Array.Empty<ParagraphDiffResult>();
+
+        return (resolvedHtml, currentVersionNumber, diffParagraphs);
+    }
+
+    /// <summary>
+    /// Determines the previous and next scene IDs for mobile navigation.
+    /// Returns (prevSceneId, nextSceneId) tuples.
+    /// </summary>
+    private static (Guid? prevSceneId, Guid? nextSceneId) GetPrevNextSceneIds(
+        Guid currentSceneId,
+        Guid chapterId,
+        IReadOnlyList<Section> allSections)
+    {
+        var siblingScenes = allSections
+            .Where(s => s.ParentId == chapterId &&
+                        s.NodeType == NodeType.Document &&
+                        s.IsPublished && !s.IsSoftDeleted)
+            .OrderBy(s => s.SortOrder)
+            .ToList();
+
+        var currentIndex = siblingScenes.FindIndex(s => s.Id == currentSceneId);
+        var prevSceneId = currentIndex > 0
+            ? siblingScenes[currentIndex - 1].Id
+            : (Guid?)null;
+        var nextSceneId = currentIndex >= 0 && currentIndex < siblingScenes.Count - 1
+            ? siblingScenes[currentIndex + 1].Id
+            : (Guid?)null;
+
+        return (prevSceneId, nextSceneId);
     }
 }

@@ -13,7 +13,7 @@
    -------------------------------------------------------------------------- */
 :root {
     /* Update for every change */
-    --css-version: "v2026-04-17-2";
+    --css-version: "v2026-04-17-3";
     /* Colour palette now split into Light and Dark theme files */
     /* Typography */
     --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
@@ -221,6 +221,25 @@ a {
     left: 50%;
     transform: translateX(-50%);
     text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Reader diff highlighting — DesktopRead.cshtml / MobileRead.cshtml
+   -------------------------------------------------------------------------- */
+.diff-para--added {
+    background: var(--color-diff-added-bg, #f0fdf4);
+    border-left: 3px solid var(--color-diff-added, #22c55e);
+    padding-left: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.diff-para--removed {
+    background: var(--color-diff-removed-bg, #fef2f2);
+    border-left: 3px solid var(--color-diff-removed, #ef4444);
+    padding-left: var(--space-3);
+    margin-bottom: var(--space-2);
+    text-decoration: line-through;
+    opacity: 0.7;
 }
 
 .site-footer__right {

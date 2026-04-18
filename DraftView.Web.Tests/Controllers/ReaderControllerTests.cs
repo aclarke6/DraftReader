@@ -35,6 +35,8 @@ public class ReaderControllerTests
     private readonly Mock<IUserPreferencesRepository> prefsRepo = new();
     private readonly Mock<IReaderAccessRepository> readerAccessRepo = new();
     private readonly Mock<ISectionVersionRepository> sectionVersionRepo = new();
+    private readonly Mock<IReadEventRepository> readEventRepo = new();
+    private readonly Mock<ISectionDiffService> sectionDiffService = new();
     private readonly Mock<ILogger<ReaderController>> logger = new();
 
     [Fact]
@@ -125,6 +127,8 @@ public class ReaderControllerTests
             prefsRepo.Object,
             readerAccessRepo.Object,
             sectionVersionRepo.Object,
+            readEventRepo.Object,
+            sectionDiffService.Object,
             logger.Object);
 
         controller.ControllerContext = new ControllerContext
@@ -259,6 +263,14 @@ public class ReaderReadRenderingRegressionTests : IClassFixture<ReaderReadRender
                 progressService.Setup(r => r.RecordOpenAsync(It.IsAny<Guid>(), reader.Id, It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
+                var readEventRepo = new Mock<IReadEventRepository>();
+                readEventRepo.Setup(r => r.GetAsync(It.IsAny<Guid>(), reader.Id, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((ReadEvent?)null);
+
+                var sectionDiffService = new Mock<ISectionDiffService>();
+                sectionDiffService.Setup(s => s.GetDiffForReaderAsync(It.IsAny<Guid>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((Domain.Contracts.SectionDiffResult?)null);
+
                 var systemStateMessageService = new Mock<ISystemStateMessageService>();
                 systemStateMessageService.Setup(s => s.GetActiveMessageAsync(It.IsAny<CancellationToken>()))
                     .ReturnsAsync((SystemStateMessage?)null);
@@ -271,6 +283,8 @@ public class ReaderReadRenderingRegressionTests : IClassFixture<ReaderReadRender
                 services.RemoveAll<IReadingProgressService>();
                 services.RemoveAll<IReaderAccessRepository>();
                 services.RemoveAll<ISectionVersionRepository>();
+                services.RemoveAll<IReadEventRepository>();
+                services.RemoveAll<ISectionDiffService>();
                 services.RemoveAll<ISystemStateMessageService>();
 
                 services.AddSingleton(userRepo.Object);
@@ -281,6 +295,8 @@ public class ReaderReadRenderingRegressionTests : IClassFixture<ReaderReadRender
                 services.AddSingleton(progressService.Object);
                 services.AddSingleton(Mock.Of<IReaderAccessRepository>());
                 services.AddSingleton(Mock.Of<ISectionVersionRepository>());
+                services.AddSingleton(readEventRepo.Object);
+                services.AddSingleton(sectionDiffService.Object);
                 services.AddSingleton(systemStateMessageService.Object);
             });
         }
