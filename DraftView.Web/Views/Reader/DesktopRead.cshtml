@@ -1,4 +1,5 @@
 @model DesktopChapterReadViewModel
+@using DraftView.Domain.Enumerations
 @{
     ViewData["Title"] = Model.Chapter.Title;
 
@@ -192,7 +193,28 @@
 
                         <div class="scene-prose-shell">
                             <div class="scene-prose-content prose">
-                                @Html.Raw(item.ResolvedHtmlContent ?? "<p><em>The author has not added content to this scene yet.</em></p>")
+                                @if (item.HasDiff)
+                                {
+                                    @foreach (var para in item.DiffParagraphs)
+                                    {
+                                        if (para.Type == DiffResultType.Added)
+                                        {
+                                            <div class="diff-para diff-para--added">@Html.Raw(para.Html)</div>
+                                        }
+                                        else if (para.Type == DiffResultType.Removed)
+                                        {
+                                            <div class="diff-para diff-para--removed">@Html.Raw(para.Html)</div>
+                                        }
+                                        else
+                                        {
+                                            @Html.Raw(para.Html)
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    @Html.Raw(item.ResolvedHtmlContent ?? "<p><em>The author has not added content to this scene yet.</em></p>")
+                                }
                             </div>
                         </div>
                     </div>
