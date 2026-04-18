@@ -1,12 +1,12 @@
 ﻿# DraftView Task List
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ---
 
 ## Test State
 
-- 596 tests passing (1 skipped — SMTP integration test)
-- Baseline after V-Sprint 1 complete + V-Sprint 2 complete (Phases 1–3)
+- 602 tests passing (1 skipped — SMTP integration test)
+- Baseline after V-Sprint 1 complete + V-Sprint 2 complete (Phases 1–3) + V-Sprint 3 Phase 1
 
 ---
 
@@ -343,7 +343,7 @@ See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
     - [x] Phase 2 — Application Diff Service — 596 tests, `SectionDiffService` coordinating version lookup and diff, committed 2026-04-17
     - [x] Phase 3 — Reader Highlighting — 596 tests, diff paragraphs rendered in desktop and mobile views, committed 2026-04-17
 - [ ] V-Sprint 3 — Reader experience layer — update messaging and banner
-    - [ ] Phase 1 — Reader State — `LastReadAt` on `ReadEvent`, `RecordReadAsync` on `IReadingProgressService`, EF migration
+    - [x] Phase 1 — Reader State — 602 tests, `LastReadAt` on `ReadEvent`, `RecordReadAsync` on `IReadingProgressService`, EF migration applied, committed 2026-04-18
     - [ ] Phase 2 — Update Messaging — "Updated since you last read" inline notice per scene
     - [ ] Phase 3 — Update Banner — dismissible top banner per scene per version, `BannerDismissedAtVersion` on `ReadEvent`
 - [ ] V-Sprint 4 — Pending change indicator and classification for authors
