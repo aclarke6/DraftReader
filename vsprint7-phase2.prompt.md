@@ -77,9 +77,9 @@ public DateTime? ScheduledPublishAt { get; private set; }
 
 public void SchedulePublish(DateTime scheduledAt)
 {
-    if (scheduledAt <= DateTime.UtcNow)
+    if (scheduledAt.Date < DateTime.UtcNow.Date)
         throw new InvariantViolationException("I-SCHED-PAST",
-            "Scheduled publish date must be in the future.");
+            "Scheduled publish date must not be in the past.");
     ScheduledPublishAt = scheduledAt;
 }
 
@@ -93,8 +93,9 @@ public void ClearSchedule()
 
 ```
 SchedulePublish_SetsScheduledPublishAt
-SchedulePublish_WithPastDate_ThrowsInvariantViolation
-SchedulePublish_WithNowDate_ThrowsInvariantViolation
+SchedulePublish_WithYesterdayDate_ThrowsInvariantViolation
+SchedulePublish_WithTodayDate_DoesNotThrow
+SchedulePublish_WithTomorrowDate_DoesNotThrow
 ClearSchedule_SetsScheduledPublishAtToNull
 ClearSchedule_WhenNotScheduled_DoesNotThrow
 ```
@@ -161,6 +162,12 @@ Implement `ClearScheduleAsync`:
 
 **No lock guard changes required.** Scheduling does not interact with locking.
 Republish on a scheduled chapter works normally — scheduling is advisory only.
+
+**UTC and timezone — important:** `<input type="date">` posts a date without time.
+The controller calls `.ToUniversalTime()` before passing to the service. The domain
+guard must compare `scheduledAt.Date` against `DateTime.UtcNow.Date` (not the full
+timestamp) so a user selecting today or tomorrow is never incorrectly rejected
+due to timezone offset. See Deliverable 1 for the corrected guard.
 
 **Application Tests:**
 
@@ -251,7 +258,7 @@ else
         <input type="hidden" name="chapterId" value="@chapter.Chapter.Id" />
         <input type="hidden" name="projectId" value="@Model.Project.Id" />
         <input type="date" name="scheduledAt" class="input input--sm"
-               min="@DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-dd")" />
+               min="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
         <button type="submit" class="btn btn--sm btn--ghost">Set date</button>
     </form>
 }
@@ -301,8 +308,9 @@ Add:
 }
 ```
 
-Check if `.btn--ghost` or `.input--sm` already exist in `DraftView.Core.css` before
-adding — do not introduce duplicates.
+**Before adding any CSS:** Search `DraftView.Core.css` for `.btn--ghost` and
+`.input--sm`. If either already exists, do not add it again. Only add what is
+genuinely missing — introducing duplicates will cause style conflicts.
 
 Bump the CSS version token in `DraftView.Core.css` using regex replace.
 Update the CSS version in `_Layout.cshtml` to match.
@@ -327,7 +335,7 @@ Run `dotnet test --nologo` and confirm:
 - [ ] Schedule date shown on Publishing Page when set
 - [ ] Clear date button shown when schedule is set
 - [ ] Set date form shown when no schedule is set
-- [ ] Republish button remains visible and enabled regardless of schedule state
+- [ ] Republish button remains visible and enabled regardless of schedule state — **critical business rule**; verify this explicitly before marking complete
 - [ ] CSS scheduling styles added, no duplicates introduced
 - [ ] CSS version token bumped
 - [ ] No new inline styles introduced
