@@ -16,6 +16,13 @@ public sealed class ReadEvent
     public int OpenCount { get; private set; }
     public int? LastReadVersionNumber { get; private set; }
 
+    /// <summary>
+    /// The version number at which the reader dismissed the update banner.
+    /// When this equals the current version number, the banner is not shown.
+    /// Null until the reader has dismissed the banner for the first time.
+    /// </summary>
+    public int? BannerDismissedAtVersion { get; private set; }
+
     // ---------------------------------------------------------------------------
     // Constructor
     // ---------------------------------------------------------------------------
@@ -65,5 +72,20 @@ public sealed class ReadEvent
                 "Version number must be 1 or greater.");
 
         LastReadVersionNumber = versionNumber;
+    }
+
+    /// <summary>
+    /// Records that the reader dismissed the update banner at the given version.
+    /// Subsequent opens of the same version will not show the banner.
+    /// </summary>
+    /// <param name="versionNumber">The version number being dismissed (must be >= 1).</param>
+    /// <exception cref="InvariantViolationException">Thrown when version number is less than 1.</exception>
+    public void DismissBannerAtVersion(int versionNumber)
+    {
+        if (versionNumber < 1)
+            throw new InvariantViolationException("I-READ-BANNER",
+                "Version number must be 1 or greater.");
+
+        BannerDismissedAtVersion = versionNumber;
     }
 }
