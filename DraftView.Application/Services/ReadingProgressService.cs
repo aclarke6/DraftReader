@@ -74,4 +74,13 @@ public class ReadingProgressService(
             await unitOfWork.SaveChangesAsync(ct);
         }
     }
+
+    public async Task RecordReadAsync(Guid sectionId, Guid userId, CancellationToken ct = default)
+    {
+        var readEvent = await readEventRepo.GetAsync(sectionId, userId, ct);
+        if (readEvent is null) return;
+
+        readEvent.RecordRead();
+        await unitOfWork.SaveChangesAsync(ct);
+    }
 }

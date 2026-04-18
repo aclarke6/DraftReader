@@ -22,5 +22,9 @@ public class ReadEventConfiguration : IEntityTypeConfiguration<ReadEvent>
 
         builder.Property(r => r.OpenCount)
             .IsRequired();
+
+        builder.Property(e => e.LastReadAt)
+            .HasColumnName("LastReadAt")
+            .IsRequired(false);
     }
 }

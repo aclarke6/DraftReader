@@ -255,4 +255,41 @@ public class ReadingProgressServiceTests
 
         _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Never);
     }
+
+    // ---------------------------------------------------------------------------
+    // RecordReadAsync
+    // ---------------------------------------------------------------------------
+
+    [Fact]
+    public async Task RecordReadAsync_SetsLastReadAt_WhenReadEventExists()
+    {
+        var sectionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var readEvent = ReadEvent.Create(sectionId, userId);
+        var sut = CreateSut();
+
+        _readEventRepo.Setup(r => r.GetAsync(sectionId, userId, default))
+            .ReturnsAsync(readEvent);
+
+        await sut.RecordReadAsync(sectionId, userId);
+
+        Assert.NotNull(readEvent.LastReadAt);
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Once);
+    }
+
+    [Fact]
+    public async Task RecordReadAsync_DoesNotThrow_WhenNoReadEventExists()
+    {
+        var sectionId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var sut = CreateSut();
+
+        _readEventRepo.Setup(r => r.GetAsync(sectionId, userId, default))
+            .ReturnsAsync((ReadEvent?)null);
+
+        await sut.RecordReadAsync(sectionId, userId);
+
+        _unitOfWork.Verify(u => u.SaveChangesAsync(default), Times.Never);
+    }
 }
+

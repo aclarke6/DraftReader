@@ -20,4 +20,11 @@ public interface IReadingProgressService
         Guid userId,
         int versionNumber,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Records that the reader has read a section at the current version.
+    /// Sets LastReadAt on the existing ReadEvent if one exists.
+    /// No-op if no ReadEvent exists for this section and user.
+    /// </summary>
+    Task RecordReadAsync(Guid sectionId, Guid userId, CancellationToken ct = default);
 }
