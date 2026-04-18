@@ -6,7 +6,7 @@ Last updated: 2026-04-17
 ## Test State
 
 - 596 tests passing (1 skipped — SMTP integration test)
-- Baseline after V-Sprint 1 complete + V-Sprint 2 Phase 1–3
+- Baseline after V-Sprint 1 complete + V-Sprint 2 complete (Phases 1–3)
 
 ---
 
@@ -338,11 +338,14 @@ See `DraftView Git Rules.md` for branch strategy, gates, and commit standards.
     - [x] V-Sprint 1 Phase 5 — Author Republish UI — 575 tests, RepublishChapter action with TDD coverage, committed 2026-04-17
     - [x] V-Sprint 1 Phase 6 — Manual Upload UI — 575 tests, UploadScene GET/POST with form and button, committed 2026-04-17
     - [x] V-Sprint 1 — Core versioning backbone + manual upload — Republish → Version → Reader flow — COMPLETE
-- [ ] V-Sprint 2 — Paragraph diff highlighting — deliver core reader value
+- [x] V-Sprint 2 — Paragraph diff highlighting — COMPLETE
     - [x] Phase 1 — Diff Engine (Domain) — 589 tests, `HtmlDiffService` with LCS paragraph diff, committed 2026-04-17
     - [x] Phase 2 — Application Diff Service — 596 tests, `SectionDiffService` coordinating version lookup and diff, committed 2026-04-17
     - [x] Phase 3 — Reader Highlighting — 596 tests, diff paragraphs rendered in desktop and mobile views, committed 2026-04-17
 - [ ] V-Sprint 3 — Reader experience layer — update messaging and banner
+    - [ ] Phase 1 — Reader State — `LastReadAt` on `ReadEvent`, `RecordReadAsync` on `IReadingProgressService`, EF migration
+    - [ ] Phase 2 — Update Messaging — "Updated since you last read" inline notice per scene
+    - [ ] Phase 3 — Update Banner — dismissible top banner per scene per version, `BannerDismissedAtVersion` on `ReadEvent`
 - [ ] V-Sprint 4 — Pending change indicator and classification for authors
 - [ ] V-Sprint 5 — AI summaries — named characters and locations, editable before publish
 - [ ] V-Sprint 6 — Per-document publishing and dedicated Publishing Page
